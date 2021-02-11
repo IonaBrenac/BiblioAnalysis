@@ -1,4 +1,4 @@
-# Bibliotools-Bibliomaps
+# BiblioAnalysis
 
 This repository is based on [Sebastian Grauwin's BiblioTools/BiblioMaps](http://www.sebastian-grauwin.com/bibliomaps/download.html).
 
