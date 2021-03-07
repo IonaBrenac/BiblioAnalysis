@@ -1,0 +1,49 @@
+{
+    "COMBINE" : "intersection",
+
+    "authors" : {"mode":true,
+	         "list":["chabli a",
+                         "brenac i",
+                         "bistori k"]},
+	
+    "publication year" : {"mode":true,
+	                  "list":{"ymin": 2019 ,
+			          "ymax": 2020}},
+
+    "countries" : {"mode":true,
+	           "list":["France",
+                           "U K",
+                           "Germany"]},
+
+    "institutions" : {"mode":false,
+	              "list":["CNRS",
+                              "CEA"]},
+
+    "document type" :{"mode":false,
+		      "list":["Article", 
+			      "Review", 
+		              "Proceedings Paper", 
+			      "Article",
+			      "Article in Press", 
+			      "Review", 
+			      "Conference Paper", 
+		              "Conference Review"]},
+
+    "language" :{"mode":false,
+		 "list":["English",
+                         "French"]},
+		
+    
+    "subject category":{"mode":false,
+                        "list":["Physics",
+                                "Computer Sciences"]},
+		 
+    "subject subcategory":{"mode":false,
+                           "list":["Education"]},
+
+    "refsource": {"mode":false,
+                  "list":["P NATL ACAD SCI USA"]},
+
+    "references": {"mode":false,
+                  "list":["Bellouard Q, 2018, INT. J. HYDROG. ENERGY, 44, 19193"]}
+}
