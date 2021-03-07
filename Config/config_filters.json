@@ -7,10 +7,10 @@
                          "bistori k"]},
 	
     "publication year" : {"mode":true,
-	                  "list":{"ymin": 2019 ,
+	                  "list":{"ymin": 2020 ,
 			          "ymax": 2020}},
 
-    "countries" : {"mode":true,
+    "countries" : {"mode":false,
 	           "list":["France",
                            "U K",
                            "Germany"]},
