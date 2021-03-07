@@ -1,7 +1,7 @@
 {
     "COMBINE" : "intersection",
 
-    "authors" : {"mode":true,
+    "authors" : {"mode":false,
 	         "list":["chabli a",
                          "brenac i",
                          "bistori k"]},
