@@ -1,49 +1,116 @@
 {
-    "COMBINE" : "intersection",
-
-    "authors" : {"mode":false,
-	         "list":["chabli a",
-                         "brenac i",
-                         "bistori k"]},
-	
-    "publication year" : {"mode":true,
-	                  "list":{"ymin": 2020 ,
-			          "ymax": 2020}},
-
-    "countries" : {"mode":false,
-	           "list":["France",
-                           "U K",
-                           "Germany"]},
-
-    "institutions" : {"mode":false,
-	              "list":["CNRS",
-                              "CEA"]},
-
-    "document type" :{"mode":false,
-		      "list":["Article", 
-			      "Review", 
-		              "Proceedings Paper", 
-			      "Article",
-			      "Article in Press", 
-			      "Review", 
-			      "Conference Paper", 
-		              "Conference Review"]},
-
-    "language" :{"mode":false,
-		 "list":["English",
-                         "French"]},
-		
+    "description":"items to be combined in union or intersection for filtering the corpus", 
     
-    "subject category":{"mode":false,
-                        "list":["Physics",
-                                "Computer Sciences"]},
-		 
-    "subject subcategory":{"mode":false,
-                           "list":["Education"]},
+    "COMBINE":"union",
 
-    "refsource": {"mode":false,
-                  "list":["P NATL ACAD SCI USA"]},
+    "authors":{"description":"Selected authors",
+               "mode":false,
+               "list":[
+                       "chabli a",
+                       "brenac i",
+                       "bistori k"
+                      ]
+              },
 
-    "references": {"mode":false,
-                  "list":["Bellouard Q, 2018, INT. J. HYDROG. ENERGY, 44, 19193"]}
+    "publication year":{"description":"Selected time period",
+                        "mode":false,
+                        "list":{
+                                "ymin": 2020,
+                                "ymax": 2020
+                               }
+                       },
+
+    "countries":{"description":"Selected countries",
+                 "mode":false,
+                 "list":[
+                         "France",
+                         "U K",
+                         "Germany"
+                        ]
+                },
+
+    "institutions":{"description":"Selected institutions",
+                    "mode":false,
+                    "list":[
+                            "CNRS",
+                            "CEA"
+                           ]
+                   },
+
+    "document type":{"description":"Selected document types",
+                     "mode":false,
+                     "list":[
+                             "Article", 
+                             "Review"
+                            ]
+                    },
+    
+    "pubsources":{"description":"Selected journals",
+                  "mode":false,
+                  "list":[
+                          "INT. J. HYDROG. ENERGY",
+                          "FUEL PROCESS. TECHNOL."
+                         ]
+                 },    
+
+    "language":{"description":"Selected languages",
+                "mode":false,
+                "list":[
+                        "English",
+                        "French"
+                       ]
+               },
+
+    
+    "subject category":{"description":"Selected subject categories",
+                        "mode":false,
+                        "list":[
+                                "Physics",
+                                "Computer Sciences"
+                               ]
+                       },
+ 
+    "subject subcategory":{"description":"Selected subject subcategories",
+                           "mode":false,
+                           "list":[
+                                   "Education"
+                                  ]
+                          },
+
+    "refsource":{"description":"Selected journals of cited publications",
+                 "mode":false,
+                 "list":[
+                         "INT. J. HYDROG. ENERGY", 
+                         "Fuel cells"
+                        ]
+                },
+
+    "references":{"description":"Selected full references of cited publications",
+                  "mode":false,
+                  "list":[
+                          "Bellouard Q, 2018, INT. J. HYDROG. ENERGY, 44, 19193"
+                         ]
+                 },
+    
+    "keywords_IK":{"description":"Selected keywords",
+                   "mode":true,
+                   "list":[
+                           "ELECTROCHEMICAL IMPEDANCE SPECTROSCOPY"
+                          ]
+                 },
+
+    "keywords_TK":{"description":"Selected title words",
+                   "mode":true,
+                   "list":[
+                           "IMPEDANCE"
+                          ]
+                  },
+
+    "keywords_AK":{"description":"Selected authors jeywords",
+                   "mode":true,
+                   "list":[
+                           "ELECTROCHEMICAL IMPEDANCE SPECTROSCOPY"
+                          ]
+                  }
+
 }
