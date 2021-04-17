@@ -3,6 +3,8 @@
     
     "COMBINE":"union",
 
+    "EXCLUSION" : true,
+
     "authors":{"description":"Selected authors",
                "mode":false,
                "list":[
@@ -63,10 +65,9 @@
 
     
     "subject category":{"description":"Selected subject categories",
-                        "mode":false,
+                        "mode":true,
                         "list":[
-                                "Physics",
-                                "Computer Sciences"
+                                "Psychiatry"
                                ]
                        },
  
@@ -88,26 +89,27 @@
     "references":{"description":"Selected full references of cited publications",
                   "mode":false,
                   "list":[
-                          "Bellouard Q, 2018, INT. J. HYDROG. ENERGY, 44, 19193"
+                          "Bellouard Q, 2018, INT. J. HYDROG. ENERGY, 44, 19193",
+                          "Boujjat H, 2019, INT. J. HEAT MASS TRANSF."
                          ]
                  },
     
     "keywords_IK":{"description":"Selected keywords",
-                   "mode":true,
+                   "mode":false,
                    "list":[
-                           "ELECTROCHEMICAL IMPEDANCE SPECTROSCOPY"
+                           "cognition","social cognition"
                           ]
                  },
 
     "keywords_TK":{"description":"Selected title words",
-                   "mode":true,
+                   "mode":false,
                    "list":[
                            "IMPEDANCE"
                           ]
                   },
 
     "keywords_AK":{"description":"Selected authors jeywords",
-                   "mode":true,
+                   "mode":false,
                    "list":[
                            "ELECTROCHEMICAL IMPEDANCE SPECTROSCOPY"
                           ]
