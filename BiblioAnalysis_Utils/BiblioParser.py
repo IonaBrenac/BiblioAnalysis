@@ -96,6 +96,12 @@ ALIAS_UK = [x.strip() for x in ALIAS_UK.split(',')]
 
 ENCODING = 'iso-8859-1' # encoding used by the function read_database_wos
 
+SCOPUS_CAT_CODES = 'scopus_cat_codes.txt'
+SCOPUS_JOURNALS_ISSN_CAT = 'scopus_journals_issn_cat.txt'
+
+NLTK_VALID_TAG_LIST = ['NN','NNS','VBG','JJ'] # you can find help on tag sets
+                                              # using nltk.help.upenn_tagset() 
+
 NOUN_MINIMUM_OCCURRENCES = 3 # Minimum occurrences of a noun to be retained when 
                              # building the set of title keywords see build_title_keywords
 
@@ -147,35 +153,74 @@ def read_database_wos(filename):
     
     return df
 
-def is_noun(pos):
-    
-    '''Returns True if pos is the label of a noun.
-    '''
-    return pos[:2] == 'NN' # we aggregate NN and NNS (see nltk doc)
 
-def build_title_keywords(list_of_title):
+def build_title_keywords(df):
     
-    '''build the set "keywords_TK" of the nouns appearing at least NOUN_MINIMUM_OCCURRENCE times 
-    in all the articles title.
+    '''Given the dataframe 'df' with one column 'title':
     
-    Beware: we disguard the geround, verb and adjective. 
-            A noun and its plural form will appear as two different keywords.
+                    Title
+            0  Experimental and CFD investigation of inert be...
+            1  Impact of Silicon/Graphite Composite Electrode...
+            
+    the function 'build_title_keywords':
+    
+       1- Builds the set "keywords_TK" of the tokens appearing at least NOUN_MINIMUM_OCCURRENCE times 
+    in all the article titles of the corpus. The tokens are the words of the title with nltk tags 
+    belonging to the global list 'NLTK_VALID_TAG_LIST'.
+       2- Adds two columns 'token' and 'pub_token' to the dataframe 'df'. The column 'token' contains
+    the set of the tokenized and lemmelized (using the nltk WordNetLemmatizer) title. The column
+    'pub_token' contains the list of words common to the set "keywords_TK" and to the column 'kept_tokens'
+       3- Buids the list of tuples 'list_of_words_occurrences.sort'
+    [(token_1,# occurrences token_1), (token_2,# occurrences token_2),...] ordered by decreasing values
+    of # occurrences token_i.
+    
+        
     '''
 
     # Standard library imports
     from collections import Counter
+    import operator
     
     # 3rd party imports
     import nltk
-
-    text = ', '.join(x for x in list_of_title)
-
-
-    tokenized = nltk.word_tokenize(text.lower())
-    nouns = [word for (word, pos) in nltk.pos_tag(tokenized) if is_noun(pos)] 
-    keywords_TK = set([x for x,y in Counter(nouns).items() if y>=NOUN_MINIMUM_OCCURRENCES])
     
-    return keywords_TK
+    def tokenizer(text):
+        
+        '''
+        Tokenizes, lemmelizes the string 'text'. Only the words with nltk tags in the global
+        NLTK_VALID_TAG_LIST are kept.
+        
+        ex 'Thermal stability of Mg2Si0.55Sn0.45 for thermoelectric applications' 
+        gives the list : ['thermal', 'stability', 'mg2si0.55sn0.45', 'thermoelectric', 'application']
+        
+        Args:
+            text (string): string to tokenize
+            
+        Returns
+            The list valid_words_lemmatized 
+        '''
+            
+        tokenized = nltk.word_tokenize(text.lower())
+        valid_words = [word for (word, pos) in nltk.pos_tag(tokenized) 
+                       if pos in NLTK_VALID_TAG_LIST] 
+
+        stemmer = nltk.stem.WordNetLemmatizer()
+        valid_words_lemmatized = [stemmer.lemmatize(valid_word) for valid_word in valid_words]
+    
+        return valid_words_lemmatized
+
+    df['title_token'] = df['Title'].apply(tokenizer)
+
+    bag_of_words = df.title_token.sum()
+
+    bag_of_words_occurrences = list(Counter(bag_of_words).items())
+    bag_of_words_occurrences.sort(key = operator.itemgetter(1),reverse=True)
+
+    keywords_TK = set([x for x,y in bag_of_words_occurrences if y>=NOUN_MINIMUM_OCCURRENCES])
+
+    df['kept_tokens'] = df['title_token'].apply(lambda x : list(keywords_TK.intersection(set(x))))
+   
+    return df,bag_of_words_occurrences
 
 def name_normalizer(text):
     
@@ -400,8 +445,6 @@ def build_keywords_wos(df_corpus=None):
     import nltk
     import pandas as pd
 
-    keywords_TK = build_title_keywords(df_corpus['TI'])
-
     key_word = namedtuple('key_word',['pub_id','type','keyword'] )
     list_keyword = []
 
@@ -419,14 +462,14 @@ def build_keywords_wos(df_corpus=None):
                                          type="IK",
                                          keyword=y.lower().strip()))
 
-    df_title = df_corpus['TI'].dropna()
-    for pub_id, title in zip(df_title.index,df_title):
-        tokenized = nltk.word_tokenize(title.lower())
-        nouns = set([word for (word, pos) in nltk.pos_tag(tokenized) if is_noun(pos)])
-        for y in keywords_TK.intersection(nouns):
+    df_title = pd.DataFrame(df_corpus['TI'].dropna())
+    df_title.columns = ['Title']
+    df_TK,list_of_words_occurrences = build_title_keywords(df_title)
+    for pub_id in df_TK.index:
+        for token in df_TK.loc[pub_id,'kept_tokens']:
             list_keyword.append(key_word(pub_id=pub_id,
-                                         type="TK",
-                                         keyword=y.lower()))
+                                             type="TK",
+                                             keyword=token))
 
     list_keyword = sorted(list_keyword, key=attrgetter('pub_id'))
     df_keyword = pd.DataFrame.from_dict({'pub_id':[s.pub_id for s in list_keyword],
@@ -997,8 +1040,6 @@ def build_keywords_scopus(df_corpus=None):
     # 3rd party imports
     import nltk
     import pandas as pd
-    
-    keywords_TK = build_title_keywords(df_corpus['Title'])
 
     key_word = namedtuple('key_word',['pub_id','type','keyword'] )
     list_keyword = []
@@ -1018,14 +1059,13 @@ def build_keywords_scopus(df_corpus=None):
                                          type="IK",
                                          keyword=keyword_IK.strip()))
 
-    df_title = df_corpus['Title'].dropna()
-    for pub_id, title in zip(df_title.index,df_title):
-        tokenized = nltk.word_tokenize(title.lower())
-        nouns = set([word for (word, pos) in nltk.pos_tag(tokenized) if is_noun(pos)])
-        for keyword_TK in keywords_TK.intersection(nouns):
+    df_title = pd.DataFrame(df_corpus['Title'].dropna())
+    df_TK,list_of_words_occurrences = build_title_keywords(df_title)
+    for pub_id in df_TK.index:
+        for token in df_TK.loc[pub_id,'kept_tokens']:
             list_keyword.append(key_word(pub_id=pub_id,
-                                         type="TK",
-                                         keyword=keyword_TK))
+                                             type="TK",
+                                             keyword=token))
 
     list_keyword = sorted(list_keyword, key=attrgetter('pub_id'))
     df_keyword = pd.DataFrame.from_dict({'pub_id':[s.pub_id for s in list_keyword],
@@ -1178,6 +1218,7 @@ def  build_articles_scopus(df_corpus=None):
    # df_article['Page start'] = df_article['Page start'].apply(str_int_convertor)
    
     return df_article
+
 def biblio_parser_scopus(in_dir_parsing, out_dir_parsing, rep_utils):
     
     '''Using the files xxxx.csv stored in the folder rawdata, the function biblio_parser_scopus
@@ -1221,8 +1262,8 @@ def biblio_parser_scopus(in_dir_parsing, out_dir_parsing, rep_utils):
                                                       if file.endswith(".csv"))
 
     filename = list_data_base[0]
-    filename1 = rep_utils / Path(scopus_cat_codes)
-    filename2 = rep_utils / Path(scopus_journals_issn_cat)
+    filename1 = rep_utils / Path(SCOPUS_CAT_CODES)
+    filename2 = rep_utils / Path(SCOPUS_JOURNALS_ISSN_CAT)
 
     df = pd.read_csv(filename,usecols=USECOLS_SCOPUS) # reads the database
 
