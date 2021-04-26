@@ -86,7 +86,7 @@ PARSED_FILE = {'AU':'authors.dat',
                'Y':'years.dat'}
 
 
-def generate_cooc_graph(df_corpus=None, size_min=1):
+def generate_cooc_graph(df_corpus=None, size_min=1, item=None):
     
     '''Builds a coocurence networkx object G=(N,V) out of the dataframe df_corpus with two columns
     pub_id and item:
@@ -120,8 +120,10 @@ def generate_cooc_graph(df_corpus=None, size_min=1):
      
      ex: N = {item1,item2,item3,item4,item5}, V={(item1,item2),(item1,item3), (item4,item5)}
      
-     The size of the node associated with item_i is the number of occurrences of item_i
+     The size of the node associated with item_i is the number of occurrences of item_i 
+     that should be >= than size_min
      ex: size node_item1=2, size node_item2=1
+     
      
      The weight w_ij of a vertex is the number of occurrences of the tuple (item_i,item_j) in the
      list of tuples [(item_i,item_j),...] where item_i and item_j are 
@@ -131,15 +133,15 @@ def generate_cooc_graph(df_corpus=None, size_min=1):
      
      The nodes has one id and two attributes: the size of the node and its label. 
      
-     The edges have two attributes: their weight w_ij and their cosine similarity 
+     The edges have two attributes: their weight w_ij and their Kessler similarity 
 
                                                         w_ij
-                               cos_ij = ----------------------------------------
+                               kess_ij = ----------------------------------------
                                           sqrt(size(node_i) * sqrt(size(node_j)
     
     Args:
         df_corpus (dataframe): dataframe structured as |pub_id|item|
-        min_size (int): minimum size of the node to be retained
+        size_min (int): minimum size of the node to be retained
         
     Return:
         The function returns G a networkx object.
@@ -165,7 +167,7 @@ def generate_cooc_graph(df_corpus=None, size_min=1):
     dg = df_corpus.groupby('item').count().reset_index()              # Number of occurrences of an item
     dg.columns = ['item','count']
     labels_to_drop = dg.query('count<@size_min')['item'].to_list()    # List of items whith a number
-                                                                      # of occurrrences less than size_min
+                                                                      # of occurrences less than size_min
     index_to_drop = [x[0]  for x in zip(df_corpus.index ,df_corpus['item']) 
                            if x[1] in labels_to_drop]
     df_corpus.drop(index_to_drop, inplace = True)                     # Cleaning of the dataframe
@@ -196,16 +198,23 @@ def generate_cooc_graph(df_corpus=None, size_min=1):
     #                            Building the networx object graph G
     #------------------------------------------------------------------------------------------------
     G = nx.Graph()
+    
     G.add_nodes_from(dic_nodes.values()) 
-    G.add_edges_from(list_edges)
     nx.set_node_attributes(G,nodes_size, 'node_size')
     nx.set_node_attributes(G,dict(zip(dic_nodes.values(), dic_nodes.keys())), 'label' )
+    if item == 'CU':
+        lat, lon = COUNTRIES_GPS[nodes_label[node]]
+        lat_dict = dict(zip(G.nodes,lat))
+        lon_dict = dict(zip(G.nodes,lon))
+        nx.set_node_attributes(G,lat_dict,'lat')
+        nx.set_node_attributes(G,lon_dict,'lon')
+        
+    G.add_edges_from(list_edges)
     nx.set_edge_attributes(G, weight, 'nbr_edges')
-    cos = {}
-    for edge in list_edges: # Computes the cosine similarity
-            cos[edge] = weight[edge] / math.sqrt(nodes_size[edge[0]] * nodes_size[edge[1]])
-            
-    nx.set_edge_attributes(G, cos, 'cos_similarity')
+    kess = {}
+    for edge in list_edges: # Computes the Kessler similarity betwween node edge[0] and node edge[1]
+            kess[edge] = weight[edge] / math.sqrt(nodes_size[edge[0]] * nodes_size[edge[1]])        
+    nx.set_edge_attributes(G, kess, 'kessler_similarity')
     
     return G
 
@@ -238,6 +247,19 @@ def plot_cooc_graph(G,node_size_ref=30):
     _ = nx.draw_networkx_edges(G, pos, alpha=0.9,width=1.5, edge_color='k', style='solid',)
     labels = nx.draw_networkx_labels(G,pos=pos,font_size=8,
                                        font_color='w')
+
+def write_cooc_gexf(G,filename):
+    
+    '''Save the graph "G" at Gephy (.gexf) format using full path filename
+    '''
+    
+    # Standard library imports
+    from pathlib import Path
+    
+    # 3rd party imports
+    import networkx as nx
+    
+    nx.write_gexf(G,filename)
 
 def write_cooc_gdf(G,item,color,filename):
     
@@ -282,7 +304,7 @@ def write_cooc_gdf(G,item,color,filename):
             f_gephi.write(row)
 
         edge_weight = nx.get_edge_attributes(G,'nbr_edges')
-        edge_similarity = nx.get_edge_attributes(G,'cos_similarity')
+        edge_similarity = nx.get_edge_attributes(G,'kessler_similarity')
         f_gephi.write('edgedef>node1 VARCHAR,node2 VARCHAR,weight DOUBLE,nb_cooc DOUBLE\n')
         for edge in G.edges:
             row = f'{edge[0]},{edge[1]},{edge_similarity[edge]:.10f},{edge_weight[edge]}\n'
@@ -320,9 +342,12 @@ def build_item_cooc(item,in_dir,out_dir,size_min = 1,):
         df.columns = ["pub_id","item"]
 
 
-    G = generate_cooc_graph(df_corpus=df, size_min=size_min)
+    G = generate_cooc_graph(df_corpus=df, size_min=size_min, item=item)
     
-    filename_out = Path('cooc_' + item + '_thr' + str(size_min) + '.gdf')
-    write_cooc_gdf(G,item,COLOR_NODES[item],out_dir / filename_out )
+    
+    
+    filename_out_prefix = 'cooc_' + item + '_thr' + str(size_min) 
+    write_cooc_gdf(G,item,COLOR_NODES[item],out_dir / Path(filename_out_prefix + '.gdf'))
+    write_cooc_gexf(G,out_dir / Path(filename_out_prefix + '.gexf'))
     
     return G
