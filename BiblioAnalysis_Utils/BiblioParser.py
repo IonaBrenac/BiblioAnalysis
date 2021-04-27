@@ -1,5 +1,8 @@
 
-__all__ = ['COUNTRIES','WOS_TAGS','WOS_TAGS_DICT','biblio_parser_scopus', 'biblio_parser_wos', 'biblio_parser']
+__all__ = ['COUNTRIES','WOS_TAGS','WOS_TAGS_DICT',
+           'biblio_parser_scopus', 'biblio_parser_wos',
+           'biblio_parser','build_title_keywords','read_database_wos',
+           'USECOLS_SCOPUS','USECOLS_WOS']
     
 COUNTRY = '''
     United States,Afghanistan,Albania,Algeria,American Samoa,Andorra,Angola,
@@ -99,7 +102,7 @@ ENCODING = 'iso-8859-1' # encoding used by the function read_database_wos
 SCOPUS_CAT_CODES = 'scopus_cat_codes.txt'
 SCOPUS_JOURNALS_ISSN_CAT = 'scopus_journals_issn_cat.txt'
 
-NLTK_VALID_TAG_LIST = ['NN','NNS','VBG','JJ'] # you can find help on tag sets
+NLTK_VALID_TAG_LIST = ['NN','NNS','VBG','JJ'] # you can find help on the nltk tags set
                                               # using nltk.help.upenn_tagset() 
 
 NOUN_MINIMUM_OCCURRENCES = 3 # Minimum occurrences of a noun to be retained when 
@@ -143,10 +146,11 @@ def read_database_wos(filename):
 
     df = pd.DataFrame(csv_list)
     
-    dc = dict(zip(df.iloc[0,:],df.columns))  # Columns selection and dataframe reformatting
+    # Columns selection and dataframe reformatting
+    dc = dict(zip(df.iloc[0,:],df.columns))  # Buids {n° column: column name,...}
     df.drop(list(set(df.columns).difference(set([dc[key] for key in USECOLS_WOS]))),
             axis=1,
-            inplace=True)
+            inplace=True)                    # Drops unused columns
     df.columns = df.iloc[0]
     df = df.drop(0)
     df.index = range(len(df))
@@ -326,7 +330,7 @@ def build_references_wos(df_corpus=None):
                     if len(year):
                         year = year[0][1:-1]
                     else:
-                        year = 2100
+                        year = 0
  
                     vol = re.findall(re_vol, field)
                     if len(vol):

@@ -1,6 +1,15 @@
-__all__ = ['AUTHORIZED_ITEMS', 'plot_cooc_graph', 'build_item_cooc']
+__all__ = ['AUTHORIZED_ITEMS', 'AUTHORIZED_ITEMS_DICT', 'plot_cooc_graph', 'build_item_cooc']
 
 AUTHORIZED_ITEMS = ['AK','AU','CU','IK','S','S2','TK']
+
+AUTHORIZED_ITEMS_DICT = {'Authors':'AU',
+                         'Author keywords':'AK',
+                         'Title keywords':'TK',
+                         'Journal keywords':'IK',
+                         'Countries':'CU',
+                         'Subjects':'S',
+                         'Sub-subjects':'S2',
+                        }
 
 COUNTRIES_GPS_STRING = '''Aruba:12.5,-69.97;Afghanistan:33,65;Angola:-12.5,18.5;Anguilla:18.25,-63.17;
 Albania:41,20;Andorra:42.5,1.5;United Arab Emirates:24,54;Argentina:-34,-64;Armenia:40,45;
@@ -201,9 +210,10 @@ def generate_cooc_graph(df_corpus=None, size_min=1, item=None):
     
     G.add_nodes_from(dic_nodes.values()) 
     nx.set_node_attributes(G,nodes_size, 'node_size')
-    nx.set_node_attributes(G,dict(zip(dic_nodes.values(), dic_nodes.keys())), 'label' )
+    nodes_label = dict(zip(dic_nodes.values(), dic_nodes.keys()))
+    nx.set_node_attributes(G,nodes_label, 'label' )
     if item == 'CU':
-        lat, lon = COUNTRIES_GPS[nodes_label[node]]
+        lat, lon = map(list, zip(*[COUNTRIES_GPS[nodes_label[node]] for node in G.nodes]))
         lat_dict = dict(zip(G.nodes,lat))
         lon_dict = dict(zip(G.nodes,lon))
         nx.set_node_attributes(G,lat_dict,'lat')
@@ -247,6 +257,7 @@ def plot_cooc_graph(G,node_size_ref=30):
     _ = nx.draw_networkx_edges(G, pos, alpha=0.9,width=1.5, edge_color='k', style='solid',)
     labels = nx.draw_networkx_labels(G,pos=pos,font_size=8,
                                        font_color='w')
+    plt.show()
 
 def write_cooc_gexf(G,filename):
     
