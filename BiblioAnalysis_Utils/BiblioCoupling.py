@@ -225,7 +225,7 @@ def build_coupling_graph(in_dir):
                 TOTW += w_ij
                 G.add_edge(pub_id_i, pub_id_j, weight=w_ij, nc=BC_table[pub_id_i][pub_id_j])
                 
-    node_label = {x:df_article.loc[x,'label_article'] for x in G.nodes}
+    node_label = {x:df_article.loc[df_article['pub_id'] == x,'label_article'] for x in G.nodes}
     nx.set_node_attributes(G,node_label,'label')  
     nx.set_node_attributes(G,nR,'nbr_references')
     

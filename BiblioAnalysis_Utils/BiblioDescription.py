@@ -69,12 +69,10 @@ def frequency_analysis(df):
     for ex_a we have: [[1,2],[4,2]]
 
     '''
+    #Standard library imports
+    import itertools
+    import operator
 
-    def p_iterator(lst):
-        c1 = sum(lst)
-        for x  in  lst:
-            yield c1
-            c1 -=x
 
     df_freq = df.groupby('item').count().reset_index()
     df_freq.sort_values(by=['pub_id'],ascending=False,inplace=True)
@@ -89,7 +87,10 @@ def frequency_analysis(df):
     df_freq_stat = df.drop_duplicates().\
                       groupby('item').count().reset_index().\
                       groupby('pub_id').count().reset_index()
-    p_item = [df_freq_stat['pub_id'].to_list(), list(p_iterator(df_freq_stat['item'].to_list()))]
+    
+    freq_item = df_freq_stat['item'].to_list()
+    p_item = [df_freq_stat['pub_id'].to_list(),
+             [k for k in itertools.accumulate([sum(freq_item)]+freq_item,operator.isub)][:-1]]
 
     return df_freq, q_item, p_item
 
