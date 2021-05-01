@@ -10,7 +10,7 @@ TREE_MAP_ITEM = [
     ("references", 7),
     ("refjournals", 8),
     ("subjects", 9),
-    ("subjects2 (only for scopus database)", 10),
+    ("subjects2", 10),
     ("keywords", 11),
     ("titlewords", 12),
     ("authorskeywords", 13),
@@ -58,7 +58,7 @@ def item_selection() :
         messagebox.showinfo("Item selection info", TREE_MAP_ITEM_HELP_TEXT)
     
     tk_root = tk.Tk()
-    tk_root.title("Filter GUI") 
+    tk_root.title("Treemap GUI") 
     item_choice = ttk.LabelFrame(tk_root, text=' Label selection ')
     item_choice.grid(column=0, row=0, padx=8, pady=4)
     

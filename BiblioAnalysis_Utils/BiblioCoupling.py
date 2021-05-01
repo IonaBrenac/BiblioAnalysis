@@ -291,9 +291,8 @@ def plot_coupling_graph(G,partition,dic_graph_carac,nodes_number_max=10):
 
     labels=nx.draw_networkx_labels(G,pos=pos,font_size=8,
                                    font_color='w')
-    
-    plt.title(f'average degree : {dic_graph_carac["avg_degree"]:.2f},\
-                average weight : {dic_graph_carac["avg_weight"]:.5f}')
+    plt.title(f'Coupling graph \nAverage degree: {dic_graph_carac["avg_degree"]:.2f}\
+                Average weight: {dic_graph_carac["avg_weight"]:.5f}',fontsize=23,fontweight="bold")
     plt.show()
     
 

@@ -530,7 +530,7 @@ def treemap_item(item_treemap, file_name_treemap):
         colors = [cm.viridis(norm(value)) for value in sizes]
         squarify.plot(sizes=sizes, label=alias, alpha=1, color = colors)
         plt.axis('off')
-        plt.title('Frequences for '+ str(size_limit) + ' ' + item_treemap + ' over ' + \
+        plt.title('Frequences for the top '+ str(size_limit) + ' ' + item_treemap + ' over ' + \
                    str(total_size),fontsize=23,fontweight="bold")
         plt.show()
     

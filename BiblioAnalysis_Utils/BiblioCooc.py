@@ -228,13 +228,15 @@ def generate_cooc_graph(df_corpus=None, size_min=1, item=None):
     
     return G
 
-def plot_cooc_graph(G,node_size_ref=30):
+def plot_cooc_graph(G,item,size_min=1,node_size_ref=30):
     
     '''Plots the cooccurrenre graph G .
     We fix the layout to be of type "spring_layout"
     
     Args:
      G (networkx ogject): Built using the function "generate_cooc_graph"
+     item (str): Item name (ex: "Authors", "Country"...)
+     size_min (int): Minimum size of the kept nodes
      Node_size_ref (int): The maximum size of a node
      
     '''
@@ -250,6 +252,8 @@ def plot_cooc_graph(G,node_size_ref=30):
     nodes_sizes_normalized = node_sizes / max(node_sizes)
     node_sizes = (nodes_sizes_normalized*node_size_ref).astype(int)
     
+    title_item_dict = {item: full_name for full_name,item in AUTHORIZED_ITEMS_DICT.items()}
+    
     #cmap = cm.get_cmap('viridis', max(partition.values()) + 1) (for future use)
     fig = plt.figure(figsize=(15,15))
     _ = nx.draw_networkx_nodes(G, pos, node_size=node_sizes) #, partition.keys(),(for future use)
@@ -257,6 +261,9 @@ def plot_cooc_graph(G,node_size_ref=30):
     _ = nx.draw_networkx_edges(G, pos, alpha=0.9,width=1.5, edge_color='k', style='solid',)
     labels = nx.draw_networkx_labels(G,pos=pos,font_size=8,
                                        font_color='w')
+    plt.title('Cooccurrence graph for item ' + title_item_dict[item] + '\nNode minimum size: '+ str(size_min),
+              fontsize=23,fontweight="bold")
+    
     plt.show()
 
 def write_cooc_gexf(G,filename):
