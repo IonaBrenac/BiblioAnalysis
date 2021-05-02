@@ -2,7 +2,8 @@
 __all__ = ['COUNTRIES','WOS_TAGS','WOS_TAGS_DICT',
            'biblio_parser_scopus', 'biblio_parser_wos',
            'biblio_parser','build_title_keywords','read_database_wos',
-           'USECOLS_SCOPUS','USECOLS_WOS']
+           'USECOLS_SCOPUS','USECOLS_WOS',
+           'merge_database']
     
 COUNTRY = '''
     United States,Afghanistan,Albania,Algeria,American Samoa,Andorra,Angola,
@@ -157,6 +158,39 @@ def read_database_wos(filename):
     
     return df
 
+def merge_database(database,filename,in_dir,out_dir):
+    
+    '''Merges several databases in one database
+    
+    Args:
+        database (string): database type (scopus or wos)
+        filename (str): name of the merged database
+        in_dir (str): name of the folder where the databases are stored
+        out_dir (str): name of the folder where the merged databases will be stored
+    
+    '''
+    # Standard library imports
+    import os
+    from pathlib import Path
+    import sys
+
+    # 3rd party imports
+    import pandas as pd
+
+    if database == 'wos':
+        list_data_base = []
+        for path, _, files in os.walk(in_dir):
+            list_data_base.extend(Path(path) / Path(file) for file in files
+                                                          if file.endswith(".txt"))
+        list_df = []
+        for file in list_data_base:
+            list_df.append(read_database_wos(file))
+
+        result = pd.concat(list_df,ignore_index=True)
+
+        result.to_csv(out_dir / Path(filename),sep='\t')
+    else:
+        print('not yet implemented')
 
 def build_title_keywords(df):
     
