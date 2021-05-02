@@ -44,7 +44,8 @@ DIC_CHANGE_CHAR = {"Ł":"L",   # polish capital to L
                    "ł":"l",   # polish l
                    "ı":"i",    
                    "‐":"-",   # Non-Breaking Hyphen to hyphen-minus
-                   "Đ":"D"}   # D with stroke (Vietamese,South Slavic) to D
+                   "Đ":"D",   # D with stroke (Vietamese,South Slavic) to D
+                   ".":""}
 CHANGE = str.maketrans(DIC_CHANGE_CHAR)
 
 WOS_TAGS = '''FN,VR,PT,AU,AF,BA,BF,CA,GP,BE,TI,SO,SE,BS,LA,DT,CT,CY,CL,

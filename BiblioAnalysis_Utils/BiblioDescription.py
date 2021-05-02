@@ -395,7 +395,9 @@ def plot_graph(in_dir,item):
         ]
         }
 
-    where type = "AU", "S", "I", "CU", "S2", "K", "AK", "TK", "R", "RJ",
+    where type = "AU", "S", "I", "CU", "S2", "K", "AK", "TK", "R", "RJ"
+    
+    Returns the graph G.
     '''
 
     import json
@@ -431,7 +433,7 @@ def plot_graph(in_dir,item):
 
     # compute the best partition
     partition = community_louvain.best_partition(G)
-
+    nx.set_node_attributes(G,partition,'community_id')
 
     # draw the graph
     pos = nx.spring_layout(G)
@@ -457,7 +459,7 @@ def plot_graph(in_dir,item):
     for g in df.groupby([0]):
         print(f'N° partition:{g[0]}, items: {g[1][1].to_list()}')
 
-    return
+    return G
 
 def plot_histo(in_dir,item):
 
