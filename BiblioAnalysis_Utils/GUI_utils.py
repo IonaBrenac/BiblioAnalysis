@@ -154,10 +154,10 @@ def cooc_selection() :
     # -------------------------------------------------------------------------------------------
     item = [(x,i) for i,x in enumerate(AUTHORIZED_ITEMS_DICT.keys())]
     varitem = tk.IntVar()
-    varitem.set(item[0][1])
+    #varitem.set(item[0][1])
 
     ttk.Label(item_choice , 
-             text='Choose an item for the cooccurrence graph:').grid(column=0, row=1, padx=8, pady=4)
+             text='Choose an item for the co-occurrence graph:').grid(column=0, row=1, padx=8, pady=4)
     
     idx_row = 2
     for  txt, val in item:
@@ -220,11 +220,11 @@ def merge_database_gui() :
     tk_root = tk.Tk()
     tk_root.title("Graph cooccurrence GUI") 
     
-    item_choice = ttk.LabelFrame(tk_root, text=' Label selection ')
+    item_choice = ttk.LabelFrame(tk_root, text=' Database selection ')
     item_choice.grid(column=0, row=0, padx=8, pady=4)
     
-    size_choice = ttk.LabelFrame(tk_root, text=' Sieze choice ')
-    size_choice.grid(column=1, row=0, padx=8, pady=4)
+    folder_choice = ttk.LabelFrame(tk_root, text=' Folders selection ')
+    folder_choice.grid(column=1, row=0, padx=8, pady=4)
 
 
     
@@ -273,27 +273,27 @@ def merge_database_gui() :
     #                   File name, in_dir,  out_dir selection
     # -------------------------------------------------------------------------------------------
     name = tk.StringVar()
-    ttk.Label(size_choice , 
+    ttk.Label(folder_choice , 
              text='File name of the merged database:').grid(column=0, row=0, padx=8, pady=4)
-    size_entered = ttk.Entry(size_choice, width=30, textvariable=name)
+    size_entered = ttk.Entry(folder_choice, width=30, textvariable=name)
     size_entered.grid(column=0, row=1, sticky=tk.W) 
     
 
-    submit_button = ttk.Button(size_choice, text="Submit", command=submit)   
+    submit_button = ttk.Button(folder_choice, text="Submit", command=submit)   
     submit_button.grid(column=1, row=1, padx=8, pady=4)
     
-    indir_button = ttk.Button(size_choice, text="Indir folder", command=indir_folder_choice)
+    indir_button = ttk.Button(folder_choice, text="In-dir folder", command=indir_folder_choice)
     indir_button.grid(column=0, row=2, padx=8, pady=4)
     
-    outdir_button = ttk.Button(size_choice, text="Outdir folder", command=outdir_folder_choice)
+    outdir_button = ttk.Button(folder_choice, text="Out-dir folder", command=outdir_folder_choice)
     outdir_button.grid(column=0, row=3, padx=8, pady=4)
     
-    help_button = ttk.Button(size_choice, text="HELP", command=help)
+    help_button = ttk.Button(folder_choice, text="HELP", command=help)
     help_button.grid(column=0, row=5, padx=8, pady=4)
     
     
-    if os.name == 'nt':
-        tk.Button(size_choice, text="Quit", command=tk_root.destroy).grid(column=0, row=6, padx=8, pady=4)
+    if os.name == 'nt': # Work with nt not macos
+        tk.Button(folder_choice, text="Quit", command=tk_root.destroy).grid(column=0, row=6, padx=8, pady=4)
     
     tk_root.mainloop()
     
