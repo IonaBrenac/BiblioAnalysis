@@ -34,7 +34,7 @@ LABEL_MEANING = {'AU' :'co-authors',
 
 
 # Buids a cooccurrence graph only for thes labels
-VALID_LABEL_GRAPH = ['AU', 'CU', 'S', 'S2', 'K', 'R', 'RJ', 'I', 'AK', 'TK']
+VALID_LABEL_GRAPH = ['AU', 'CU', 'S', 'S2', 'IK', 'R', 'RJ', 'I', 'AK', 'TK']
 
 def frequency_analysis(df):
 
@@ -168,7 +168,7 @@ def describe_item(df,item,dic_distrib_item,list_cooc_nodes,list_cooc_edges ,freq
     '''Builds the dataframe "df_freq" and the arrays "q_item" and "p_item for :
     item = 'AU','AK','CU', 'DT', 'I', 'J', 'IK', 'LA', 'R', 'RJ', 'S', 'S2', 'TK', 'Y'
        Builds the coocurence undirected graph
-    item = 'AU', 'CU', 'S', 'S2', 'K', 'R', 'RJ', 'I', 'AK', 'TK'
+    item = 'AU', 'CU', 'S', 'S2', 'IK', 'R', 'RJ', 'I', 'AK', 'TK'
     '''
 
 
@@ -395,7 +395,7 @@ def plot_graph(in_dir,item):
         ]
         }
 
-    where type = "AU", "S", "I", "CU", "S2", "K", "AK", "TK", "R", "RJ"
+    where type = "AU", "S", "I", "CU", "S2", "IK", "AK", "TK", "R", "RJ"
     
     Returns the graph G.
     '''

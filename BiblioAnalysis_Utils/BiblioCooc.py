@@ -153,7 +153,8 @@ def generate_cooc_graph(df_corpus=None, size_min=1, item=None):
         size_min (int): minimum size of the node to be retained
         
     Return:
-        The function returns G a networkx object.
+        The function returns G a networkx object. The function return G=None if the graph has less than
+        two nodes
     '''
     
     # Standard library import
@@ -184,49 +185,53 @@ def generate_cooc_graph(df_corpus=None, size_min=1, item=None):
     #                 Building the set of nodes and the set of edges
     #------------------------------------------------------------------------------------------------
     df_corpus.columns = ['pub_id','item' ]
-    nodes_id = list(set(df_corpus['item']))                 # Attribution of a integer id to the items
+    nodes_id = list(set(df_corpus['item']))                 # Attribution of a integer id to the different items
     dic_nodes = dict(zip(nodes_id,range(len(nodes_id))))    # Number of an item occurrence keyed by the
                                                             #   node id
     dic_size = dict(zip(dg['item'],dg['count']))
     nodes_size = {dic_nodes[x]:dic_size[x] for x in nodes_id}
-
-
-    list_edges = []
-    weight = defaultdict(int)
-    for group_by_pub_id in df_corpus.groupby('pub_id'):
-        for edges in list(distinct_combinations(group_by_pub_id[1]['item'].to_list(), 2)):
-            if edges:
-                edge = (dic_nodes[edges[0]],dic_nodes[edges[1]])
-                if edge not in list_edges:
-                    list_edges.append(edge)
-                    weight[edge] = 1
-                else:
-                    weight[edge] +=1 
-                    
-                    
-    #                            Building the networx object graph G
-    #------------------------------------------------------------------------------------------------
-    G = nx.Graph()
     
-    G.add_nodes_from(dic_nodes.values()) 
-    nx.set_node_attributes(G,nodes_size, 'node_size')
-    nodes_label = dict(zip(dic_nodes.values(), dic_nodes.keys()))
-    nx.set_node_attributes(G,nodes_label, 'label' )
-    if item == 'CU':
-        lat, lon = map(list, zip(*[COUNTRIES_GPS[nodes_label[node]] for node in G.nodes]))
-        lat_dict = dict(zip(G.nodes,lat))
-        lon_dict = dict(zip(G.nodes,lon))
-        nx.set_node_attributes(G,lat_dict,'lat')
-        nx.set_node_attributes(G,lon_dict,'lon')
+    if len(nodes_size)<2: # Dont build a graph with one or zero node
+        G = None
         
-    G.add_edges_from(list_edges)
-    nx.set_edge_attributes(G, weight, 'nbr_edges')
-    kess = {}
-    for edge in list_edges: # Computes the Kessler similarity betwween node edge[0] and node edge[1]
-            kess[edge] = weight[edge] / math.sqrt(nodes_size[edge[0]] * nodes_size[edge[1]])        
-    nx.set_edge_attributes(G, kess, 'kessler_similarity')
+    else:
+        list_edges = []
+        weight = defaultdict(int)
+        for group_by_pub_id in df_corpus.groupby('pub_id'):
+            for edges in list(distinct_combinations(group_by_pub_id[1]['item'].to_list(), 2)):
+                if edges:
+                    edge = (dic_nodes[edges[0]],dic_nodes[edges[1]])
+                    if edge not in list_edges:
+                        list_edges.append(edge)
+                        weight[edge] = 1
+                    else:
+                        weight[edge] +=1 
+
+
+        #                            Building the networx object graph G
+        #------------------------------------------------------------------------------------------------
+        G = nx.Graph()
+
+        G.add_nodes_from(dic_nodes.values()) 
+        nx.set_node_attributes(G,nodes_size, 'node_size')
+        nodes_label = dict(zip(dic_nodes.values(), dic_nodes.keys()))
+        nx.set_node_attributes(G,nodes_label, 'label' )
+        if item == 'CU':
+            lat, lon = map(list, zip(*[COUNTRIES_GPS[nodes_label[node]] for node in G.nodes]))
+            lat_dict = dict(zip(G.nodes,lat))
+            lon_dict = dict(zip(G.nodes,lon))
+            nx.set_node_attributes(G,lat_dict,'lat')
+            nx.set_node_attributes(G,lon_dict,'lon')
+
+        G.add_edges_from(list_edges)
+        nx.set_edge_attributes(G, weight, 'nbr_edges')
+        kess = {}
+        for edge in list_edges: # Computes the Kessler similarity betwween node edge[0] and node edge[1]
+                kess[edge] = weight[edge] / math.sqrt(nodes_size[edge[0]] * nodes_size[edge[1]])        
+        nx.set_edge_attributes(G, kess, 'kessler_similarity')
     
     return G
+
 
 def plot_cooc_graph(G,item,size_min=1,node_size_ref=30):
     
@@ -363,9 +368,9 @@ def build_item_cooc(item,in_dir,out_dir,size_min = 1,):
     G = generate_cooc_graph(df_corpus=df, size_min=size_min, item=item)
     
     
-    
-    filename_out_prefix = 'cooc_' + item + '_thr' + str(size_min) 
-    write_cooc_gdf(G,item,COLOR_NODES[item],out_dir / Path(filename_out_prefix + '.gdf'))
-    write_cooc_gexf(G,out_dir / Path(filename_out_prefix + '.gexf'))
+    if G is not None:
+        filename_out_prefix = 'cooc_' + item + '_thr' + str(size_min) 
+        write_cooc_gdf(G,item,COLOR_NODES[item],out_dir / Path(filename_out_prefix + '.gdf'))
+        write_cooc_gexf(G,out_dir / Path(filename_out_prefix + '.gexf'))
     
     return G
