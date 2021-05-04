@@ -18,7 +18,7 @@ DIC_FREQ_FILES = {'AU':'freq_authors.dat',
                    'Y':'freq_years.dat'}
 
 LABEL_MEANING = {'AU' :'co-authors',
-                 'AK' :'authors_keywords',
+                 'AK' :'author_keywords',
                   'CU':'countries',
                   'DT':'doc_type',
                    'I':'institution',
@@ -29,7 +29,7 @@ LABEL_MEANING = {'AU' :'co-authors',
                   'RJ':'refjournal',
                    'S':'subjects',
                   'S2':'subjects2',
-                  'TK':'title_words',
+                  'TK':'title_keywords',
                    'Y':'year'}
 
 
@@ -214,8 +214,8 @@ def describe_corpus(in_dir, out_dir, verbose):
     import pandas as pd
 
     dic_distrib_item = {}
-    list_cooc_nodes = []
-    list_cooc_edges = []
+    list_cooc_nodes = []   # Only one .json file is used to describe all the graph
+    list_cooc_edges = []   
 
 
 
@@ -227,10 +227,10 @@ def describe_corpus(in_dir, out_dir, verbose):
                               header=None,
                               usecols=[0,2,3,7,8])
     df_articles.rename (columns = {0:'pub_id',
-                                  3:'Source title',
-                                  2:'Year',
-                                  7:'Document Type',
-                                  8:'Language of Original Document',},
+                                   3:'Source title',
+                                   2:'Year',
+                                   7:'Document Type',
+                                   8:'Language of Original Document',},
                        inplace = True)
     dic_distrib_item["N"] = len(df_articles)
 

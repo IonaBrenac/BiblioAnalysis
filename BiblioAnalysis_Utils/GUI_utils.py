@@ -161,8 +161,8 @@ def cooc_selection() :
     
     idx_row = 2
     for  txt, val in item:
-        tk.Radiobutton(item_choice, text = txt, variable = varitem, value=val,
-            command=lambda t = txt, v = varitem: choice(t, v)).grid(column=0, row=idx_row+2, padx=8, pady=4,sticky=tk.W)
+        tk.Radiobutton(item_choice, text=txt, variable=varitem, value=val,
+            command=lambda t = txt, v=varitem: choice(t, v)).grid(column=0, row=idx_row+2, padx=8, pady=4,sticky=tk.W)
         idx_row += 1
      
     #                                Minmum node size selection
