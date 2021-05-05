@@ -436,7 +436,7 @@ def build_authors_wos(df_corpus=None):
                         df_corpus['AU']):
         idx_author = 0
         for y in x.split(";"):
-            author = name_normalizer(y.replace('.','').replace(',',''))
+            author = name_normalizer(y.replace('.','').replace(',',''))  # <----- to be checked
             
             if author not in ['Dr','Pr','Dr ','Pr ']:
                 list_author.append(nt_co_author(pub_id,
@@ -839,7 +839,7 @@ def build_references_scopus(df_corpus=None):
             for field in row.split(";"):
                 author = re.findall(re_author, field)
                 if len(author):
-                    author = author[0] .replace(".","").replace(",","")
+                    author = author[0] .replace(".","").replace(",","")  # <---- must be normalized
                 else:
                     author = 'unknown'
 
@@ -1438,6 +1438,15 @@ def biblio_parser_wos(in_dir_parsing, out_dir_parsing):
                 index=False,
                 sep='\t',
                 header=HEADER)
+    
+    for item in ['AK','IK','TK']:      # Deals with keywords
+        df_K.query('type==@item')[['pub_id','keyword']].to_csv(Path(out_dir_parsing) / Path('keywords_'+item+'.dat'),
+                index=False,
+                sep='\t',
+                header=HEADER)
+                    
+    
+    
     
     df_AD, df_CU, df_I = build_addresses_countries_institutions_wos(df_corpus=df)
     df_AD.to_csv(Path(out_dir_parsing) / Path('addresses.dat'),

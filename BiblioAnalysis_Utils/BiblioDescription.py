@@ -380,21 +380,60 @@ def describe_corpus(in_dir, out_dir, verbose):
         print('no file references.dat found')
 
     
-    df = pd.read_csv(in_dir / Path('keywords.dat'),
+    item = 'AK'                   # Deals with authors keywords
+    df = pd.read_csv(in_dir / Path('keywords_AK.dat'),
                      sep='\t',
                      header=None,
-                     usecols=[0,1,2]
-                     )
-    df.columns = ['pub_id','type','item']
-
-    for item in ['AK','IK','TK']:      # Deals with keywords
-        describe_item(df.query('type==@item')[['pub_id','item']],
-                      item,
-                      dic_distrib_item,
-                      list_cooc_nodes,
-                      list_cooc_edges,
-                      out_dir/Path(DIC_FREQ_FILES[item]))
+                     usecols=[0,1])
+    describe_item(df,
+                  item,
+                  dic_distrib_item,
+                  list_cooc_nodes,
+                  list_cooc_edges,
+                  out_dir/Path(DIC_FREQ_FILES[item]))
     del df
+    
+    item = 'IK'                   # Deals journal keywords
+    df = pd.read_csv(in_dir / Path('keywords_IK.dat'),
+                     sep='\t',
+                     header=None,
+                     usecols=[0,1])
+    describe_item(df,
+                  item,
+                  dic_distrib_item,
+                  list_cooc_nodes,
+                  list_cooc_edges,
+                  out_dir/Path(DIC_FREQ_FILES[item]))
+    del df
+    
+    item = 'TK'                   # Deals with title keywords
+    df = pd.read_csv(in_dir / Path('keywords_TK.dat'),
+                     sep='\t',
+                     header=None,
+                     usecols=[0,1])
+    describe_item(df,
+                  item,
+                  dic_distrib_item,
+                  list_cooc_nodes,
+                  list_cooc_edges,
+                  out_dir/Path(DIC_FREQ_FILES[item]))
+    del df
+    
+#    df = pd.read_csv(in_dir / Path('keywords.dat'),
+#                     sep='\t',
+#                     header=None,
+#                     usecols=[0,1,2]
+#                     )
+#    df.columns = ['pub_id','type','item']
+#
+#    for item in ['AK','IK','TK']:      # Deals with keywords
+#        describe_item(df.query('type==@item')[['pub_id','item']],
+#                      item,
+#                      dic_distrib_item,
+#                      list_cooc_nodes,
+#                      list_cooc_edges,
+#                      out_dir/Path(DIC_FREQ_FILES[item]))
+#    del df
 
     #                    creates two json files
     #---------------------------------------------------------------------
