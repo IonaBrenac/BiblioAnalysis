@@ -172,7 +172,6 @@ def describe_item(df,item,dic_distrib_item,list_cooc_nodes,list_cooc_edges ,freq
 
     df.columns = ['pub_id','item']
     df_freq, q_item, p_item = frequency_analysis(df)
-
     df_freq.to_csv(freq_filename,sep=',', index = False)
 
     dic_distrib_item["q"+item.capitalize()] = q_item

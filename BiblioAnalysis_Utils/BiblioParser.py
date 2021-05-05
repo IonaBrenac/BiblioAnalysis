@@ -45,7 +45,8 @@ DIC_CHANGE_CHAR = {"Ł":"L",   # polish capital to L
                    "ı":"i",    
                    "‐":"-",   # Non-Breaking Hyphen to hyphen-minus
                    "Đ":"D",   # D with stroke (Vietamese,South Slavic) to D
-                   ".":""}
+                   ".":"",
+                   ",":""}
 CHANGE = str.maketrans(DIC_CHANGE_CHAR)
 
 WOS_TAGS = '''FN,VR,PT,AU,AF,BA,BF,CA,GP,BE,TI,SO,SE,BS,LA,DT,CT,CY,CL,
@@ -387,7 +388,7 @@ def build_references_wos(df_corpus=None):
  
                     author = re.findall(re_author, field)
                     if len(author):
-                        author = author[0][:-1]
+                        author = name_normalizer(author[0][:-1])
                     else:
                         author = 'unknown'
  
@@ -514,7 +515,8 @@ def build_keywords_wos(df_corpus=None):
     df_keyword = pd.DataFrame.from_dict({'pub_id':[s.pub_id for s in list_keyword],
                                          'type':[s.type for s in list_keyword],
                                          'keyword':[s.keyword for s in list_keyword]})
-    return df_keyword
+    
+    return df_keyword[df_keyword["keyword"] != ""]
 
 
 def  build_addresses_countries_institutions_wos(df_corpus=None):
@@ -717,9 +719,12 @@ def  build_articles_wos(df_corpus=None):
             return(int(float(x)))
         except:
             return 0
+    
+    def treat_author(list_authors):
+        first_author = list_authors.split(';')[0] # we pick the first author
+        return  name_normalizer(first_author)
  
-    df_article = df_corpus.loc[:,['AU','PY', 'SO', 'VL','BP', 'DI','DT','LA','TI','SN']].astype(str)
-    df_article.AU = df_article.AU.str.split(';').str[0] # we pick the first author                     
+    df_article = df_corpus.loc[:,['AU','PY', 'SO', 'VL','BP', 'DI','DT','LA','TI','SN']].astype(str)                
  
     df_article.rename (columns = {'AU':'Authors',
                                   'PY':'Year',
@@ -730,11 +735,10 @@ def  build_articles_wos(df_corpus=None):
                                   'DT':'Document Type',
                                   'LA':'Language of Original Document',
                                   'TI':'Title',
-                                  'SN':'EID'}, inplace = True)
-   
+                                  'SN':'ISSN'}, inplace = True)
+                                                                                                
+    df_article['Authors'] = df_article['Authors'].apply(treat_author)    
     df_article['Year'] = df_article['Year'].apply(str_int_convertor)
-    #df_article['Volume'] = df_article['Volume'].apply(str_int_convertor)
-    #df_article['Page start'] = df_article['Page start'].apply(str_int_convertor)
    
     return df_article
 
@@ -1110,7 +1114,7 @@ def build_keywords_scopus(df_corpus=None):
     df_keyword = pd.DataFrame.from_dict({'pub_id':[s.pub_id for s in list_keyword],
                                          'type':[s.type for s in list_keyword],
                                          'keyword':[s.keyword for s in list_keyword]})
-    return df_keyword
+    return df_keyword[df_keyword["keyword"] != ""]
 
 def  build_subjects_scopus(df_corpus=None,
                           path_scopus_cat_codes=None,
@@ -1223,7 +1227,7 @@ def  build_articles_scopus(df_corpus=None):
     '''Builds the dataframe "df_article" with three columns:
    
     Authors|Year|Source title|Volume|Page start|DOI|Document Type|
-    Language of Original Document|Title|EID
+    Language of Original Document|Title|ISSN
  
     Args:
         df_corpus (dataframe): the dataframe of the wos/scopus corpus
@@ -1233,12 +1237,29 @@ def  build_articles_scopus(df_corpus=None):
         The dataframe df_institution
         
     '''
+    
+    import re
+
+    re_issn = re.compile(r'^[0-9]{8}|[0-9]{4}|[0-9]{3}X') # Use to normalize the ISSN to the
+                                                          # form dddd-dddd or dddd-dddX used by wos
+    
+    def convert_issn(text):
+        
+        y = ''.join(re.findall(re_issn,  text))
+        if len(y) != 0:
+            return y[0:4]+"-"+y[4:]
+        else:
+            return 'unknown'
    
     def str_int_convertor(x):
         try:
             return(int(float(x)))
         except:
             return 0
+        
+    def treat_author(list_authors):
+        first_author = list_authors.split(',')[0] # we pick the first author
+        return  name_normalizer(first_author)
  
     df_article = df_corpus[['Authors',
                             'Year',
@@ -1249,12 +1270,12 @@ def  build_articles_scopus(df_corpus=None):
                             'Document Type',
                             'Language of Original Document',
                             'Title',
-                            'EID']].astype(str)
+                            'ISSN']].astype(str)
    
-    df_article.Authors = df_article.Authors.str.split(',').str[0] # we pick the first author
+    df_article['Authors'] = df_article['Authors'].apply(treat_author)
     df_article['Year'] = df_article['Year'].apply(str_int_convertor)
-   # df_article['Volume'] = df_article['Volume'].apply(str_int_convertor)
-   # df_article['Page start'] = df_article['Page start'].apply(str_int_convertor)
+    df_article['ISSN'] = df_article['ISSN'].apply(convert_issn)
+   
    
     return df_article
 
@@ -1281,7 +1302,7 @@ def biblio_parser_scopus(in_dir_parsing, out_dir_parsing, rep_utils):
         build_subjects_scopus which parses the column 'Source title', 'ISSN'
         build_sub_subjects_scopus which parses the column 'Source title', 'ISSN'
         build_articles_scopus which parses the columns 'Authors','Year','Source title','Volume',
-            'Page start','DOI','Document Type','Language of Original Document','Title','EID'
+            'Page start','DOI','Document Type','Language of Original Document','Title','ISSN'
 
     '''
     
