@@ -50,7 +50,7 @@ def item_selection() :
     Arguments: none
     
     Returns:
-        ITEM_CHOICE (string): spectrum/interp spectrum/full spectrum/interp full spectrum
+        ITEM_CHOICE (string): choosen item
 
     '''
     

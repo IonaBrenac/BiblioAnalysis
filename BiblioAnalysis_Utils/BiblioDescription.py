@@ -202,6 +202,21 @@ def describe_corpus(in_dir, out_dir, verbose):
     |   |-- parsing/
     |   |   |-- addresses.dat, articles.dat, authors.dat, countries.dat, database.dat
     |   |   |-- institutions.dat, keywords.dat, references.dat, subjects.dat, subjects2.dat
+    
+    the json file coocnetworks.json is structured as follow:
+
+        {
+        "nodes":[
+            {"type":"AU","name":0,"item":"Abanades S","size":8},
+            ...................................................
+        ],
+        "links":[
+            {"type":"AU","source":0,"target":8,"Ncooc":5},
+            ..............................................
+        ]
+        }
+
+    where type = "AU", "S", "I", "CU", "S2", "IK", "AK", "TK", "R", "RJ"
 
     '''
 
@@ -213,7 +228,7 @@ def describe_corpus(in_dir, out_dir, verbose):
 
     dic_distrib_item = {}
     list_cooc_nodes = []   # Only one .json file is used to describe all the graph
-    list_cooc_edges = []   
+    list_cooc_edges = []   # these list are extended at each call of describe_item
 
 
 
@@ -230,12 +245,9 @@ def describe_corpus(in_dir, out_dir, verbose):
                                    2:'Year',
                                    7:'Document Type',
                                    8:'Language of Original Document',},
-<<<<<<< HEAD
                        inplace = True)
-=======
-                        inplace = True)
     
->>>>>>> 85020bcd1abe5f3c9ef888b61bc1d6016cbdd25e
+
     dic_distrib_item["N"] = len(df_articles)
 
     item = "Y"                       # Deals with years
@@ -381,7 +393,7 @@ def describe_corpus(in_dir, out_dir, verbose):
     except:
         print('no file references.dat found')
 
-    #                    creates json files
+    #                    creates two json files
     #---------------------------------------------------------------------
     with open(out_dir / Path('DISTRIBS_itemuse.json'),'w') as file:
         json.dump(dic_distrib_item,file,indent=4)
