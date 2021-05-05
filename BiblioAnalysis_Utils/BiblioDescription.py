@@ -3,7 +3,7 @@ __all__ = ['NMAX_NODES','LABEL_MEANING', 'describe_corpus', 'plot_graph', 'plot_
 NMAX_NODES = 100 # maximum number of nodes to keep
 
 DIC_FREQ_FILES = {'AU':'freq_authors.dat',
-                  'AK':'freq_authorkeywords.dat',
+                  'AK':'freq_authorskeywords.dat',
                   'CU':'freq_countries.dat',
                   'DT':'freq_doctypes.dat',
                    'I':'freq_institutions.dat',
@@ -17,20 +17,20 @@ DIC_FREQ_FILES = {'AU':'freq_authors.dat',
                   'TK':'freq_titlekeywords.dat',
                    'Y':'freq_years.dat'}
 
-LABEL_MEANING = {'AU' :'co-authors',
-                 'AK' :'author_keywords',
-                  'CU':'countries',
-                  'DT':'doc_type',
-                   'I':'institution',
-                   'J':'journal',
-                  'IK':'journal_keywords',
-                  'LA':'languages',
-                   'R':'reference',
-                  'RJ':'refjournal',
-                   'S':'subjects',
-                  'S2':'subjects2',
-                  'TK':'title_keywords',
-                   'Y':'year'}
+LABEL_MEANING = {'AU':'co-authors',
+                 'AK':'author_keywords',
+                 'CU':'countries',
+                 'DT':'doc_type',
+                  'I':'institution',
+                  'J':'journal',
+                 'IK':'journal_keywords',
+                 'LA':'languages',
+                  'R':'reference',
+                 'RJ':'refjournal',
+                  'S':'subjects',
+                 'S2':'subjects2',
+                 'TK':'title_keywords',
+                  'Y':'year'}
 
 
 # Buids a cooccurrence graph only for thes labels
@@ -90,7 +90,8 @@ def frequency_analysis(df):
     freq_item = df_freq_stat['item'].to_list()
     p_item = [df_freq_stat['pub_id'].to_list(),
              [k for k in itertools.accumulate([sum(freq_item)]+freq_item,operator.isub)][:-1]]
-
+    
+    del df_freq_stat
     return df_freq, q_item, p_item
 
 def generate_cooc(df,item):
@@ -159,7 +160,8 @@ def generate_cooc(df,item):
                            "source":dict_node[edge[0]],
                            "target":dict_node[edge[1]],
                            "Ncooc":weight})
-
+    
+    del dict_node, dg, dic_item_to_keep
     return liste_node, liste_edge
 
 def describe_item(df,item,dic_distrib_item,list_cooc_nodes,list_cooc_edges ,freq_filename):
@@ -182,7 +184,8 @@ def describe_item(df,item,dic_distrib_item,list_cooc_nodes,list_cooc_edges ,freq
 
         list_cooc_nodes.extend(liste_node)
         list_cooc_edges.extend(liste_edge)
-
+    
+    del df_freq, q_item, p_item
 
 def describe_corpus(in_dir, out_dir, verbose):
 
@@ -295,23 +298,6 @@ def describe_corpus(in_dir, out_dir, verbose):
                   out_dir/Path(DIC_FREQ_FILES[item]))
     del df
     
-    df = pd.read_csv(in_dir / Path('keywords.dat'),
-                     sep='\t',
-                     header=None,
-                     usecols=[0,1,2]
-                     )
-    df.columns = ['pub_id','type','item']
-
-    for item in ['AK','IK','TK']:      # Deals with keywords
-        describe_item(df.query('type==@item')[['pub_id','item']],
-                      item,
-                      dic_distrib_item,
-                      list_cooc_nodes,
-                      list_cooc_edges,
-                      out_dir/Path(DIC_FREQ_FILES[item]))
-    del df
-
-
     item = 'S'                        # Deals with subjects
     df = pd.read_csv(in_dir / Path('subjects.dat'),
                      sep='\t',
@@ -388,9 +374,27 @@ def describe_corpus(in_dir, out_dir, verbose):
                       list_cooc_nodes,
                       list_cooc_edges,
                       out_dir/Path(DIC_FREQ_FILES[item]))
-        del df
+        del df    
+    
     except:
         print('no file references.dat found')
+
+    
+    df = pd.read_csv(in_dir / Path('keywords.dat'),
+                     sep='\t',
+                     header=None,
+                     usecols=[0,1,2]
+                     )
+    df.columns = ['pub_id','type','item']
+
+    for item in ['AK','IK','TK']:      # Deals with keywords
+        describe_item(df.query('type==@item')[['pub_id','item']],
+                      item,
+                      dic_distrib_item,
+                      list_cooc_nodes,
+                      list_cooc_edges,
+                      out_dir/Path(DIC_FREQ_FILES[item]))
+    del df
 
     #                    creates two json files
     #---------------------------------------------------------------------
@@ -482,7 +486,9 @@ def plot_graph(in_dir,item):
 
     for g in df.groupby([0]):
         print(f'N° partition:{g[0]}, items: {g[1][1].to_list()}')
-
+    
+    del df, dg, src_attr_dict, partition, labels, node
+    
     return G
 
 def plot_histo(in_dir,item):
@@ -563,6 +569,9 @@ def treemap_item(item_treemap, file_name_treemap):
         print(f'{"alias":<6}{item_treemap:<60}{"frequency"}')
         for i in range(0, len(alias)):
             print(f'{alias[i]:<6}{labels[i]:<60}{sizes[i]}')
-    
+        
+        del sizes, all_labels, labels, all_alias, alias
     else:
         print("The selected item is empty")
+
+    del df, all_sizes, 

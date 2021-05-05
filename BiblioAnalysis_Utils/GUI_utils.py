@@ -11,8 +11,8 @@ TREE_MAP_ITEM = [
     ("refjournals", 8),
     ("subjects", 9),
     ("subjects2", 10),
-    ("keywords", 11),
-    ("titlewords", 12),
+    ("journalkeywords", 11),
+    ("titlekeywords", 12),
     ("authorskeywords", 13),
 ]
 
@@ -22,7 +22,7 @@ With MACOS, to exit you have to kill manually the menu window.'''
 
 
 COOC_SELECTION_HELP_TEXT = '''In a cooccurrence graph two authors, keywords, sujects 
-or more generally two 'items' are linked by an edge if two
+or more generally two 'items' are linked by an edge, if two
 authors have coothered an article, if two keywords
 names belong to the same article...
 
@@ -32,20 +32,21 @@ To build a cooccurrence graph, you have to select:
                                  
 The node size is the total number of occurences of an author, keyword name,... in the corpus.
 
-With MACOS, to exit you have to kill manually the menu window.''' 
+With macOS, to exit you have to kill manually the menu window.''' 
 
 MERGE_DATABASE_HELP_TEXT = '''Merge several databases (wos/scopus) in one database.
 You have to choose:
     the database type (wos/scopus)
     the name of the merged database (without extension)
     the input dfolder where the databases are stored
-    the output folder where the merged database will be stored
-With MACOS, to exit you have to kill manually the menu window.''' 
+    the output folder where the merged database will be stored.
+    
+With macOS, to exit you have to kill manually the menu window.''' 
 
 def item_selection() :
     
     '''
-    selection of items for treemaps
+    Selection of items for treemaps
     
     Arguments: none
     
@@ -160,7 +161,7 @@ def cooc_selection() :
              text='Choose an item for the co-occurrence graph:').grid(column=0, row=1, padx=8, pady=4)
     
     idx_row = 2
-    for  txt, val in item:
+    for txt, val in item:
         tk.Radiobutton(item_choice, text=txt, variable=varitem, value=val,
             command=lambda t = txt, v=varitem: choice(t, v)).grid(column=0, row=idx_row+2, padx=8, pady=4,sticky=tk.W)
         idx_row += 1
@@ -189,21 +190,21 @@ def cooc_selection() :
     except: # Takes a default value
         minimum_size_node = 1
     
-    
-    return ITEM_CHOICE, int(minimum_size_node)
+ 
+    return ITEM_CHOICE, minimum_size_node
     
 def merge_database_gui() :
     
     '''
-    Selection of items for cooccurrences graph treatment
+    Selection of database files to be merged
     
     Arguments: none
     
     Returns:
-        database (string): database type (scopus or wos)
+        database (str): database type (scopus or wos)
         filename (str): name of the merged database
-        in_dir (str): name of the folder where the databases are stored
-        out_dir (str): name of the folder where the merged databases will be stored
+        in_dir (str): name of the folder where the databases to be merged are stored
+        out_dir (str): name of the folder where the merged database will be stored
 
     '''
     # Standard library imports
@@ -215,7 +216,7 @@ def merge_database_gui() :
     from pathlib import Path
 
     
-    global database, filename, in_dir, out_dir
+    global DATABASE_TYPE, DATABASE_FILENAME, IN_DIR, OUT_DIR
      
     tk_root = tk.Tk()
     tk_root.title("Graph cooccurrence GUI") 
@@ -225,31 +226,28 @@ def merge_database_gui() :
     
     folder_choice = ttk.LabelFrame(tk_root, text=' Folders selection ')
     folder_choice.grid(column=1, row=0, padx=8, pady=4)
-
-
     
-    database = 'wos'  # Default value
+    DATABASE_TYPE = 'wos'  # Default value
     def choice(text, v):
-        global database
-        database = text
+        global DATABASE_TYPE
+        DATABASE_TYPE = text
     
-    filename = "essai" # Default value
+    DATABASE_FILENAME = "test" # Default value
     def submit(): 
-        global filename
-        filename = size_entered.get()
-        if database == "wos":
-            filename = filename + '.txt'
+        global DATABASE_FILENAME
+        DATABASE_FILENAME = size_entered.get()
+        if DATABASE_TYPE == "wos":
+            DATABASE_FILENAME = DATABASE_FILENAME + '.txt'
         else:
-            filename = filename + '.csv'
+            DATABASE_FILENAME = DATABASE_FILENAME + '.csv'
     
     def indir_folder_choice():
-        global in_dir
-        in_dir = filedialog.askdirectory(initialdir=str(Path.home()), title="Select in_dir folder")                                         
-
+        global IN_DIR
+        IN_DIR = filedialog.askdirectory(initialdir=str(Path.home()), title="Select in_dir folder")                             
     
     def outdir_folder_choice():
-        global out_dir
-        out_dir = filedialog.askdirectory(initialdir=str(Path.home()), title="Select in_dir folder")   
+        global OUT_DIR
+        OUT_DIR = filedialog.askdirectory(initialdir=str(Path.home()), title="Select out_dir folder")   
     
     def help():
         messagebox.showinfo("Merge database info", MERGE_DATABASE_HELP_TEXT)
@@ -297,6 +295,5 @@ def merge_database_gui() :
     
     tk_root.mainloop()
     
-    
-    return database, filename, in_dir, out_dir
+    return DATABASE_TYPE, DATABASE_FILENAME, IN_DIR, OUT_DIR
 

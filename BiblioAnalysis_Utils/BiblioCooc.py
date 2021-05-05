@@ -3,7 +3,7 @@ __all__ = ['AUTHORIZED_ITEMS', 'AUTHORIZED_ITEMS_DICT', 'plot_cooc_graph', 'buil
 AUTHORIZED_ITEMS = ['AK','AU','CU','IK','S','S2','TK']
 
 AUTHORIZED_ITEMS_DICT = {'Authors':'AU',
-                         'Author keywords':'AK',
+                         'Authors keywords':'AK',
                          'Title keywords':'TK',
                          'Journal keywords':'IK',
                          'Countries':'CU',
@@ -69,17 +69,17 @@ for country in COUNTRIES_GPS_STRING.split(';'):
     COUNTRIES_GPS[match.group("country")] = (float(match.group("long")),float(match.group("lat")))
 
 
-COLOR_NODES = {"Y": "255,255,0", # default color for gephi display
-               "J": "150,0,150",
+COLOR_NODES = { "Y": "255,255,0", # default color for gephi display
+                "J": "150,0,150",
                "AU": "20,50,255",
                "IK": "255,0,255",
                "AK": "255,0,255",
                "TK": "205,0,205",
-               "S": "50,0,150",
+                "S": "50,0,150",
                "S2": "50,0,150",
-               "R": "255,0,0",
+                "R": "255,0,0",
                "RJ": "255,97,0",
-               "I": "0,255,0",
+                "I": "0,255,0",
                "CU": "0,255,255",
                "LA": "0,180,0",
                "DT": "0,180,0",}
@@ -88,11 +88,11 @@ PARSED_FILE = {'AU':'authors.dat',
                'AK':'keywords.dat',
                'TK':'keywords.dat',
                'IK':'keywords.dat',
-               'I':'institutions.dat',
+                'I':'institutions.dat',
                'CU':'countries.dat',
-               'S':'subjects.dat',
+                'S':'subjects.dat',
                'S2':'subjects2.dat',
-               'Y':'years.dat'}
+                'Y':'years.dat'}
 
 
 def generate_cooc_graph(df_corpus=None, size_min=1, item=None):
@@ -185,14 +185,17 @@ def generate_cooc_graph(df_corpus=None, size_min=1, item=None):
     #                 Building the set of nodes and the set of edges
     #------------------------------------------------------------------------------------------------
     df_corpus.columns = ['pub_id','item' ]
-    nodes_id = list(set(df_corpus['item']))                 # Attribution of a integer id to the different items
+    nodes_id = list(set(df_corpus['item']))                 # Attribution of an integer id to the different items
     dic_nodes = dict(zip(nodes_id,range(len(nodes_id))))    # Number of an item occurrence keyed by the
                                                             #   node id
     dic_size = dict(zip(dg['item'],dg['count']))
     nodes_size = {dic_nodes[x]:dic_size[x] for x in nodes_id}
     
+    del dg, nodes_id, dic_size
+    
     if len(nodes_size)<2: # Dont build a graph with one or zero node
         G = None
+        del df_corpus, dic_nodes
         
     else:
         list_edges = []
@@ -206,8 +209,7 @@ def generate_cooc_graph(df_corpus=None, size_min=1, item=None):
                         weight[edge] = 1
                     else:
                         weight[edge] +=1 
-
-
+        del df_corpus
         #                            Building the networx object graph G
         #------------------------------------------------------------------------------------------------
         G = nx.Graph()
@@ -215,6 +217,8 @@ def generate_cooc_graph(df_corpus=None, size_min=1, item=None):
         G.add_nodes_from(dic_nodes.values()) 
         nx.set_node_attributes(G,nodes_size, 'node_size')
         nodes_label = dict(zip(dic_nodes.values(), dic_nodes.keys()))
+        del dic_nodes
+        
         nx.set_node_attributes(G,nodes_label, 'label' )
         if item == 'CU':
             lat, lon = map(list, zip(*[COUNTRIES_GPS[nodes_label[node]] for node in G.nodes]))
@@ -222,6 +226,7 @@ def generate_cooc_graph(df_corpus=None, size_min=1, item=None):
             lon_dict = dict(zip(G.nodes,lon))
             nx.set_node_attributes(G,lat_dict,'lat')
             nx.set_node_attributes(G,lon_dict,'lon')
+            del lat_dict, lon_dict
 
         G.add_edges_from(list_edges)
         nx.set_edge_attributes(G, weight, 'nbr_edges')
@@ -229,6 +234,9 @@ def generate_cooc_graph(df_corpus=None, size_min=1, item=None):
         for edge in list_edges: # Computes the Kessler similarity betwween node edge[0] and node edge[1]
                 kess[edge] = weight[edge] / math.sqrt(nodes_size[edge[0]] * nodes_size[edge[1]])        
         nx.set_edge_attributes(G, kess, 'kessler_similarity')
+        del list_edges, weight, nodes_label
+    
+    del nodes_size
     
     return G
 
@@ -366,7 +374,7 @@ def build_item_cooc(item,in_dir,out_dir,size_min = 1,):
 
 
     G = generate_cooc_graph(df_corpus=df, size_min=size_min, item=item)
-    
+    del df
     
     if G is not None:
         filename_out_prefix = 'cooc_' + item + '_thr' + str(size_min) 
