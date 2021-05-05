@@ -3,18 +3,18 @@ __all__ = ['NMAX_NODES','LABEL_MEANING', 'describe_corpus', 'plot_graph', 'plot_
 NMAX_NODES = 100 # maximum number of nodes to keep
 
 DIC_FREQ_FILES = {'AU':'freq_authors.dat',
-                  'AK':'freq_authorskeywords.dat',
+                  'AK':'freq_authorkeywords.dat',
                   'CU':'freq_countries.dat',
                   'DT':'freq_doctypes.dat',
                    'I':'freq_institutions.dat',
                    'J':'freq_journals.dat',
-                  'IK':'freq_keywords.dat',
+                  'IK':'freq_journalkeywords.dat',
                   'LA':'freq_languages.dat',
                    'R':'freq_references.dat',
                   'RJ':'freq_refjournals.dat',
                    'S':'freq_subjects.dat',
                   'S2':'freq_subjects2.dat',
-                  'TK':'freq_titlewords.dat',
+                  'TK':'freq_titlekeywords.dat',
                    'Y':'freq_years.dat'}
 
 LABEL_MEANING = {'AU' :'co-authors',
@@ -72,13 +72,12 @@ def frequency_analysis(df):
     #Standard library imports
     import itertools
     import operator
-
-
+    
     df_freq = df.groupby('item').count().reset_index()
     df_freq.sort_values(by=['pub_id'],ascending=False,inplace=True)
     df_freq["f"] = df_freq['pub_id']/len(df)*100
     df_freq.columns = ['item','count','f']
-
+    
     df_freq_stat = df.drop_duplicates().\
                       groupby('pub_id').count().reset_index().\
                       groupby('item').count().reset_index()
@@ -168,9 +167,8 @@ def describe_item(df,item,dic_distrib_item,list_cooc_nodes,list_cooc_edges ,freq
     '''Builds the dataframe "df_freq" and the arrays "q_item" and "p_item for :
     item = 'AU','AK','CU', 'DT', 'I', 'J', 'IK', 'LA', 'R', 'RJ', 'S', 'S2', 'TK', 'Y'
        Builds the coocurence undirected graph
-    item = 'AU', 'CU', 'S', 'S2', 'IK', 'R', 'RJ', 'I', 'AK', 'TK'
+    item = 'AU', 'CU', 'S', 'S2', 'K', 'R', 'RJ', 'I', 'AK', 'TK'
     '''
-
 
     df.columns = ['pub_id','item']
     df_freq, q_item, p_item = frequency_analysis(df)
@@ -226,12 +224,18 @@ def describe_corpus(in_dir, out_dir, verbose):
                               sep='\t',
                               header=None,
                               usecols=[0,2,3,7,8])
+    
     df_articles.rename (columns = {0:'pub_id',
                                    3:'Source title',
                                    2:'Year',
                                    7:'Document Type',
                                    8:'Language of Original Document',},
+<<<<<<< HEAD
                        inplace = True)
+=======
+                        inplace = True)
+    
+>>>>>>> 85020bcd1abe5f3c9ef888b61bc1d6016cbdd25e
     dic_distrib_item["N"] = len(df_articles)
 
     item = "Y"                       # Deals with years
@@ -265,6 +269,7 @@ def describe_corpus(in_dir, out_dir, verbose):
                   list_cooc_nodes,
                   list_cooc_edges,
                   out_dir/Path(DIC_FREQ_FILES[item]))
+    del df_articles
 
     item = 'AU'                   # Deals with authors
     df = pd.read_csv(in_dir / Path('authors.dat'),
@@ -277,11 +282,13 @@ def describe_corpus(in_dir, out_dir, verbose):
                   list_cooc_nodes,
                   list_cooc_edges,
                   out_dir/Path(DIC_FREQ_FILES[item]))
-
+    del df
+    
     df = pd.read_csv(in_dir / Path('keywords.dat'),
                      sep='\t',
                      header=None,
-                     usecols=[0,1,2])
+                     usecols=[0,1,2]
+                     )
     df.columns = ['pub_id','type','item']
 
     for item in ['AK','IK','TK']:      # Deals with keywords
@@ -291,6 +298,7 @@ def describe_corpus(in_dir, out_dir, verbose):
                       list_cooc_nodes,
                       list_cooc_edges,
                       out_dir/Path(DIC_FREQ_FILES[item]))
+    del df
 
 
     item = 'S'                        # Deals with subjects
@@ -303,6 +311,7 @@ def describe_corpus(in_dir, out_dir, verbose):
                   list_cooc_nodes,
                   list_cooc_edges,
                   out_dir/Path(DIC_FREQ_FILES[item]))
+    del df
 
     item = 'S2'                      # Deals with subject2
     try:
@@ -315,8 +324,9 @@ def describe_corpus(in_dir, out_dir, verbose):
                       list_cooc_nodes,
                       list_cooc_edges,
                       out_dir/Path(DIC_FREQ_FILES[item]))
+        del df
     except:
-        print('no file subjects2.dat found')
+        print('no file subjects2.dat found')       
 
     item = 'I'                       # Deals with institutions
     df = pd.read_csv(in_dir / Path('institutions.dat'),
@@ -329,6 +339,7 @@ def describe_corpus(in_dir, out_dir, verbose):
                   list_cooc_nodes,
                   list_cooc_edges,
                   out_dir/Path(DIC_FREQ_FILES[item]))
+    del df    
 
     item = 'CU'                     # Deals with countries
     df = pd.read_csv(in_dir / Path('countries.dat'),
@@ -341,6 +352,7 @@ def describe_corpus(in_dir, out_dir, verbose):
                   list_cooc_nodes,
                   list_cooc_edges,
                   out_dir/Path(DIC_FREQ_FILES[item]))
+    del df
 
     item = 'RJ'
     try:
@@ -365,6 +377,7 @@ def describe_corpus(in_dir, out_dir, verbose):
                       list_cooc_nodes,
                       list_cooc_edges,
                       out_dir/Path(DIC_FREQ_FILES[item]))
+        del df
     except:
         print('no file references.dat found')
 
