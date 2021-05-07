@@ -3,7 +3,35 @@ __all__ = ['COUNTRIES','WOS_TAGS','WOS_TAGS_DICT',
            'biblio_parser_scopus', 'biblio_parser_wos',
            'biblio_parser','build_title_keywords','read_database_wos',
            'USECOLS_SCOPUS','USECOLS_WOS',
-           'merge_database']
+           'merge_database','DIC_OUTDIR_PARSING','LABEL_MEANING']
+
+DIC_OUTDIR_PARSING = {'K':'keywords.dat',
+                      'AK':'authorskeywords.dat',
+                      'IK':'journalkeywords.dat',
+                      'TK':'titlekeywords.dat',
+                      'S':'subjects.dat',
+                      'S2':'subjects2.dat',
+                      'AD':'addresses.dat',
+                      'CU':'countries.dat',
+                      'I':'institutions.dat',
+                      'AU':'authors.dat',
+                      'R':'references.dat',
+                      'A':'articles.dat'}
+
+LABEL_MEANING = {'AU':'co-authors',
+                 'AK':'author_keywords',
+                 'CU':'countries',
+                 'DT':'doc_type',
+                 'I':'institution',
+                 'J':'journal',
+                 'IK':'journal_keywords',
+                 'LA':'languages',
+                 'R':'references',
+                 'RJ':'refjournal',
+                 'S':'subjects',
+                 'S2':'subjects2',
+                 'TK':'title_keywords',
+                 'Y':'year'}
     
 COUNTRY = '''
     United States,Afghanistan,Albania,Algeria,American Samoa,Andorra,Angola,
@@ -179,20 +207,25 @@ def merge_database(database,filename,in_dir,out_dir):
     # 3rd party imports
     import pandas as pd
 
+    list_data_base = []
+    list_df = []
     if database == 'wos':
-        list_data_base = []
         for path, _, files in os.walk(in_dir):
             list_data_base.extend(Path(path) / Path(file) for file in files
                                                           if file.endswith(".txt"))
-        list_df = []
         for file in list_data_base:
             list_df.append(read_database_wos(file))
 
-        result = pd.concat(list_df,ignore_index=True)
-
-        result.to_csv(out_dir / Path(filename),sep='\t')
     else:
-        print('not yet implemented')
+        for path, _, files in os.walk(in_dir):
+            list_data_base.extend(Path(path) / Path(file) for file in files
+                                                          if file.endswith(".csv"))
+        for file in list_data_base:
+            df = pd.read_csv(file,usecols=USECOLS_SCOPUS) # reads the database
+            list_df.append(df)
+        
+    result = pd.concat(list_df,ignore_index=True)
+    result.to_csv(out_dir / Path(filename),sep='\t')
 
 def build_title_keywords(df):
     
@@ -268,8 +301,9 @@ def name_normalizer(text):
             - replacing none ascii letters by ascii ones
             - capitalizing first name 
             - capitalizing surnames
+            - supressing comma and dot
             
-       ex: name_normalizer(" GrÔŁ-biçà-vèLU D'aillön E-kj ")
+       ex: name_normalizer(" GrÔŁ-biçà-vèLU D'aillön, E-kj. ")
         >>> "Grol-Bica-Velu D'Aillon E-KJ"
         
     Args:
@@ -640,6 +674,25 @@ def  build_addresses_countries_institutions_wos(df_corpus=None):
 
 
 def build_subjects_wos(df_corpus=None):
+    
+    '''Builds the dataframe "df_subject" using the column "SC":
+    
+            pub_id  subject
+               0    Neurosciences & Neurology
+               1    Psychology
+               1    Environmental Sciences & Ecology
+               2    Engineering
+               2    Physics
+               3    Philosophy
+    
+    
+    Args:
+        df_corpus (dataframe): the dataframe of the wos/scopus corpus
+
+    Returns:
+        The dataframe df_subject
+    '''    
+    
 
     from collections import namedtuple
 
@@ -660,7 +713,7 @@ def build_subjects_wos(df_corpus=None):
 
 def  build_sub_subjects_wos(df_corpus=None):
     
-    '''Builds the dataframe "df_wos_category":
+    '''Builds the dataframe "df_wos_category" using the column "WC":
     
             pub_id  wos_category
                0    Engineering
@@ -839,7 +892,7 @@ def build_references_scopus(df_corpus=None):
             for field in row.split(";"):
                 author = re.findall(re_author, field)
                 if len(author):
-                    author = author[0] .replace(".","").replace(",","")  # <---- must be normalized
+                    author = name_normalizer(author[0])
                 else:
                     author = 'unknown'
 
@@ -847,7 +900,7 @@ def build_references_scopus(df_corpus=None):
                 if len(year):
                     year = year[0]
                 else:
-                    year = 2100
+                    year = 0
 
                 journal = re.findall(re_journal, field)
                 if journal:
@@ -1327,56 +1380,85 @@ def biblio_parser_scopus(in_dir_parsing, out_dir_parsing, rep_utils):
 
     df = pd.read_csv(filename,usecols=USECOLS_SCOPUS) # reads the database
 
+    item = 'AU' # Deals with authors
     df_AU = build_authors_scopus(df_corpus=df)
-    df_AU.to_csv(Path(out_dir_parsing) / Path('authors.dat'), 
+    df_AU.to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item]), 
                  index=False,
                  sep='\t',
                  header=HEADER)
-
+    
+    item = 'R'   # Deals with references
     df_R = build_references_scopus(df_corpus=df)
-    df_R.to_csv(Path(out_dir_parsing) / Path('references.dat'),
+    df_R.to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item]),
                 index=False, 
                 sep='\t',
                 header=HEADER)
-
+    
+    item = 'S2'   # Deals with sub-subjects
     df_S2 = build_sub_subjects_scopus(df_corpus=df,
                                  path_scopus_cat_codes=filename1,
                                  path_scopus_journals_issn_cat=filename2)
-    df_S2.to_csv(Path(out_dir_parsing) / Path('subjects2.dat'),
+    df_S2.to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item]),
                  index=False, 
                  sep='\t',
                  header=HEADER)
-
+    
+    item = 'S'   # Deals with subjects
     df_S = build_subjects_scopus(df_corpus=df,
                                 path_scopus_cat_codes=filename1,
                                 path_scopus_journals_issn_cat=filename2)
-    df_S.to_csv(Path(out_dir_parsing) / Path('subjects.dat'),
+    df_S.to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item]),
                 index=False,
                 sep='\t',
                 header=HEADER)
-
+    
+    item = 'AD'   # Deals with addresses
     df_AD, df_CU, df_I  = build_addresses_countries_institutions_scopus(df_corpus=df)
-    df_AD.to_csv(Path(out_dir_parsing) / Path('addresses.dat'),
+    df_AD.to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item]),
                  index=False,
                  sep='\t',
                  header=HEADER)
-    df_I.to_csv(Path(out_dir_parsing) / Path('institutions.dat'),
+    
+    item = 'I'   # Deals with institutions
+    df_I.to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item]),
                 index=False,
                 sep='\t',
                 header=HEADER)
-    df_CU.to_csv(Path(out_dir_parsing) / Path('countries.dat'),
+    
+    item = 'CU'   # Deals with counties    
+    df_CU.to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item]),
                  index=False, 
                  sep='\t',
                  header=HEADER)
-
+    
+    item = 'K'  # Deals with keywords
     df_K = build_keywords_scopus(df_corpus=df)
-    df_K.to_csv(Path(out_dir_parsing) / Path('keywords.dat'),
+    df_K.to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item]),
+                index=False,
+                sep='\t',
+                header=HEADER)
+    
+    item = 'AK'  # Deals with authors keywords
+    df_K.query('type==@item')[['pub_id','keyword']].to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item]),
+                index=False,
+                sep='\t',
+                header=HEADER)
+    
+    item = 'IK'  # Deals with journal keywords
+    df_K.query('type==@item')[['pub_id','keyword']].to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item]),
+                index=False,
+                sep='\t',
+                header=HEADER)
+    
+    item = 'TK'  # Deals with title keywords
+    df_K.query('type==@item')[['pub_id','keyword']].to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item]),
                 index=False,
                 sep='\t',
                 header=HEADER)
 
+    item = 'A'   # Deals with articles
     df_A = build_articles_scopus(df_corpus=df)
-    df_A.to_csv(Path(out_dir_parsing) / Path('articles.dat'),
+    df_A.to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item]),
                 index=True,
                 sep='\t',
                 header=HEADER)
@@ -1426,62 +1508,81 @@ def biblio_parser_wos(in_dir_parsing, out_dir_parsing):
     
     df = read_database_wos(filename)
     
-    
+    item = 'AU' # Deals with authors
     df_AU = build_authors_wos(df_corpus=df)
-    df_AU.to_csv(Path(out_dir_parsing) / Path('authors.dat'), 
+    df_AU.to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item] ), 
                  index=False,
                  sep='\t',
                  header=HEADER)
     
+    item = 'K'  # Deals with keywords
     df_K = build_keywords_wos(df_corpus=df)
-    df_K.to_csv(Path(out_dir_parsing) / Path('keywords.dat'),
+    df_K.to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item]),
                 index=False,
                 sep='\t',
                 header=HEADER)
     
-    for item in ['AK','IK','TK']:      # Deals with keywords
-        df_K.query('type==@item')[['pub_id','keyword']].to_csv(Path(out_dir_parsing) / Path('keywords_'+item+'.dat'),
+    item = 'AK'  # Deals with authors keywords
+    df_K.query('type==@item')[['pub_id','keyword']].to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item]),
                 index=False,
                 sep='\t',
                 header=HEADER)
+    
+    item = 'IK'  # Deals with journal keywords
+    df_K.query('type==@item')[['pub_id','keyword']].to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item]),
+                index=False,
+                sep='\t',
+                header=HEADER)
+    
+    item = 'TK'  # Deals with title keywords
+    df_K.query('type==@item')[['pub_id','keyword']].to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item]),
+                index=False,
+                sep='\t',
+                header=HEADER)    
                     
-    
-    
-    
+    item = 'AD'  # Deals with addresses
     df_AD, df_CU, df_I = build_addresses_countries_institutions_wos(df_corpus=df)
-    df_AD.to_csv(Path(out_dir_parsing) / Path('addresses.dat'),
+    df_AD.to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item]),
                  index=False,
                  sep='\t',
                  header=HEADER)
-    df_CU.to_csv(Path(out_dir_parsing) / Path('countries.dat'),
-                 index=False, 
-                 sep='\t',
-                 header=HEADER)
-    df_I.to_csv(Path(out_dir_parsing) / Path('institutions.dat'),
+    
+    item = 'CU'  # Deals with countries
+    df_CU.to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item]),
                  index=False, 
                  sep='\t',
                  header=HEADER)
     
+    item = 'I'   # Deals with institutions
+    df_I.to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item]),
+                 index=False, 
+                 sep='\t',
+                 header=HEADER)
+    
+    item = 'S'   # Deals with subjects
     df_S = build_subjects_wos(df_corpus=df)
-    df_S.to_csv(Path(out_dir_parsing) / Path('subjects.dat'),
+    df_S.to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item]),
                 index=False,
                 sep='\t',
                 header=HEADER)
 
+    item = 'S2'   # Deals with sub-subjects
     df_S2 = build_sub_subjects_wos(df_corpus=df)
-    df_S2.to_csv(Path(out_dir_parsing) / Path('subjects2.dat'),
+    df_S2.to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item]),
                 index=False,
                 sep='\t',
                 header=HEADER)
-       
+    
+    item = 'A'   # Deals with articles
     df_A = build_articles_wos(df_corpus=df)
-    df_A.to_csv(Path(out_dir_parsing) / Path('articles.dat'),
+    df_A.to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item]),
                 index=True,
                 sep='\t',
                 header=HEADER)
     
+    item = 'R'   # Deals with references
     df_R = build_references_wos(df_corpus=df)
-    df_R.to_csv(Path(out_dir_parsing) / Path('references.dat'),
+    df_R.to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item]),
                 index=False, 
                 sep='\t',
                 header=HEADER)
@@ -1497,3 +1598,10 @@ def biblio_parser(in_dir_parsing, out_dir_parsing, database, expert, rep_utils):
         biblio_parser_scopus(in_dir_parsing, out_dir_parsing, rep_utils)
     else:
         raise Exception("Sorry, unrecognized database {database} : should be wos or scopus ")
+
+
+
+
+
+
+
