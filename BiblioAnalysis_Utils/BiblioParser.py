@@ -482,7 +482,8 @@ def build_authors_wos(df_corpus=None):
                     {'pub_id':[s.pub_id for s in list_author],
                      'idx_author':[s.idx_author for s in list_author],
                      'co-author':[s.co_author for s in list_author]})
-                
+    df_co_authors = df_co_authors[df_co_authors['co-author'] != ""] 
+    
     return df_co_authors
 
 def build_keywords_wos(df_corpus=None):
@@ -549,8 +550,9 @@ def build_keywords_wos(df_corpus=None):
     df_keyword = pd.DataFrame.from_dict({'pub_id':[s.pub_id for s in list_keyword],
                                          'type':[s.type for s in list_keyword],
                                          'keyword':[s.keyword for s in list_keyword]})
+    df_keyword = df_keyword[df_keyword["keyword"] != ""]
     
-    return df_keyword[df_keyword["keyword"] != ""]
+    return df_keyword
 
 
 def  build_addresses_countries_institutions_wos(df_corpus=None):
@@ -668,7 +670,10 @@ def  build_addresses_countries_institutions_wos(df_corpus=None):
 
     df_institution = pd.DataFrame.from_dict({'pub_id':[s.pub_id for s in list_institution],
                                              'idx_author':[s.idx_author for s in list_institution],
-                                             'country':[s.institution for s in list_institution]})
+                                             'institution':[s.institution for s in list_institution]})
+    df_address = df_address[df_address['address'] != ""]
+    df_country = df_country[df_country['country'] != ""]
+    df_institution = df_institution[df_institution['institution'] != ""]
     
     return df_address, df_country, df_institution
 
@@ -708,8 +713,9 @@ def build_subjects_wos(df_corpus=None):
 
     df_subject = pd.DataFrame.from_dict({'pub_id':[s.pub_id for s in list_subject],
                                          'subject':[s.subject for s in list_subject]})
-    return df_subject
-
+    df_subject = df_subject[df_subject['subject'] != ""]
+    
+    return   df_subject
 
 def  build_sub_subjects_wos(df_corpus=None):
     
@@ -748,8 +754,9 @@ def  build_sub_subjects_wos(df_corpus=None):
 
     df_wos_category = pd.DataFrame.from_dict({'pub_id':[s.pub_id for s in list_wos_category],
                                               'wos_category':[s.wos_category for s in list_wos_category]})
+    df_wos_category = df_wos_category[df_wos_category['wos_category'] != ""]
     
-    return df_wos_category
+    return  df_wos_category
 
 
 def  build_articles_wos(df_corpus=None):
@@ -836,8 +843,10 @@ def build_authors_scopus(df_corpus=None):
                     {'pub_id':[s.pub_id for s in list_author],
                      'idx_author':[s.idx_author for s in list_author],
                      'co-author':[s.co_author for s in list_author]})
-                
-    return df_co_authors
+    
+    df_co_authors = df_co_authors[df_co_authors['co-author'] != ""]
+    
+    return df_co_authors 
 
 
 def build_references_scopus(df_corpus=None):
@@ -1022,7 +1031,9 @@ def  build_sub_subjects_scopus(df_corpus=None,
                                                'ASJC_description':list_keywords})
     df_fine_subjects.drop_duplicates(inplace=True)
     
-    return df_fine_subjects
+    df_fine_subjects = df_fine_subjects[df_fine_subjects['ASJC_description'] != ""]
+    
+    return df_fine_subjects 
 
 def  build_addresses_countries_institutions_scopus(df_corpus=None):
     
@@ -1097,8 +1108,10 @@ def  build_addresses_countries_institutions_scopus(df_corpus=None):
 
     df_institution = pd.DataFrame.from_dict({'pub_id':[s.pub_id for s in list_institution],
                                              'idx_address':[s.idx_address for s in list_institution],
-                                             'country':[s.institution for s in list_institution]})
-    
+                                             'institution':[s.institution for s in list_institution]})
+    df_address = df_address[df_address['address'] != ""]
+    df_country = df_country[df_country['country'] != ""]
+    df_institution = df_institution[df_institution['institution'] != ""]
     
     return df_address, df_country, df_institution
 
@@ -1167,7 +1180,9 @@ def build_keywords_scopus(df_corpus=None):
     df_keyword = pd.DataFrame.from_dict({'pub_id':[s.pub_id for s in list_keyword],
                                          'type':[s.type for s in list_keyword],
                                          'keyword':[s.keyword for s in list_keyword]})
-    return df_keyword[df_keyword["keyword"] != ""]
+    df_keyword = df_keyword[df_keyword["keyword"] != ""]
+    
+    return df_keyword
 
 def  build_subjects_scopus(df_corpus=None,
                           path_scopus_cat_codes=None,
@@ -1272,7 +1287,9 @@ def  build_subjects_scopus(df_corpus=None,
                                                'ASJC_description':list_keywords})
     df_gross_subject.drop_duplicates(inplace=True)
     
-    return df_gross_subject
+    df_gross_subject = df_gross_subject[df_gross_subject['ASJC_description'] != ""]
+    
+    return df_gross_subject 
 
 
 def  build_articles_scopus(df_corpus=None):

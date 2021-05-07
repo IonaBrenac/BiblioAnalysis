@@ -168,7 +168,7 @@ def generate_cooc_graph(df_corpus=None, size_min=1, item=None):
     import pandas as pd
 
     #                           Cleaning of the dataframe
-    #-----------------------------------------------------------------------------------------------
+    #----------------------------------------------------------------------------------------------- 
     df_corpus.drop_duplicates(inplace=True)                           # Keeps unique occurrence of an item
                                                                       # per article
     df_corpus.drop(index=df_corpus[df_corpus['item'] == 'unknown'].index,
