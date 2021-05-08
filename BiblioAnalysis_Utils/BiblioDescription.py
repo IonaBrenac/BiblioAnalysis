@@ -1,4 +1,4 @@
-__all__ = ['NMAX_NODES','LABEL_MEANING', 'describe_corpus', 'plot_graph', 'plot_histo', 'treemap_item']
+__all__ = ['NMAX_NODES','LABEL_MEANING', 'describe_corpus', 'plot_graph', 'plot_counts', 'plot_histo', 'treemap_item']
 
 from .BiblioParser import DIC_OUTDIR_PARSING
 from .BiblioParser import LABEL_MEANING
@@ -443,6 +443,30 @@ def plot_graph(in_dir,item):
     del df, dg, src_attr_dict, partition, labels, node
     
     return G
+
+def plot_counts(item_counts, file_name_counts):
+
+    '''Plots a distribution curve from the frequency_analysis .
+    The data are extracted from the freq_xxxx.dat files 
+    built by the funtion describe_corpus
+    '''
+
+    # Standard library imports
+    import pandas as pd
+    import sys
+    import matplotlib.pyplot as plt
+    from matplotlib import cm
+    from matplotlib import colors
+    from pathlib import Path
+
+    df = pd.read_csv(file_name_counts, sep= ',')
+
+    #        Scatter plot 
+    #------------------------------------------------------
+    fig = plt.figure(figsize=(15,7))
+    plt.scatter(df['item'], df['count'] )
+    plt.xticks([])
+    plt.show()
 
 def plot_histo(in_dir,item):
 
