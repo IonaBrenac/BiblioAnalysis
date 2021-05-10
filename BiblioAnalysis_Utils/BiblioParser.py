@@ -156,7 +156,7 @@ def country_normalization(country):
         elif country == 'Vietnam':   
             country_clean = 'Viet Nam'
         else:
-            country_clean = 'unknown'
+            country_clean = ''
 
     return country_clean
 
@@ -281,6 +281,14 @@ def build_title_keywords(df):
         valid_words_lemmatized = [stemmer.lemmatize(valid_word) for valid_word in valid_words]
     
         return valid_words_lemmatized
+    
+    def list_keywords_TK(x):
+        list_keywords_TK = list(keywords_TK.intersection(set(x)))
+        if list_keywords_TK == []:
+            list_keywords_TK = ['']
+            
+        return list_keywords_TK
+        
 
     df['title_token'] = df['Title'].apply(tokenizer)
 
@@ -291,9 +299,9 @@ def build_title_keywords(df):
 
     keywords_TK = set([x for x,y in bag_of_words_occurrences if y>=NOUN_MINIMUM_OCCURRENCES])
 
-    df['kept_tokens'] = df['title_token'].apply(lambda x : list(keywords_TK.intersection(set(x))))
+    df['kept_tokens'] = df['title_token'].apply(list_keywords_TK)
    
-    return df,bag_of_words_occurrences
+    return df,bag_of_words_occurrences 
 
 def name_normalizer(text):
     
@@ -486,7 +494,7 @@ def build_authors_wos(df_corpus=None):
     
     return df_co_authors
 
-def build_keywords_wos(df_corpus=None):
+def build_keywords_wos(df_corpus=None,dic_failed=None):
     
     '''Builds the dataframe "df_keyword" with three columns:
                 pub_id  type  keyword
@@ -523,21 +531,21 @@ def build_keywords_wos(df_corpus=None):
     key_word = namedtuple('key_word',['pub_id','type','keyword'] )
     list_keyword = []
 
-    df_AK = df_corpus['ID'].dropna()
+    df_AK = df_corpus['ID']
     for pub_id,x in zip(df_AK.index,df_AK):
         for y in x.split(';'):
             list_keyword.append(key_word(pub_id=pub_id,
                                          type="AK",
                                          keyword=y.lower().strip()))
 
-    df_IK = df_corpus['DE'].dropna()
+    df_IK = df_corpus['DE']
     for pub_id,x in zip(df_IK.index,df_IK):
         for y in x.split(';'):
             list_keyword.append(key_word(pub_id=pub_id,
                                          type="IK",
                                          keyword=y.lower().strip()))
 
-    df_title = pd.DataFrame(df_corpus['TI'].dropna())
+    df_title = pd.DataFrame(df_corpus['TI'])
     df_title.columns = ['Title']
     df_TK,list_of_words_occurrences = build_title_keywords(df_title)
     for pub_id in df_TK.index:
@@ -550,12 +558,20 @@ def build_keywords_wos(df_corpus=None):
     df_keyword = pd.DataFrame.from_dict({'pub_id':[s.pub_id for s in list_keyword],
                                          'type':[s.type for s in list_keyword],
                                          'keyword':[s.keyword for s in list_keyword]})
+    
+    df_failed = df_keyword[df_keyword["keyword"] == ""]
+    for type in ["AK","IK","TK"]:
+        list_id = df_failed[df_failed['type']==type]['pub_id'].values
+        list_id = list(set(list_id))
+        dic_failed[type] = {"success (%)":100*(1-len(list_id)/len(df_corpus)),
+                            "pub_id":[int(x) for x in list(list_id)]}
+    
     df_keyword = df_keyword[df_keyword["keyword"] != ""]
     
     return df_keyword
 
 
-def  build_addresses_countries_institutions_wos(df_corpus=None):
+def  build_addresses_countries_institutions_wos(df_corpus=None,dic_failed=None):
     
     '''Parse the field 'C1' of wos database to retrieve the article author address (without duplicates),
        the author country and affiliation.
@@ -634,30 +650,44 @@ def  build_addresses_countries_institutions_wos(df_corpus=None):
 
     for pub_id, affiliation in zip(df_corpus.index,
                                    df_corpus['C1']):
+        
         try:
-            authors = re_author.findall(affiliation)    # for future use
+            #authors = re_author.findall(affiliation)    # for future use
             addresses = re_address.findall(affiliation)
         except:
             print(pub_id,affiliation)
         
+        if addresses:
+            for idx, author_address in enumerate(addresses): 
 
-        for idx, author_address in enumerate(addresses): 
-                
+                list_author_address.append(address(pub_id=pub_id,
+                                                   idx_address=idx,
+                                                   address=author_address))
+
+                author_institution = author_address.split(',')[0]
+                author_institution = re.sub(re_sub,"University ", author_institution)
+                list_institution.append(ref_institution(pub_id=pub_id,
+                                                        idx_author=idx,
+                                                        institution=author_institution))
+
+                author_country = country_normalization(author_address.split(',')[-1].replace(';','').strip())
+
+                list_author_countries.append(country(pub_id=pub_id,
+                                                     idx_author=idx,
+                                                     country=author_country))
+        else:
             list_author_address.append(address(pub_id=pub_id,
-                                               idx_address=idx,
-                                               address=author_address))
-
-            author_institution = author_address.split(',')[0]
-            author_institution = re.sub(re_sub,"University ", author_institution)
+                                                   idx_address=0,
+                                                   address=''))
             list_institution.append(ref_institution(pub_id=pub_id,
-                                                    idx_author=idx,
-                                                    institution=author_institution))
-
-            author_country = country_normalization(author_address.split(',')[-1].replace(';','').strip())
-
+                                                        idx_author=0,
+                                                        institution=''))
             list_author_countries.append(country(pub_id=pub_id,
-                                                 idx_author=idx,
-                                                 country=author_country))
+                                                     idx_author=0,
+                                                     country=''))
+            
+            
+            
 
     df_address = pd.DataFrame.from_dict({'pub_id':[s.pub_id for s in list_author_address],
                                          'idx_address':[s.idx_address for s in list_author_address],
@@ -671,14 +701,31 @@ def  build_addresses_countries_institutions_wos(df_corpus=None):
     df_institution = pd.DataFrame.from_dict({'pub_id':[s.pub_id for s in list_institution],
                                              'idx_author':[s.idx_author for s in list_institution],
                                              'institution':[s.institution for s in list_institution]})
+    
+    list_id = df_address[df_address["address"] == ""]['pub_id'].values
+    list_id = list(set(list_id))
+    dic_failed["address"] = {"success (%)":100*(1-len(list_id)/len(df_corpus)),
+                                "pub_id":[int(x) for x in list(list_id)]}
+    
     df_address = df_address[df_address['address'] != ""]
+    
+    
+    list_id = df_country[df_country["country"] == ""]['pub_id'].values
+    list_id = list(set(list_id))
+    dic_failed["country"] = {"success (%)":100*(1-len(list_id)/len(df_corpus)),
+                                "pub_id":[int(x) for x in list(list_id)]}
     df_country = df_country[df_country['country'] != ""]
+    
+    list_id = df_institution[df_institution["institution"] == ""]['pub_id'].values
+    list_id = list(set(list_id))
+    dic_failed["institution"] = {"success (%)":100*(1-len(list_id)/len(df_corpus)),
+                                "pub_id":[int(x) for x in list(list_id)]}
     df_institution = df_institution[df_institution['institution'] != ""]
     
     return df_address, df_country, df_institution
 
 
-def build_subjects_wos(df_corpus=None):
+def build_subjects_wos(df_corpus=None,dic_failed=None):
     
     '''Builds the dataframe "df_subject" using the column "SC":
     
@@ -713,11 +760,15 @@ def build_subjects_wos(df_corpus=None):
 
     df_subject = pd.DataFrame.from_dict({'pub_id':[s.pub_id for s in list_subject],
                                          'subject':[s.subject for s in list_subject]})
+    list_id = df_subject[df_subject["subject"] == ""]['pub_id'].values
+    list_id = list(set(list_id))
+    dic_failed["subject"] = {"success (%)":100*(1-len(list_id)/len(df_corpus)),
+                             "pub_id":[int(x) for x in list(list_id)]}
     df_subject = df_subject[df_subject['subject'] != ""]
-    
+
     return   df_subject
 
-def  build_sub_subjects_wos(df_corpus=None):
+def  build_sub_subjects_wos(df_corpus=None,dic_failed=None):
     
     '''Builds the dataframe "df_wos_category" using the column "WC":
     
@@ -754,6 +805,11 @@ def  build_sub_subjects_wos(df_corpus=None):
 
     df_wos_category = pd.DataFrame.from_dict({'pub_id':[s.pub_id for s in list_wos_category],
                                               'wos_category':[s.wos_category for s in list_wos_category]})
+    
+    list_id = df_wos_category[df_wos_category["wos_category"] == ""]['pub_id'].values
+    list_id = list(set(list_id))
+    dic_failed["subsubject"] = {"success (%)":100*(1-len(list_id)/len(df_corpus)),
+                                "pub_id":[int(x) for x in list(list_id)]}
     df_wos_category = df_wos_category[df_wos_category['wos_category'] != ""]
     
     return  df_wos_category
@@ -954,7 +1010,8 @@ def build_references_scopus(df_corpus=None):
 
 def  build_sub_subjects_scopus(df_corpus=None,
                      path_scopus_cat_codes=None,
-                     path_scopus_journals_issn_cat=None):
+                     path_scopus_journals_issn_cat=None,
+                     dic_failed=None):
     
     '''Builds the dataframe "df_fine_subjects" with two columns 'publi_id' and 'ASJC_description'
     ex:       pub_id   ASJC_description
@@ -1009,7 +1066,7 @@ def  build_sub_subjects_scopus(df_corpus=None,
                 for keyword in keywords: # append keyword dont take care of duplicates
                     res.extend([(pub_id,code_cat[int(i)]) for i in keyword[:-1]])
             except:
-                pass
+                res.extend([(pub_id,'')])
 
         else:                            # check if journal found in scopus issn list
             keywords = df_scopus_journals_issn_cat.query('issn==@issn')['keyword_id']
@@ -1020,7 +1077,7 @@ def  build_sub_subjects_scopus(df_corpus=None,
                     for keyword in keywords: # append keyword dont take care of duplicates
                         res.extend([(pub_id,code_cat[int(i)]) for i in keyword[:-1]])
                 except:
-                    pass
+                    res.extend([(pub_id,'')])
 
     # Builds the dataframe "df_keyword" out of tuples [(publi_id,scopus category),...]
     # "df_keyword" has two columns "pub_id" and "scopus_keywords". 
@@ -1029,15 +1086,18 @@ def  build_sub_subjects_scopus(df_corpus=None,
     list_pub_id,list_keywords = zip(*res)
     df_fine_subjects = pd.DataFrame.from_dict({'pub_id':list_pub_id,
                                                'ASJC_description':list_keywords})
+    list_id = df_fine_subjects[df_fine_subjects["ASJC_description"] == ""]['pub_id'].values
+    dic_failed["subsubject"] = {"success (%)":100*(1-len(list_id)/len(df_corpus)),
+                                "pub_id":[int(x) for x in list(list_id)]}
     df_fine_subjects.drop_duplicates(inplace=True)
     
     df_fine_subjects = df_fine_subjects[df_fine_subjects['ASJC_description'] != ""]
     
     return df_fine_subjects 
 
-def  build_addresses_countries_institutions_scopus(df_corpus=None):
+def  build_addresses_countries_institutions_scopus(df_corpus=None,dic_failed=None):
     
-    '''Builds the dataframe "df_address" :
+    '''Builds the dataframe "df_address" from the column "Affiliations" of the scopus corpus:
     
             pub_id  idx_address  address
               0         0         CEA-LITEN Solar and ...
@@ -1080,23 +1140,37 @@ def  build_addresses_countries_institutions_scopus(df_corpus=None):
     list_countries =[]
     for pub_id, affiliation in zip(df_corpus.index,
                                    df_corpus['Affiliations']):
-        for idx_address, address_pub in enumerate(affiliation.split(";")):
-                
-            list_addresses.append(address(pub_id=pub_id,
-                                         idx_address=idx_address,
-                                         address=address_pub))
-            
-            institution = address_pub.split(',')[0]
-            institution = re.sub(re_sub,"University ", institution)
+        list_affiliation = affiliation.split(";")
+        
+        if list_affiliation:
+            for idx_address, address_pub in enumerate(list_affiliation):
+
+                list_addresses.append(address(pub_id=pub_id,
+                                             idx_address=idx_address,
+                                             address=address_pub))
+
+                institution = address_pub.split(',')[0]
+                institution = re.sub(re_sub,"University ", institution)
+                list_institution.append(ref_institution(pub_id=pub_id,
+                                                        idx_address=idx_address,
+                                                        institution=institution))
+                country = address_pub.split(',')[-1].replace(';','').strip()  
+                country = country_normalization(country)
+
+                list_countries.append(ref_country(pub_id=pub_id,
+                                                     idx_address=idx_address,
+                                                     country=country))
+        else:
+            list_author_address.append(address(pub_id=pub_id,
+                                                   idx_address=0,
+                                                   address=''))
             list_institution.append(ref_institution(pub_id=pub_id,
-                                                    idx_address=idx_address,
-                                                    institution=institution))
-            country = address_pub.split(',')[-1].replace(';','').strip()  
-            country = country_normalization(country)
+                                                        idx_author=0,
+                                                        institution=''))
+            list_author_countries.append(country(pub_id=pub_id,
+                                                     idx_author=0,
+                                                     country=''))
             
-            list_countries.append(ref_country(pub_id=pub_id,
-                                                 idx_address=idx_address,
-                                                 country=country))
 
     df_address = pd.DataFrame.from_dict({'pub_id':[s.pub_id for s in list_addresses],
                                          'idx_address':[s.idx_address for s in list_addresses],
@@ -1109,13 +1183,27 @@ def  build_addresses_countries_institutions_scopus(df_corpus=None):
     df_institution = pd.DataFrame.from_dict({'pub_id':[s.pub_id for s in list_institution],
                                              'idx_address':[s.idx_address for s in list_institution],
                                              'institution':[s.institution for s in list_institution]})
+    
+    list_id = df_address[df_address["address"] == ""]['pub_id'].values
+    dic_failed["address"] = {"success (%)":100*(1-len(list_id)/len(df_corpus)),
+                                "pub_id":[int(x) for x in list(list_id)]}
+    
     df_address = df_address[df_address['address'] != ""]
+    
+    
+    list_id = list(set(df_country[df_country["country"] == ""]['pub_id'].values))
+    dic_failed["country"] = {"success (%)":100*(1-len(list_id)/len(df_corpus)),
+                                "pub_id":[int(x) for x in list(list_id)]}
     df_country = df_country[df_country['country'] != ""]
+    
+    list_id = df_institution[df_institution["institution"] == ""]['pub_id'].values
+    dic_failed["institution"] = {"success (%)":100*(1-len(list_id)/len(df_corpus)),
+                                "pub_id":[int(x) for x in list(list_id)]}
     df_institution = df_institution[df_institution['institution'] != ""]
     
     return df_address, df_country, df_institution
 
-def build_keywords_scopus(df_corpus=None):
+def build_keywords_scopus(df_corpus=None,dic_failed=None):
     
     '''Builds the dataframe "df_keyword" with three columns:
                 pub_id  type  keyword
@@ -1125,12 +1213,14 @@ def build_keywords_scopus(df_corpus=None):
     with: 
          type = AK for author keywords 
          type = IK for journal keywords
-         type = TK for title keywords
+         type = TK for title keywords 
          
+    The author keywords are extracted from the scopus column 'Author Keywords' 
+    The journal keywords are extracted from the scopus column 'Index Keywords' 
     The title keywords are builds out of the set TK_corpus of the most cited nouns 
-    (at leat N times) in the set of all the articles. The keywords of type TK of an
-    article, referenced by the key pub_id, are the elements of the intersection
-    between the set TK_corpus and the set of the nouns of the article title.
+      (at leat N times) in the set of all the articles. The keywords of type TK of an
+      article, referenced by the key pub_id, are the elements of the intersection
+      between the set TK_corpus and the set of the nouns of the article title.
     
         
     Args:
@@ -1153,22 +1243,33 @@ def build_keywords_scopus(df_corpus=None):
     key_word = namedtuple('key_word',['pub_id','type','keyword'] )
     list_keyword = []
 
-    df_AK = df_corpus['Author Keywords'].dropna()
+    df_AK = df_corpus['Author Keywords'].fillna('')
     for pub_id,keywords_AK in zip(df_AK.index,df_AK):
-        for keyword_AK in keywords_AK.split(';'):
+        list_keywords_AK = keywords_AK.split(';')
+        if list_keywords_AK != ['']:
+            for keyword_AK in list_keywords_AK:
+                list_keyword.append(key_word(pub_id=pub_id,
+                                             type="AK",
+                                             keyword=keyword_AK.strip()))
+        else:
             list_keyword.append(key_word(pub_id=pub_id,
-                                         type="AK",
-                                         keyword=keyword_AK.strip()))
+                                             type="AK",
+                                             keyword=''))
 
-    
-    df_IK = df_corpus['Index Keywords'].dropna()
+    df_IK = df_corpus['Index Keywords'].fillna('')
     for pub_id,keywords_IK in zip(df_IK.index,df_IK):
-        for keyword_IK in keywords_IK.split(';'):
+        list_keywords_IK = keywords_IK.split(';')
+        if list_keywords_IK != ['']:
+            for keyword_IK in list_keywords_IK:
+                list_keyword.append(key_word(pub_id=pub_id,
+                                             type="IK",
+                                             keyword=keyword_IK.strip()))
+        else:
             list_keyword.append(key_word(pub_id=pub_id,
-                                         type="IK",
-                                         keyword=keyword_IK.strip()))
+                                             type="IK",
+                                             keyword=''))
 
-    df_title = pd.DataFrame(df_corpus['Title'].dropna())
+    df_title = pd.DataFrame(df_corpus['Title'].fillna(''))
     df_TK,list_of_words_occurrences = build_title_keywords(df_title)
     for pub_id in df_TK.index:
         for token in df_TK.loc[pub_id,'kept_tokens']:
@@ -1180,13 +1281,21 @@ def build_keywords_scopus(df_corpus=None):
     df_keyword = pd.DataFrame.from_dict({'pub_id':[s.pub_id for s in list_keyword],
                                          'type':[s.type for s in list_keyword],
                                          'keyword':[s.keyword for s in list_keyword]})
+    
+    df_failed = df_keyword[df_keyword["keyword"] == ""]
+    for type in ["AK","IK","TK"]:
+        list_id = df_failed[df_failed['type']==type]['pub_id'].values
+        dic_failed[type] = {"success (%)":100*(1-len(list_id)/len(df_corpus)),
+                            "pub_id":[int(x) for x in list(list_id)]}
+        
     df_keyword = df_keyword[df_keyword["keyword"] != ""]
     
     return df_keyword
 
 def  build_subjects_scopus(df_corpus=None,
                           path_scopus_cat_codes=None,
-                          path_scopus_journals_issn_cat=None):
+                          path_scopus_journals_issn_cat=None,
+                          dic_failed=None):
     
     '''Builds the dataframe "df_gross_subject" with two columns 'publi_id' 
     and 'ASJC_description'
@@ -1262,7 +1371,7 @@ def  build_subjects_scopus(df_corpus=None,
                     res.extend([(pub_id,code_cat[int(i.strip()[0:2] + "00")].replace("General",""))
                                 for i in keyword[:-1]])
             except:
-                pass
+                res.extend([(pub_id,'')])
 
         else:                            # check if journal found in scopus issn list
             keywords = df_scopus_journals_issn_cat.query('issn==@issn')['keyword_id']
@@ -1276,7 +1385,7 @@ def  build_subjects_scopus(df_corpus=None,
                                      replace("General",""))
                                      for i in keyword[:-1]])
                 except:
-                    pass
+                    res.extend([(pub_id,'')])
 
     # Builds the dataframe "df_keyword" out of tuples [(publi_id,scopus category),...]
     # "df_keyword" has two columns "pub_id" and "scopus_keywords". 
@@ -1285,9 +1394,13 @@ def  build_subjects_scopus(df_corpus=None,
     list_pub_id,list_keywords = zip(*res)
     df_gross_subject = pd.DataFrame.from_dict({'pub_id':list_pub_id,
                                                'ASJC_description':list_keywords})
-    df_gross_subject.drop_duplicates(inplace=True)
     
+    list_id = df_gross_subject[df_gross_subject["ASJC_description"] == ""]['pub_id'].values
+    dic_failed["subject"] = {"success (%)":100*(1-len(list_id)/len(df_corpus)),
+                                "pub_id":[int(x) for x in list(list_id)]}
+                               
     df_gross_subject = df_gross_subject[df_gross_subject['ASJC_description'] != ""]
+    df_gross_subject.drop_duplicates(inplace=True)
     
     return df_gross_subject 
 
@@ -1377,6 +1490,7 @@ def biblio_parser_scopus(in_dir_parsing, out_dir_parsing, rep_utils):
     '''
     
     # Standard library imports
+    import json
     import os
     from pathlib import Path
     
@@ -1396,7 +1510,10 @@ def biblio_parser_scopus(in_dir_parsing, out_dir_parsing, rep_utils):
     filename2 = rep_utils / Path(SCOPUS_JOURNALS_ISSN_CAT)
 
     df = pd.read_csv(filename,usecols=USECOLS_SCOPUS) # reads the database
-
+    
+    dic_failed = {}
+    dic_failed['number of article'] = len(df)
+    
     item = 'AU' # Deals with authors
     df_AU = build_authors_scopus(df_corpus=df)
     df_AU.to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item]), 
@@ -1414,7 +1531,8 @@ def biblio_parser_scopus(in_dir_parsing, out_dir_parsing, rep_utils):
     item = 'S2'   # Deals with sub-subjects
     df_S2 = build_sub_subjects_scopus(df_corpus=df,
                                  path_scopus_cat_codes=filename1,
-                                 path_scopus_journals_issn_cat=filename2)
+                                 path_scopus_journals_issn_cat=filename2,
+                                 dic_failed=dic_failed)
     df_S2.to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item]),
                  index=False, 
                  sep='\t',
@@ -1423,14 +1541,16 @@ def biblio_parser_scopus(in_dir_parsing, out_dir_parsing, rep_utils):
     item = 'S'   # Deals with subjects
     df_S = build_subjects_scopus(df_corpus=df,
                                 path_scopus_cat_codes=filename1,
-                                path_scopus_journals_issn_cat=filename2)
+                                path_scopus_journals_issn_cat=filename2,
+                                dic_failed=dic_failed)
     df_S.to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item]),
                 index=False,
                 sep='\t',
                 header=HEADER)
     
     item = 'AD'   # Deals with addresses
-    df_AD, df_CU, df_I  = build_addresses_countries_institutions_scopus(df_corpus=df)
+    df_AD, df_CU, df_I  = build_addresses_countries_institutions_scopus(df_corpus=df,
+                                                                        dic_failed=dic_failed)
     df_AD.to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item]),
                  index=False,
                  sep='\t',
@@ -1449,7 +1569,7 @@ def biblio_parser_scopus(in_dir_parsing, out_dir_parsing, rep_utils):
                  header=HEADER)
     
     item = 'K'  # Deals with keywords
-    df_K = build_keywords_scopus(df_corpus=df)
+    df_K = build_keywords_scopus(df_corpus=df,dic_failed=dic_failed)
     df_K.to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item]),
                 index=False,
                 sep='\t',
@@ -1479,6 +1599,9 @@ def biblio_parser_scopus(in_dir_parsing, out_dir_parsing, rep_utils):
                 index=True,
                 sep='\t',
                 header=HEADER)
+    
+    with open(Path(out_dir_parsing) / Path('failed.json'), 'w') as write_json:
+        json.dump(dic_failed, write_json,indent=4)
 
 def biblio_parser_wos(in_dir_parsing, out_dir_parsing):
     
@@ -1508,6 +1631,7 @@ def biblio_parser_wos(in_dir_parsing, out_dir_parsing):
     
     # Standard library imports
     import os
+    import json
     from pathlib import Path
     
     # 3rd party imports
@@ -1524,6 +1648,8 @@ def biblio_parser_wos(in_dir_parsing, out_dir_parsing):
     filename = list_data_base[0]
     
     df = read_database_wos(filename)
+    dic_failed = {}
+    dic_failed['number of article'] = len(df)
     
     item = 'AU' # Deals with authors
     df_AU = build_authors_wos(df_corpus=df)
@@ -1533,7 +1659,7 @@ def biblio_parser_wos(in_dir_parsing, out_dir_parsing):
                  header=HEADER)
     
     item = 'K'  # Deals with keywords
-    df_K = build_keywords_wos(df_corpus=df)
+    df_K = build_keywords_wos(df_corpus=df,dic_failed=dic_failed)
     df_K.to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item]),
                 index=False,
                 sep='\t',
@@ -1558,7 +1684,7 @@ def biblio_parser_wos(in_dir_parsing, out_dir_parsing):
                 header=HEADER)    
                     
     item = 'AD'  # Deals with addresses
-    df_AD, df_CU, df_I = build_addresses_countries_institutions_wos(df_corpus=df)
+    df_AD, df_CU, df_I = build_addresses_countries_institutions_wos(df_corpus=df,dic_failed=dic_failed)
     df_AD.to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item]),
                  index=False,
                  sep='\t',
@@ -1577,14 +1703,14 @@ def biblio_parser_wos(in_dir_parsing, out_dir_parsing):
                  header=HEADER)
     
     item = 'S'   # Deals with subjects
-    df_S = build_subjects_wos(df_corpus=df)
+    df_S = build_subjects_wos(df_corpus=df,dic_failed=dic_failed)
     df_S.to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item]),
                 index=False,
                 sep='\t',
                 header=HEADER)
 
     item = 'S2'   # Deals with sub-subjects
-    df_S2 = build_sub_subjects_wos(df_corpus=df)
+    df_S2 = build_sub_subjects_wos(df_corpus=df,dic_failed=dic_failed)
     df_S2.to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item]),
                 index=False,
                 sep='\t',
@@ -1603,6 +1729,9 @@ def biblio_parser_wos(in_dir_parsing, out_dir_parsing):
                 index=False, 
                 sep='\t',
                 header=HEADER)
+                
+    with open(Path(out_dir_parsing) / Path('failed.json'), 'w') as write_json:
+        json.dump(dic_failed, write_json,indent=4)
 
 def biblio_parser(in_dir_parsing, out_dir_parsing, database, expert, rep_utils):
     
