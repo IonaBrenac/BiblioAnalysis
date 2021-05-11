@@ -140,6 +140,9 @@ NOUN_MINIMUM_OCCURRENCES = 3 # Minimum occurrences of a noun to be retained when
                              # building the set of title keywords see build_title_keywords
 
 def country_normalization(country):
+    '''
+    Normalize the country name for coherence seeking between wos and scopus corpuses.
+    '''
 
     country_clean = country
     if country not in COUNTRIES:
