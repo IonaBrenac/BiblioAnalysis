@@ -1,7 +1,7 @@
 __all__ = ['NMAX_NODES','LABEL_MEANING', 'describe_corpus', 'plot_graph', 'plot_counts', 'plot_histo', 'treemap_item']
 
-from .BiblioParser import DIC_OUTDIR_PARSING
-from .BiblioParser import LABEL_MEANING
+from .BiblioParsingGlobals import DIC_OUTDIR_PARSING
+from .BiblioParsingGlobals import LABEL_MEANING
 
 NMAX_NODES = 100 # maximum number of nodes to keep
 

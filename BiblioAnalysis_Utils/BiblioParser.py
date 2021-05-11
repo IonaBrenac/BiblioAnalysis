@@ -1,143 +1,28 @@
 
-__all__ = ['COUNTRIES','WOS_TAGS','WOS_TAGS_DICT',
-           'biblio_parser_scopus', 'biblio_parser_wos',
+__all__ = ['biblio_parser_scopus', 'biblio_parser_wos',
            'biblio_parser','build_title_keywords','read_database_wos',
-           'USECOLS_SCOPUS','USECOLS_WOS',
-           'merge_database','DIC_OUTDIR_PARSING','LABEL_MEANING']
+           'merge_database']
 
-DIC_OUTDIR_PARSING = {'K':'keywords.dat',
-                      'AK':'authorskeywords.dat',
-                      'IK':'journalkeywords.dat',
-                      'TK':'titlekeywords.dat',
-                      'S':'subjects.dat',
-                      'S2':'subjects2.dat',
-                      'AD':'addresses.dat',
-                      'CU':'countries.dat',
-                      'I':'institutions.dat',
-                      'AU':'authors.dat',
-                      'R':'references.dat',
-                      'A':'articles.dat'}
+from .BiblioGeneralGlobals import ALIAS_UK
+from .BiblioGeneralGlobals import COUNTRIES
+from .BiblioGeneralGlobals import DIC_CHANGE_CHAR
+from .BiblioGeneralGlobals import USA_STATES
 
-LABEL_MEANING = {'AU':'co-authors',
-                 'AK':'author_keywords',
-                 'CU':'countries',
-                 'DT':'doc_type',
-                 'I':'institution',
-                 'J':'journal',
-                 'IK':'journal_keywords',
-                 'LA':'languages',
-                 'R':'references',
-                 'RJ':'refjournal',
-                 'S':'subjects',
-                 'S2':'subjects2',
-                 'TK':'title_keywords',
-                 'Y':'year'}
-    
-COUNTRY = '''
-    United States,Afghanistan,Albania,Algeria,American Samoa,Andorra,Angola,
-    Anguilla,Antarctica,Antigua And Barbuda,Argentina,Armenia,Aruba,Australia,
-    Austria,Azerbaijan,Bahamas,Bahrain,Bangladesh,Barbados,Belarus,Belgium,
-    Belize,Benin,Bermuda,Bhutan,Bolivia,Bosnia And Herzegowina,Botswana,Bouvet Island,
-    Brazil,Brunei Darussalam,Bulgaria,Burkina Faso,Burundi,Cambodia,Cameroon,Canada,
-    Cape Verde,Cayman Islands,Central African Rep,Chad,Chile,China,Christmas Island,
-    Cocos Islands,Colombia,Comoros,Congo,Cook Islands,Costa Rica,Cote D`ivoire,Croatia,
-    Cuba,Cyprus,Czech Republic,Denmark,Djibouti,Dominica,Dominican Republic,East Timor,
-    Ecuador,Egypt,El Salvador,Equatorial Guinea,Eritrea,Estonia,Ethiopia,Falkland Islands (Malvinas),
-    Faroe Islands,Fiji,Finland,France,French Guiana,French Polynesia,French S. Territories,
-    Gabon,Gambia,Georgia,Germany,Ghana,Gibraltar,Greece,Greenland,Grenada,Guadeloupe,Guam,
-    Guatemala,Guinea,Guinea-bissau,Guyana,Haiti,Honduras,Hong Kong,Hungary,Iceland,India,
-    Indonesia,Iran,Iraq,Ireland,Israel,Italy,Jamaica,Japan,Jordan,Kazakhstan,Kenya,Kiribati,
-    North Korea,South Korea,Kuwait,Kyrgyzstan,Laos,Latvia,Lebanon,Lesotho,Liberia,Libya,
-    Liechtenstein,Lithuania,Luxembourg,Macau,Macedonia,Madagascar,Malawi,Malaysia,Maldives,
-    Mali,Malta,Marshall Islands,Martinique,Mauritania,Mauritius,Mayotte,Mexico,Micronesia,
-    Moldova,Monaco,Mongolia,Montserrat,Morocco,Mozambique,Myanmar,Namibia,Nauru,Nepal,Netherlands,
-    Netherlands Antilles,New Caledonia,New Zealand,Nicaragua,Niger,Nigeria,Niue,Norfolk Island,
-    Northern Mariana Islands,Norway,Oman,Pakistan,Palau,Panama,Papua New Guinea,Paraguay,Peru,
-    Philippines,Pitcairn,Poland,Portugal,Puerto Rico,Qatar,Reunion,Romania,Russian Federation,
-    Rwanda,Saint Kitts And Nevis,Saint Lucia,St Vincent/Grenadines,Samoa,San Marino,Sao Tome,
-    Saudi Arabia,Senegal,Seychelles,Sierra Leone,Singapore,Slovakia,Slovenia,Solomon Islands,
-    Somalia,South Africa,Spain,Sri Lanka,St. Helena,St.Pierre,Sudan,Suriname,Swaziland,Sweden,
-    Switzerland,Syrian Arab Republic,Taiwan,Tajikistan,Tanzania,Thailand,Togo,Tokelau,Tonga,
-    Trinidad And Tobago,Tunisia,Turkey,Turkmenistan,Tuvalu,Uganda,Ukraine,United Arab Emirates,
-    United Kingdom,Uruguay,Uzbekistan,Vanuatu,Vatican City State,Venezuela,Viet Nam,Virgin Islands (British),
-    Virgin Islands (U.S.),Western Sahara,Yemen,Yugoslavia,Zaire,Zambia,Zimbabwe
-'''
-COUNTRIES = [x.strip() for x in COUNTRY.split(',')]
+from .BiblioParsingGlobals import DIC_OUTDIR_PARSING
+from .BiblioParsingGlobals import ENCODING
+from .BiblioParsingGlobals import HEADER
+from .BiblioParsingGlobals import LABEL_MEANING
+from .BiblioParsingGlobals import NLTK_VALID_TAG_LIST
+from .BiblioParsingGlobals import NOUN_MINIMUM_OCCURRENCES
+from .BiblioParsingGlobals import SCOPUS_CAT_CODES
+from .BiblioParsingGlobals import SCOPUS_JOURNALS_ISSN_CAT
+from .BiblioParsingGlobals import SCOPUS_TAGS
+from .BiblioParsingGlobals import USECOLS_SCOPUS
+from .BiblioParsingGlobals import USECOLS_WOS
+from .BiblioParsingGlobals import WOS_TAGS
+from .BiblioParsingGlobals import WOS_TAGS_DICT
 
-USA_STATES = '''AL,AK,AZ,AR,CA,CO,CT,DE,FL,GA,HI,ID,IL,IN,IA,KS,KY,LA,ME,MD,MA,MI,MN,MS,MO,MT,
-NE,NV,NH,NJ,NM,NY,NC,ND,OH,OK,OR,PA,RI,SC,SD,TN,TX,UT,VT,VA,WA,WV,WI,WY'''
-USA_STATES = [x.strip() for x in USA_STATES.split(',')]
-
-DIC_CHANGE_CHAR = {"Ł":"L",   # polish capital to L 
-                   "ł":"l",   # polish l
-                   "ı":"i",    
-                   "‐":"-",   # Non-Breaking Hyphen to hyphen-minus
-                   "Đ":"D",   # D with stroke (Vietamese,South Slavic) to D
-                   ".":"",
-                   ",":""}
 CHANGE = str.maketrans(DIC_CHANGE_CHAR)
-
-WOS_TAGS = '''FN,VR,PT,AU,AF,BA,BF,CA,GP,BE,TI,SO,SE,BS,LA,DT,CT,CY,CL,
-              SP,HO,DE,ID,AB,C1,RP,EM,RI,OI,FU,FX,CR,NR,TC,Z9,U1,U2,PU,
-              PI,PA,SN,EI,BN,J9,JI,PD,PY,VL,IS,SI,PN,SU,MA,BP,EP,AR,DI,
-              D2,EA,EY,PG,P2,WC,SC,GA,PM,UT,OA,HP,ES,HC,DA,ER,EF'''
-
-WOS_TAGS_VALUES ='''File Name,Version Number,Publication Type (J=Journal; B=Book; S=Series;P=Patent),
-Authors,Author Full Name,Book Authors,Book Authors Full Name,
-Group Authors,Book Group Authors,Editors,Document Title,Publication Name,
-Book Series Title,Book Series Subtitle,Language,Document Type,
-Conference Title,Conference Date,Conference Location,Conference Sponsors,
-Conference Host,Author Keywords,Keywords Plus,Abstract,Author Address,Reprint Address,
-E-mail Address,ResearcherID Number,ORCID Identifier (Open Researcher and Contributor ID),
-Funding Agency and Grant Number,Funding Text,Cited References,Cited Reference Count,
-Web of Science Core Collection Times Cited Count,Total Times Cited Count 
-(Web of Science Core Collection; BIOSIS Citation Index; Chinese Science Citation Database;
-Data Citation Index; Russian Science Citation Index; SciELO Citation Index),
-Usage Count (Last 180 Days),Usage Count (Since 2013),Publisher,Publisher City,Publisher Address,
-International Standard Serial Number (ISSN),Electronic International Standard Serial Number (eISSN),
-International Standard Book Number (ISBN),29-Character Source Abbreviation,
-ISO Source Abbreviation,Publication Date,Year Published,Volume,Issue,Special Issue,Part Number,
-Supplement,Meeting Abstract,Beginning Page,Ending Page,Article Number,Digital Object Identifier (DOI),
-Book Digital Object Identifier (DOI),Early access date,Early access year,Page Count,
-Chapter Count (Book Citation Index),Web of Science Categories,Research Areas,Document Delivery Number,
-PubMed ID,Accession Number,Open Access Indicator,ESI Hot Paper. Note that this field is valued only for subscribers.,
-ESI Highly Cited Paper. Note that this field is valued only for ESI subscribers.,
-Date this report was generated.,End of Record,End of File'''
-WOS_TAGS_DICT = dict(zip([x.strip() for x in WOS_TAGS.split(',')],
-                         [x.strip() for x in WOS_TAGS_VALUES.split(',')]))
-
-USECOLS_WOS ='''AB,AU,BP,BS,C1,CR,DE,DI,DT,ID,IS,LA,PY,RP,
-                SC,SN,SO,TI,UT,VL,WC'''
-USECOLS_WOS = [x.strip() for x in USECOLS_WOS.split(',')]
-
-
-SCOPUS_TAGS = '''Authors,Title,Year,Source title,Volume,Issue,Art. No.,
-Page start,Page end,Page count,Cited by,DOI,Link,Affiliations,
-Authors with affiliations,Abstract,Author Keywords,Index Keywords,References,
-ISSN,ISBN,CODEN,Language of Original Document,Abbreviated Source Title,
-Document Type,Source,EID'''
-SCOPUS_TAGS = [x.strip() for x in SCOPUS_TAGS.split(',')]
-
-USECOLS_SCOPUS = '''Abstract,Affiliations,Authors,Author Keywords,Authors with affiliations,
-       CODEN,Document Type,DOI,EID,Index Keywords,ISBN,ISSN,Issue,Language of Original Document,
-       Page start,References,Source title,Title,Volume,Year'''
-USECOLS_SCOPUS = [x.strip() for x in USECOLS_SCOPUS.split(',')]
-
-HEADER = False
-
-ALIAS_UK = '''England,Wales,North Ireland,Scotland'''
-ALIAS_UK = [x.strip() for x in ALIAS_UK.split(',')]                                
-
-ENCODING = 'iso-8859-1' # encoding used by the function read_database_wos
-
-SCOPUS_CAT_CODES = 'scopus_cat_codes.txt'
-SCOPUS_JOURNALS_ISSN_CAT = 'scopus_journals_issn_cat.txt'
-
-NLTK_VALID_TAG_LIST = ['NN','NNS','VBG','JJ'] # you can find help on the nltk tags set
-                                              # using nltk.help.upenn_tagset() 
-
-NOUN_MINIMUM_OCCURRENCES = 3 # Minimum occurrences of a noun to be retained when 
-                             # building the set of title keywords see build_title_keywords
 
 def country_normalization(country):
     '''
