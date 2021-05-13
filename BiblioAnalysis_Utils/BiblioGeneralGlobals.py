@@ -1,4 +1,5 @@
-__all__ = ['COUNTRIES','USA_STATES','COUNTRIES_GPS', 'ALIAS_UK', 'DIC_CHANGE_CHAR']
+__all__ = ['COUNTRIES','USA_STATES','COUNTRIES_GPS', 'ALIAS_UK',
+ 'DIC_CHANGE_CHAR','CHANGE']
 
 # Countries normalized names and GPS coordinates
 COUNTRY = '''
@@ -104,3 +105,5 @@ DIC_CHANGE_CHAR = {"Ł":"L",   # polish capital to L
                    "Đ":"D",   # D with stroke (Vietamese,South Slavic) to D
                    ".":"",
                    ",":""}
+
+CHANGE = str.maketrans(DIC_CHANGE_CHAR)

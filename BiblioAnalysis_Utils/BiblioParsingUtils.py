@@ -3,15 +3,12 @@ __all__ = ['build_title_keywords','country_normalization',
 
 from .BiblioGeneralGlobals import ALIAS_UK
 from .BiblioGeneralGlobals import COUNTRIES
-from .BiblioGeneralGlobals import DIC_CHANGE_CHAR
+from .BiblioGeneralGlobals import CHANGE
 from .BiblioGeneralGlobals import USA_STATES
 
 from .BiblioParsingGlobals import NLTK_VALID_TAG_LIST
 from .BiblioParsingGlobals import NOUN_MINIMUM_OCCURRENCES
-
-CHANGE = str.maketrans(DIC_CHANGE_CHAR)
-
-        
+       
 def build_title_keywords(df):
     
     '''Given the dataframe 'df' with one column 'title':
