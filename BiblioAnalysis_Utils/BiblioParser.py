@@ -577,7 +577,8 @@ def build_keywords_wos(df_corpus=None,dic_failed=None):
 def  build_addresses_countries_institutions_wos(df_corpus=None,dic_failed=None):
     
     '''Parse the field 'C1' of wos database to retrieve the article author address (without duplicates),
-       the author country and affiliation.
+       the author country and affiliation. Beware, multiple formats may exist for the 'C1' field. 
+       We take care for two different formats in this implementation
        
     For example the string:
 
@@ -655,8 +656,11 @@ def  build_addresses_countries_institutions_wos(df_corpus=None,dic_failed=None):
                                    df_corpus['C1']):
         
         try:
-            #authors = re_author.findall(affiliation)    # for future use
-            addresses = re_address.findall(affiliation)
+            if '[' in affiliation:                           # ex: '[Author1] address1;[Author1, Author2] address2...'
+                #authors = re_author.findall(affiliation)    # for future use
+                addresses = re_address.findall(affiliation)
+            else:                                            # ex: 'address1;address2...'
+                addresses = affiliation.split(';')   
         except:
             print(pub_id,affiliation)
         
