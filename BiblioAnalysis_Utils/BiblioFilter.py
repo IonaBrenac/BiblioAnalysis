@@ -1,4 +1,4 @@
-__all__ = ['filter_corpus_new']
+__all__ = ['filter_corpus_new','read_config_filters']
 
 def read_config_filters(file_config):
     """
@@ -26,7 +26,7 @@ def read_config_filters(file_config):
                 "publication year":"Y",     # ex: 2019
                 "subject category":"S",     # ex: Chemical Engineering,Engineering 
                 "subject subcategory":"S2", # ex: Applied Mathematics, Organic Chemistry
-                "refsouce":"RJ",
+                "refsource":"RJ",
                 "references":"R",
                 "keywords_IK":"IK",
                 "keywords_TK":"TK",

@@ -250,12 +250,12 @@ def build_keywords_wos(df_corpus=None,dic_failed=None):
     df_keyword = df_keyword[df_keyword["keyword"] != ""]
     
     return df_keyword
-
-
+    
 def  build_addresses_countries_institutions_wos(df_corpus=None,dic_failed=None):
     
     '''Parse the field 'C1' of wos database to retrieve the article author address (without duplicates),
-       the author country and affiliation.
+       the author country and affiliation. Beware, multiple formats may exist for the 'C1' field. 
+       We take care for two different formats in this implementation.
        
     For example the string:
 
@@ -294,7 +294,6 @@ def  build_addresses_countries_institutions_wos(df_corpus=None,dic_failed=None):
     Args:
         df_corpus (dataframe): the dataframe of the wos/scopus corpus
 
-
     Returns:
         The dataframe df_address, df_country, df_institution
     '''
@@ -323,8 +322,6 @@ def  build_addresses_countries_institutions_wos(df_corpus=None,dic_failed=None):
     country = namedtuple('country',['pub_id','idx_author','country'] )
     ref_institution = namedtuple('ref_institution',['pub_id','idx_author','institution'] )
 
-
-
     list_author_address = []
     list_author_countries = []
     list_institution = []
@@ -333,8 +330,11 @@ def  build_addresses_countries_institutions_wos(df_corpus=None,dic_failed=None):
                                    df_corpus['C1']):
         
         try:
-            #authors = re_author.findall(affiliation)    # for future use
-            addresses = re_address.findall(affiliation)
+            if '[' in affiliation:                           # ex: '[Author1] address1;[Author1, Author2] address2...'
+                #authors = re_author.findall(affiliation)    # for future use
+                addresses = re_address.findall(affiliation)
+            else:                                            # ex: 'address1;address2...'
+                addresses = affiliation.split(';')   
         except:
             print(pub_id,affiliation)
         
@@ -366,9 +366,6 @@ def  build_addresses_countries_institutions_wos(df_corpus=None,dic_failed=None):
             list_author_countries.append(country(pub_id=pub_id,
                                                      idx_author=0,
                                                      country=''))
-            
-            
-            
 
     df_address = pd.DataFrame.from_dict({'pub_id':[s.pub_id for s in list_author_address],
                                          'idx_address':[s.idx_address for s in list_author_address],
@@ -389,8 +386,7 @@ def  build_addresses_countries_institutions_wos(df_corpus=None,dic_failed=None):
                                 "pub_id":[int(x) for x in list(list_id)]}
     
     df_address = df_address[df_address['address'] != ""]
-    
-    
+
     list_id = df_country[df_country["country"] == ""]['pub_id'].values
     list_id = list(set(list_id))
     dic_failed["country"] = {"success (%)":100*(1-len(list_id)/len(df_corpus)),
