@@ -17,12 +17,19 @@ def read_database_wos(filename):
     '''Used to circumvent the error ParserError: '	' expected after '"' generated
     by the method pd.read_csv
     '''
+    # Standard library imports
+    import sys
+    import csv
     
-    from csv import reader
+    # 3rd party imports
     import pandas as pd
+    
+    from .BiblioParsingGlobals import FIELD_SIZE_LIMIT
+    
+    csv.field_size_limit(FIELD_SIZE_LIMIT) # To extend the field size limit for reading .txt files
 
     with open(filename,'rt',encoding=ENCODING) as csv_file: 
-        csv_reader = reader(csv_file, delimiter = '\t')
+        csv_reader = csv.reader(csv_file, delimiter = '\t')
         csv_list = []
         for row in csv_reader:
             csv_list.append(row)
@@ -30,7 +37,7 @@ def read_database_wos(filename):
     df = pd.DataFrame(csv_list)
     
     # Columns selection and dataframe reformatting
-    dc = dict(zip(df.iloc[0,:],df.columns))  # Buids {n° column: column name,...}
+    dc = dict(zip(df.iloc[0,:],df.columns))  # Builds {n° column: column name,...}
     df.drop(list(set(df.columns).difference(set([dc[key] for key in USECOLS_WOS]))),
             axis=1,
             inplace=True)                    # Drops unused columns

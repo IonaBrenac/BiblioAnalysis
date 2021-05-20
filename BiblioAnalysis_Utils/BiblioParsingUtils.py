@@ -167,16 +167,18 @@ def name_normalizer(text):
     '''
 
     # Standard library imports
+    import functools
     import re
     import unicodedata
 
 
-    clear_data = lambda text : \
-        unicodedata.normalize('NFD', text.translate(CHANGE)). \
-        encode('ascii', 'ignore'). \
-        decode('utf-8').strip()
+    nfc = functools.partial(unicodedata.normalize,'NFD')
     
-    text = clear_data(text.lstrip())
+    text = text.translate(CHANGE) # Translate special character using global CHANGE dict
+    text = nfc(text). \
+           encode('ascii', 'ignore'). \
+           decode('utf-8').\
+           strip()
     
     re_minus = re.compile('(-[a-zA-Z]+)')       # Captures: "cCc-cC-ccc-CCc"
     for text_minus_texts in re.findall(re_minus,text):

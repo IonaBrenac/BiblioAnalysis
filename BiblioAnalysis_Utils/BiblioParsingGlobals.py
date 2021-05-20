@@ -18,20 +18,20 @@ DIC_OUTDIR_PARSING = {'K':'keywords.dat',
                       'R':'references.dat',
                       'A':'articles.dat'}
 
-LABEL_MEANING = {'AU':'co-authors',
-                 'AK':'author_keywords',
-                 'CU':'countries',
-                 'DT':'doc_type',
-                 'I':'institution',
-                 'J':'journal',
-                 'IK':'journal_keywords',
-                 'LA':'languages',
-                 'R':'references',
-                 'RJ':'refjournal',
-                 'S':'subjects',
-                 'S2':'subjects2',
-                 'TK':'title_keywords',
-                 'Y':'year'}
+LABEL_MEANING = {'AU':'Authors',          # ex: Faure-Vincent J, De Vito E, Simonato J-P
+                 'AK':'Authors keywords', # ex: BIOMASS, SOLAR FUEL
+                 'CU':'Countries',        # ex: France, United States
+                 'DT':'Document types',   # ex: review, article, proceding
+                 'I':'Institutions',      # ex: CEA-Liten, CEA/CNRS/IRIG
+                 'J':'Journals',          # ex: Conference Paper, Article 
+                 'IK':'Journal keywords',
+                 'LA':'Languages',        # ex: English, French
+                 'R':'References',
+                 'RJ':'References journals',
+                 'S':'Subjects',          # ex: Chemical Engineering,Engineering 
+                 'S2':'Sub-subjects',     # ex: Applied Mathematics, Organic Chemistry
+                 'TK':'Title keywords',
+                 'Y':'Years'}             # ex: 2019
     
 
 
@@ -84,6 +84,7 @@ USECOLS_SCOPUS = [x.strip() for x in USECOLS_SCOPUS.split(',')]
 HEADER = False                              
 
 ENCODING = 'iso-8859-1' # encoding used by the function read_database_wos
+FIELD_SIZE_LIMIT = 256<<10 # extend maximum field size for wos file reading
 
 SCOPUS_CAT_CODES = 'scopus_cat_codes.txt'
 SCOPUS_JOURNALS_ISSN_CAT = 'scopus_journals_issn_cat.txt'
