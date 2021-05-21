@@ -1,5 +1,6 @@
 __all__ = ['build_title_keywords','country_normalization',
-           'merge_database','name_normalizer',]
+           'merge_database','name_normalizer',
+          'biblio_parser']
 
 from .BiblioGeneralGlobals import ALIAS_UK
 from .BiblioGeneralGlobals import COUNTRIES
@@ -205,3 +206,15 @@ def name_normalizer(text):
         text = text.replace(x,x.upper())
            
     return text
+
+def biblio_parser(in_dir_parsing, out_dir_parsing, database, expert, rep_utils):
+    
+    '''Chooses the appropriate parser to parse wos or scopus databases.
+    '''
+    
+    if database == "wos":
+        bau.biblio_parser_wos(in_dir_parsing, out_dir_parsing)
+    elif database == "scopus":
+        bau.biblio_parser_scopus(in_dir_parsing, out_dir_parsing, rep_utils)
+    else:
+        raise Exception("Sorry, unrecognized database {database} : should be wos or scopus ")
