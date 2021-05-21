@@ -1,4 +1,4 @@
-__all__ = ['item_selection','cooc_selection','merge_database_gui','filters_selection']
+__all__ = ['item_selection','cooc_selection','merge_database_gui','filters_selection','SAVE_CONFIG_FILTERS']
 
 from .BiblioParsingGlobals import DIC_OUTDIR_PARSING
 from .BiblioParsingGlobals import LABEL_MEANING
@@ -24,6 +24,7 @@ TREE_MAP_ITEM_HELP_TEXT = '''Select the item you want to deal with.
 
 With MACOS, to exit you have to kill manually the menu window.''' 
 
+GEOMETRY_ITEM_SELECTION = '350x520+50+50'
 
 COOC_SELECTION_HELP_TEXT = '''In a cooccurrence graph two authors, keywords, sujects 
 or more generally two 'items' are linked by an edge, if two
@@ -38,6 +39,8 @@ The node size is the total number of occurences of an author, keyword name,... i
 
 With macOS, to exit you have to kill manually the menu window.''' 
 
+GEOMETRY_COOC_SELECTION = '450x550+50+50'
+
 MERGE_DATABASE_HELP_TEXT = '''Merge several databases (wos/scopus) in one database.
 You have to choose:
     the database type (wos/scopus)
@@ -47,9 +50,13 @@ You have to choose:
     
 With macOS, to exit you have to kill manually the menu window.''' 
 
+GEOMETRY_MERGE_GUI = '500x550+50+50'
+
 FILTERS_SELECTION_HELP_TEXT = '''To be done'''
 
-GEOMETRY_FILTERS_SELECTION = '500x550+50+50'
+GEOMETRY_FILTERS_SELECTION = '500x580+50+50'
+
+SAVE_CONFIG_FILTERS = 'save_config_filters.json'
 
 DEFAULT_SAVE_CONFIG_FILTER = {'description': 'items to be combined in union or intersection for filtering the corpus',
  'COMBINE': 'union',
@@ -72,7 +79,7 @@ DEFAULT_SAVE_CONFIG_FILTER = {'description': 'items to be combined in union or i
   'list': []},
  'LA': {'description': 'Selected languages',
   'mode': False,
-  'list': ['English']},
+  'list': []},
  'S': {'description': 'Selected subject categories',
   'mode': False,
   'list': []},
@@ -91,7 +98,7 @@ DEFAULT_SAVE_CONFIG_FILTER = {'description': 'items to be combined in union or i
  'TK': {'description': 'Selected title words',
   'mode': False,
   'list': []},
- 'AK': {'description': 'Selected authors jeywords',
+ 'AK': {'description': 'Selected authors keywords',
   'mode': False,
   'list': []}}
 
@@ -119,6 +126,8 @@ def item_selection() :
         messagebox.showinfo("Item selection info", TREE_MAP_ITEM_HELP_TEXT)
     
     tk_root = tk.Tk()
+    tk_root.attributes("-topmost", True)
+    tk_root.geometry(GEOMETRY_ITEM_SELECTION)
     tk_root.title("Treemap GUI") 
     item_choice = ttk.LabelFrame(tk_root, text=' Label selection ')
     item_choice.grid(column=0, row=0, padx=8, pady=4)
@@ -150,7 +159,7 @@ def item_selection() :
     help_button.grid(column=0, row=0)
     
     if os.name == 'nt':
-        tk.Button(menu, text="Quit", command=tk_root.destroy).grid(column=0, row=1, padx=8, pady=4)
+        tk.Button(menu, text="EXIT", command=tk_root.destroy).grid(column=0, row=1, padx=8, pady=4)
     tk_root.mainloop()
     
     return ITEM_CHOICE
@@ -179,6 +188,8 @@ def cooc_selection() :
     global ITEM_CHOICE, minimum_size_node
      
     tk_root = tk.Tk()
+    tk_root.attributes("-topmost", True)
+    tk_root.geometry(GEOMETRY_COOC_SELECTION)
     tk_root.title("Graph cooccurrence GUI") 
     
     item_choice = ttk.LabelFrame(tk_root, text=' Label selection ')
@@ -233,7 +244,7 @@ def cooc_selection() :
     help_button.grid(column=0, row=2, padx=8, pady=4)
     
     if os.name == 'nt':
-        tk.Button(size_choice, text="Quit", command=tk_root.destroy).grid(column=0, row=3, padx=8, pady=4)
+        tk.Button(size_choice, text="EXIT", command=tk_root.destroy).grid(column=0, row=3, padx=8, pady=4)
     
     tk_root.mainloop()
     
@@ -271,6 +282,8 @@ def merge_database_gui() :
     global DATABASE_TYPE, DATABASE_FILENAME, IN_DIR, OUT_DIR
      
     tk_root = tk.Tk()
+    tk_root.attributes("-topmost", True)
+    tk_root.geometry(GEOMETRY_MERGE_GUI)
     tk_root.title("Graph cooccurrence GUI") 
     
     item_choice = ttk.LabelFrame(tk_root, text=' Database selection ')
@@ -343,13 +356,17 @@ def merge_database_gui() :
     
     
     if os.name == 'nt': # Work with nt not macos
-        tk.Button(folder_choice, text="Quit", command=tk_root.destroy).grid(column=0, row=6, padx=8, pady=4)
+        tk.Button(folder_choice, text="EXIT", command=tk_root.destroy).grid(column=0, row=6, padx=8, pady=4)
     
     tk_root.mainloop()
     
     return DATABASE_TYPE, DATABASE_FILENAME, IN_DIR, OUT_DIR
     
-def read_item_state(item,in_dir):
+def read_item_state(item,parsing_dir):
+    '''
+    item: 
+    parsing_dir:
+    '''
 
     # Standard library imports
     from pathlib import Path
@@ -358,7 +375,7 @@ def read_item_state(item,in_dir):
     import pandas as pd
     
     if item in ['AU','CU','I']:
-        df = pd.read_csv(in_dir / Path(DIC_OUTDIR_PARSING[item]),
+        df = pd.read_csv(parsing_dir / Path(DIC_OUTDIR_PARSING[item]),
                      sep='\t',
                      engine='python',
                      header=None)
@@ -366,7 +383,7 @@ def read_item_state(item,in_dir):
         dg = df['attribute'].tolist()
     
     elif item in ['IK','TK','AK','S','S2']:
-        df = pd.read_csv(in_dir / Path(DIC_OUTDIR_PARSING[item]),
+        df = pd.read_csv(parsing_dir / Path(DIC_OUTDIR_PARSING[item]),
                      sep='\t',
                      engine='python',
                      header=None)
@@ -374,7 +391,7 @@ def read_item_state(item,in_dir):
         dg = df['attribute'].tolist()
         
     elif item in ['Y','DT','J','LA']:
-        df = pd.read_csv(in_dir / Path(DIC_OUTDIR_PARSING['A']),
+        df = pd.read_csv(parsing_dir / Path(DIC_OUTDIR_PARSING['A']),
                      sep='\t',
                      engine='python',
                      header=None).astype(str)
@@ -389,7 +406,7 @@ def read_item_state(item,in_dir):
             dg = df['LA'].tolist()
             
     elif item in ['R','RJ']:
-        df = pd.read_csv(in_dir / Path(DIC_OUTDIR_PARSING['R']),
+        df = pd.read_csv(parsing_dir / Path(DIC_OUTDIR_PARSING['R']),
                      sep='\t',
                      engine='python',
                      header=None).astype(str)
@@ -459,7 +476,7 @@ def select_item_attributes(dg,item_tag,config_filter):
         if os.name == 'nt':
             top.destroy()
 
-    btn = tk.Button(top, text='Select', command=selected_item)
+    btn = tk.Button(top, text='OK', command=selected_item)
 
     btn.pack(side='bottom')
 
@@ -478,7 +495,7 @@ def function_help():
     T.insert("end",FILTERS_SELECTION_HELP_TEXT)
     top.mainloop()
 
-def filters_selection(filters_filename,in_dir) :
+def filters_selection(filters_filename,parsing_dir) :
     
     '''
     Selection of items for cooccurrences graph treatment
@@ -498,9 +515,10 @@ def filters_selection(filters_filename,in_dir) :
     import tkinter as tk
     from tkinter import ttk
     from tkinter import messagebox
+    from pathlib import Path
     
     global ITEM_CHOICE, minimum_size_node,val
-    
+      
     try:
         with open(filters_filename, "r") as read_file:
             config_filter = json.load(read_file)
@@ -522,7 +540,7 @@ def filters_selection(filters_filename,in_dir) :
                 config_filter[item_acronyme]['mode'] = False
             
     def func(item_acronyme):
-        dg = read_item_state(item_acronyme,in_dir)
+        dg = read_item_state(item_acronyme,parsing_dir) #in_dir)
         select_item_attributes(dg,item_acronyme,config_filter)
         
     def ModeSelected():
@@ -544,6 +562,7 @@ def filters_selection(filters_filename,in_dir) :
         function_help()    
      
     tk_root = tk.Tk()
+    tk_root.attributes("-topmost", True)
     tk_root.title("Filters GUI")
     tk_root.geometry(GEOMETRY_FILTERS_SELECTION)
     
@@ -600,13 +619,13 @@ def filters_selection(filters_filename,in_dir) :
     tk.Label(combine_choice, text='Choose a combination mode :').grid(column=0, row=1, padx=8, pady=4)
     
     button_union = tk.Radiobutton(combine_choice,
-                                  text = 'union',
+                                  text = 'Union',
                                   variable = var_union_inter,
                                   value=1,
                                   command=ModeSelected)
     button_union.grid(column=0, row=2, padx=8, pady=4,sticky=tk.W)
     button_inter = tk.Radiobutton(combine_choice,
-                                  text = 'intersection',
+                                  text = 'Intersection',
                                   variable = var_union_inter,
                                   value=2,
                                   command=ModeSelected)
@@ -618,7 +637,7 @@ def filters_selection(filters_filename,in_dir) :
         button_inter.select()
         
     tk.Checkbutton(combine_choice, 
-                       text = 'exclusion', 
+                       text = 'Exclusion', 
                        variable = var_exclusion,command=action_exlusion
                       ).grid(column=0, row=5, padx=8, pady=4,sticky=tk.W)
     
