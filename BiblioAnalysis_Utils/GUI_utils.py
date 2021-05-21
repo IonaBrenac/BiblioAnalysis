@@ -47,6 +47,8 @@ You have to choose:
     
 With macOS, to exit you have to kill manually the menu window.''' 
 
+FILTERS_SELECTION_HELP_TEXT = '''To be done'''
+
 GEOMETRY_FILTERS_SELECTION = '500x550+50+50'
 
 DEFAULT_SAVE_CONFIG_FILTER = {'description': 'items to be combined in union or intersection for filtering the corpus',
@@ -55,7 +57,7 @@ DEFAULT_SAVE_CONFIG_FILTER = {'description': 'items to be combined in union or i
  'AU': {'description': 'Selected authors',
   'mode': False,
   'list': []},
- 'Y': {'description': 'Selected time period', 'mode': False, 'list': ['2020']},
+ 'Y': {'description': 'Selected time period', 'mode': False, 'list': []},
  'CU': {'description': 'Selected countries',
   'mode': False,
   'list': []},
@@ -64,7 +66,7 @@ DEFAULT_SAVE_CONFIG_FILTER = {'description': 'items to be combined in union or i
   'list': []},
  'DT': {'description': 'Selected document types',
   'mode': False,
-  'list': ['Article', 'Review', 'Letter', 'Book Review', 'Proceedings Paper']},
+  'list': []},
  'J': {'description': 'Selected journals',
   'mode': False,
   'list': []},
@@ -466,6 +468,15 @@ def select_item_attributes(dg,item_tag,config_filter):
     yscrollbar.config(command = listbox.yview)
     top.mainloop()
     return val
+    
+def function_help():
+    import tkinter as tk
+    top = tk.Toplevel()
+    top.geometry(GEOMETRY_FILTERS_SELECTION)
+    T = tk.Text(top)
+    T.pack(expand = True, fill = tk.BOTH)
+    T.insert("end",FILTERS_SELECTION_HELP_TEXT)
+    top.mainloop()
 
 def filters_selection(filters_filename,in_dir) :
     
@@ -530,20 +541,23 @@ def filters_selection(filters_filename,in_dir) :
             config_filter['EXCLUSION'] = False
     
     def func_help():
-        messagebox.showinfo("Merge database info", "To be done")    
+        function_help()    
      
     tk_root = tk.Tk()
     tk_root.title("Filters GUI")
     tk_root.geometry(GEOMETRY_FILTERS_SELECTION)
     
-    item_choice = ttk.LabelFrame(tk_root, text=' Items activation ')
+    item_choice = ttk.LabelFrame(tk_root, text=' ')
     item_choice.grid(column=0, row=0, padx=8, pady=4)
     
-    combine_choice = ttk.LabelFrame(tk_root, text=' Combination modes ')
-    combine_choice.grid(column=1, row=0, padx=8, pady=4)
+    combine_exit = ttk.LabelFrame(tk_root, text=' ')
+    combine_exit.grid(column=1, row=0, padx=8, pady=4)
+    
+    combine_choice = ttk.LabelFrame(combine_exit, text=' ')
+    combine_choice.grid(column=0, row=0, padx=8, pady=4)
 
-    exit_choice = ttk.LabelFrame(tk_root, text='  ')
-    exit_choice.grid(column=2, row=0, padx=8, pady=4)
+    exit_choice = ttk.LabelFrame(combine_exit, text='  ')
+    exit_choice.grid(column=0, row=1, padx=8, pady=4)
     
    
     items = [(x,i) for i,x in enumerate(LABEL_MEANING.values())]
@@ -583,7 +597,7 @@ def filters_selection(filters_filename,in_dir) :
         
     var_union_inter = tk.IntVar()
     var_exclusion = tk.IntVar()
-    tk.Label(combine_choice, text='Choose a set mode :').grid(column=0, row=1, padx=8, pady=4)
+    tk.Label(combine_choice, text='Choose a combination mode :').grid(column=0, row=1, padx=8, pady=4)
     
     button_union = tk.Radiobutton(combine_choice,
                                   text = 'union',
@@ -615,7 +629,11 @@ def filters_selection(filters_filename,in_dir) :
                             text='HELP', 
                             command=func_help,
                             state = 'normal')
-    button_help.grid(column=0, row=2, padx=8, pady=4,sticky=tk.W)
+    button_help.grid(column=0, row=0, padx=8, pady=4,sticky=tk.W)
+    
+    if os.name == 'nt':
+        exit = tk.Button(exit_choice, text="EXIT", command=tk_root.destroy)
+        exit.grid(column=0, row=1, padx=8, pady=4)
     
     tk_root.mainloop()
     
