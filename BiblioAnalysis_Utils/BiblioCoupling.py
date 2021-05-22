@@ -1,5 +1,7 @@
 __all__ = ['build_coupling_graph','build_louvain_partition',
           'plot_coupling_graph','save_communities_xls','save_communities_gexf']
+
+from .BiblioParsingGlobals import DIC_OUTDIR_PARSING
            
 BCTHR = 1 # minimum number of shared references to keep a link (default 1)
 
@@ -147,7 +149,7 @@ def build_coupling_graph(in_dir):
     # The references and their ids are extracted from the file articles.dat (tsv format)
     # ---------------------------------------------------------------------------------------
 
-    df_article = pd.read_csv(in_dir / Path('articles.dat'),
+    df_article = pd.read_csv(in_dir / Path(DIC_OUTDIR_PARSING['A']),
                  sep='\t',
                  header=None,
                  usecols=[0,1,2,3,4,5]).fillna(0).astype(str)
@@ -168,7 +170,7 @@ def build_coupling_graph(in_dir):
     # 2- creates the dict named nR = {pub_id: number of references of pub_id}
     # ---------------------------------------------------------------------------------------
 
-    df_reference = pd.read_csv(in_dir / Path('references.dat'),
+    df_reference = pd.read_csv(in_dir / Path(DIC_OUTDIR_PARSING['R']),
                                sep='\t',
                                header = None,
                                usecols=[0,1,2,3,4,5],
@@ -308,7 +310,7 @@ def save_communities_xls(partition,in_dir,out_dir):
     # 3rd party import
     import pandas as pd
     
-    df_articles = pd.read_csv(in_dir / Path('articles.dat'),sep="\t",header=None)
+    df_articles = pd.read_csv(in_dir / Path(DIC_OUTDIR_PARSING['A']),sep="\t",header=None)
 
     df_articles['communnity'] = df_articles[0].map(partition) # Adds column community
     df_articles.sort_values(by=['communnity',0],inplace=True)

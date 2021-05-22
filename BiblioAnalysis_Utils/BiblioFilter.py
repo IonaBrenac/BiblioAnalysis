@@ -1,4 +1,4 @@
-__all__ = ['filter_corpus_new']
+__all__ = ['filter_corpus_new','read_config_filters']
 
 def read_config_filters(file_config):
     """
@@ -17,21 +17,6 @@ def read_config_filters(file_config):
 
     filter_param = defaultdict(list)
 
-    acronyme = {"authors":"AU",             # ex: Faure-Vincent J, De Vito E, Simonato J-P
-                "countries":"CU",           # ex: France, United States
-                "institutions":"I",         # ex: CEA-Liten, CEA/CNRS/IRIG
-                "document type":"DT",       # ex: Conference Paper, Article 
-                "pubsources":"J",           # ex: Physical Review B
-                "language":"LA",            # ex: English, French
-                "publication year":"Y",     # ex: 2019
-                "subject category":"S",     # ex: Chemical Engineering,Engineering 
-                "subject subcategory":"S2", # ex: Applied Mathematics, Organic Chemistry
-                "refsouce":"RJ",
-                "references":"R",
-                "keywords_IK":"IK",
-                "keywords_TK":"TK",
-                "keywords_AK":"AK"          # ex: BIOMASS, SOLAR FUEL
-                }
 
 
     with open(file_config, "r") as read_file:
@@ -43,7 +28,7 @@ def read_config_filters(file_config):
     for key, value in config_filter.items():
         if isinstance(value, dict):
             if value['mode']:
-                filter_param[acronyme[key]]=value["list"]
+                filter_param[key] = value["list"]
 
     return combine,exclusion,filter_param
 
