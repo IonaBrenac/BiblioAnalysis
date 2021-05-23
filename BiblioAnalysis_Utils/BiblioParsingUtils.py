@@ -212,9 +212,12 @@ def biblio_parser(in_dir_parsing, out_dir_parsing, database, expert, rep_utils):
     '''Chooses the appropriate parser to parse wos or scopus databases.
     '''
     
+    from .BiblioParsingScopus import biblio_parser_scopus
+    from .BiblioParsingWos import biblio_parser_wos
+    
     if database == "wos":
-        bau.biblio_parser_wos(in_dir_parsing, out_dir_parsing)
+        biblio_parser_wos(in_dir_parsing, out_dir_parsing)
     elif database == "scopus":
-        bau.biblio_parser_scopus(in_dir_parsing, out_dir_parsing, rep_utils)
+        biblio_parser_scopus(in_dir_parsing, out_dir_parsing, rep_utils)
     else:
         raise Exception("Sorry, unrecognized database {database} : should be wos or scopus ")

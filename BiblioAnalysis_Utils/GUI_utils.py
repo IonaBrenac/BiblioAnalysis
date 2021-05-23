@@ -450,6 +450,7 @@ def select_item_attributes(dg,item_tag,config_filter):
 
     top = tk.Toplevel()
     top.geometry(GEOMETRY_FILTERS_SELECTION)
+    top.attributes("-topmost", True)
 
     yscrollbar = tk.Scrollbar(top)
     yscrollbar.pack(side = tk.RIGHT, fill = tk.Y)
@@ -490,6 +491,7 @@ def function_help():
     import tkinter as tk
     top = tk.Toplevel()
     top.geometry(GEOMETRY_FILTERS_SELECTION)
+    top.attributes("-topmost", True)
     T = tk.Text(top)
     T.pack(expand = True, fill = tk.BOTH)
     T.insert("end",FILTERS_SELECTION_HELP_TEXT)
