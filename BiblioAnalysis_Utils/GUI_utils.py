@@ -2,6 +2,8 @@ __all__ = ['item_selection','cooc_selection','merge_database_gui','filters_selec
 
 from .BiblioParsingGlobals import DIC_OUTDIR_PARSING
 from .BiblioParsingGlobals import LABEL_MEANING
+import os
+
 ACRONYME_MEANING = dict(zip(LABEL_MEANING.values(),LABEL_MEANING.keys()))
 
 TREE_MAP_ITEM = [
@@ -52,7 +54,7 @@ With macOS, to exit you have to kill manually the menu window.'''
 
 GEOMETRY_MERGE_GUI = '500x550+50+50'
 
-FILTERS_SELECTION_HELP_TEXT = '''To be done'''
+FILE_FILTERS_SELECTION_HELP_TEXT = os.path.join(os.path.dirname(__file__), 'FILTERS_SELECTION_HELP_TEXT.txt')
 
 GEOMETRY_FILTERS_SELECTION = '500x580+50+50'
 
@@ -450,6 +452,7 @@ def select_item_attributes(dg,item_tag,config_filter):
 
     top = tk.Toplevel()
     top.geometry(GEOMETRY_FILTERS_SELECTION)
+    top.attributes("-topmost", True)
 
     yscrollbar = tk.Scrollbar(top)
     yscrollbar.pack(side = tk.RIGHT, fill = tk.Y)
@@ -486,12 +489,15 @@ def select_item_attributes(dg,item_tag,config_filter):
     top.mainloop()
     return val
     
-def function_help():
+def function_help_filters_selection():
     import tkinter as tk
     top = tk.Toplevel()
     top.geometry(GEOMETRY_FILTERS_SELECTION)
+    top.attributes("-topmost", True)
     T = tk.Text(top)
     T.pack(expand = True, fill = tk.BOTH)
+    with open(FILE_FILTERS_SELECTION_HELP_TEXT) as file:
+        FILTERS_SELECTION_HELP_TEXT = file.read()
     T.insert("end",FILTERS_SELECTION_HELP_TEXT)
     top.mainloop()
 
@@ -646,7 +652,7 @@ def filters_selection(filters_filename,parsing_dir) :
         
     button_help = tk.Button(exit_choice, 
                             text='HELP', 
-                            command=func_help,
+                            command=function_help_filters_selection,
                             state = 'normal')
     button_help.grid(column=0, row=0, padx=8, pady=4,sticky=tk.W)
     

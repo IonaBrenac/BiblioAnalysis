@@ -112,9 +112,8 @@ def filter_pub_id(combine,exclusion,filter_param,in_dir):
                           'LA',        # language
                           ]
         if item == 'Y': #years selection
-            Ymin = filter_param['Y']['ymin']
-            Ymax = filter_param['Y']['ymax']
-            keepid[item] = set(df.loc[(df[item] >= Ymin) & (df[item]<=Ymax)].index)
+            year = filter_param['Y']
+            keepid[item] = set(df.query('Y in @year').index)
 
         elif item == 'LA': #language selection
             languages = filter_param['LA']
@@ -244,11 +243,12 @@ def filter_corpus_new(in_dir, out_dir, verbose, file_config_filters):
     # Reads the fitering parameters
     combine,exclusion,filter_param = read_config_filters(file_config_filters)
     
-    # Builds the set of articles id to keep
-    #tokeep = filter_pub_id(combine,exclusion,filter_param,out_dir_parsing)
-    tokeep = filter_pub_id(combine,exclusion,filter_param,in_dir)
-    
-    # Stores the filtered files 
-    #save_filtered_files(tokeep,in_dir_parsing,out_dir)
-    save_filtered_files(tokeep,in_dir,out_dir)
+    if filter_param:  # at least one filter to apply
+        # Builds the set of articles id to keep
+        #tokeep = filter_pub_id(combine,exclusion,filter_param,out_dir_parsing)
+        tokeep = filter_pub_id(combine,exclusion,filter_param,in_dir)
+
+        # Stores the filtered files 
+        #save_filtered_files(tokeep,in_dir_parsing,out_dir)
+        save_filtered_files(tokeep,in_dir,out_dir)
 

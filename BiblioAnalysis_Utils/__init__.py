@@ -1,3 +1,14 @@
+"""
+
+function                            module                         public
+-------------------------------------------------------------------------
+BiblioCooc.py		        AUTHORIZED_ITEMS	                     x
+BiblioCooc.py			    AUTHORIZED_ITEMS_DICT		             x
+BiblioCooc.py			    plot_cooc_graph	                         x
+BiblioCooc.py			    build_item_cooc		                     x
+
+"""
+
 from .BiblioCooc import *
 from .BiblioCoupling import *
 from .BiblioDescription import *
