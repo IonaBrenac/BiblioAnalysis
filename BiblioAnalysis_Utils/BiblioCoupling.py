@@ -14,13 +14,231 @@ NRTHR = 1 # minimum number of references to keep a node (default 1)
 
 NRUNS = 1 # number of time the louvain algorithm is run for a given network, 
           # the best partition being kept (default 1)
-    
+       
 SIZECUT = 10
 verbose = True
 
 FILENAME_GEXF = 'biblio_network.gexf'
 FILENAME_XLSX = 'biblio_network.xlsx'
 
+def build_coupling_graph(in_dir):
+    
+    '''Builds a graph G(N,V) where:
+            - N is the set of nodes with two attributes: article id and number of references
+            - V is the set of vertices. A vertex links two articles if and only if:
+                   (i)   they share at least "BCTHR" references
+                   (ii)  each article has at least "NRTHR" references
+                   (iii) their Kessler similarity w_ij is >= "WTHR"
+              A vertex has two attributes: number of shared references 
+                                           and the Kessler similarity     
+    The Kessler similarity is defined as: 
+                       
+                  # of common references between pub_id_i and pub_id_j
+         w_ij = ---------------------------------------------------------
+                sqrt(# references of pub_id_i * # references of pub_id_j)
+                                 
+    It returns the networkx object G
+    '''
+     
+    # Standard library import
+    from collections import defaultdict
+    from more_itertools import distinct_combinations
+    from pathlib import Path
+    
+    # 3rd party import
+    import math
+    import networkx as nx
+    import pandas as pd
+
+
+    # The references and their ids are extracted from the file articles.dat (tsv format)
+    # ---------------------------------------------------------------------------------------
+
+    df_article = pd.read_csv(in_dir / Path(DIC_OUTDIR_PARSING['A']),
+                 sep='\t',
+                 header=None,
+                 usecols=[0,1,2,3,4,5]).fillna(0).astype(str)
+    df_article.columns = ['pub_id','first_author','year','journal','volume','page']
+
+    table_art = df_article.apply(lambda row : ", ".join(row[1:]),axis=1) # Builds ref: "author, year, journal, volume, page"
+                                                                     # ex:"Gordon P, 2004, SCIENCE, 306, 496"
+    table_art = [x.replace(', 0','') for x in table_art] # takes care of the unknown volume and/or page number
+                                                 # ex: "Ahn H., 2010,THESIS"
+    df_article['label_article'] = table_art
+
+    df_article['pub_id'] = pd.to_numeric(df_article['pub_id'])
+
+
+
+    # 1- Creates the dict named ref_table = {ref A: [list of article id (pub_id) citing ref A]}
+    # ex : ref_table = {'Bellouard Q, 2017, INT. J. HYDROG. ENERGY, 42, 13486': [0, 50],...}
+    # 2- creates the dict named nR = {pub_id: number of references of pub_id}
+    # ---------------------------------------------------------------------------------------
+
+    df_reference = pd.read_csv(in_dir / Path(DIC_OUTDIR_PARSING['R']),
+                               sep='\t',
+                               header = None,
+                               usecols=[0,1,2,3,4,5],
+                               na_filter=False).astype(str)
+    df_reference.columns = ['pub_id','first_author','year','journal','volume','page']
+
+    table = df_reference.apply(lambda row : ", ".join(row[1:]), axis=1) # Builds ref: "author, year, journal, volume, page"
+                                                                        # ex:"Gordon P, 2004, SCIENCE, 306, 496"
+    table = [x.replace(', 0','') for x in table] # takes care of the unknown volume and/or page number
+                                                 # ex: "Ahn H., 2010,THESIS"
+    df_reference['label_ref'] = table
+
+    df_reference['pub_id'] = pd.to_numeric(df_reference['pub_id'])
+
+    nR = df_reference.groupby('pub_id').count().to_dict()['first_author']
+
+    ref_table = {x[0]:x[1].tolist() for x in df_reference.groupby('label_ref')['pub_id']}
+
+
+    # Builds the dict of dicts BC_table such as:
+    #   BC_table = {pub_id_i:{pub_id_j: number of common references of pub_id_i and pub_id_j,...},...}
+    # ex : BC_table = {0: {50: 8, 55: 2, 121: 2, 10: 2},...}
+    #   pub_id 0 has 8 common references with pub_id 50; pub_id 0 has 2 common references with pub_id 55
+    #----------------------------------------------------------------------------------------------
+
+    BC_table = {}
+    for reference in ref_table:
+        if len(ref_table[reference]) >= RTUTHR:  # The reference is cited more than RTUTHR-1 times
+            for pub_id_i,pub_id_j  in distinct_combinations(ref_table[reference], 2):
+                if pub_id_i not in BC_table:
+                    BC_table[pub_id_i] = dict()
+                if pub_id_j not in BC_table[pub_id_i]:
+                    BC_table[pub_id_i][pub_id_j] = 0
+                BC_table[pub_id_i][pub_id_j] += 1   
+                
+    # Builds the graph netwokx objet G with edge atributes:
+    #    1-   the Kessler similarity  w_ij
+    #    2-   the number of common references between pub_id_i and pub_id_j                                 
+    #----------------------------------------------------------------------------------------------
+
+    G = nx.Graph()
+    TOTW = 0  # cummulative Kessler similarity
+    for pub_id_i in BC_table:
+        for pub_id_j in BC_table[pub_id_i]:
+            w_ij = (1.0 * BC_table[pub_id_i][pub_id_j]) \
+                   / math.sqrt(nR[pub_id_i] * nR[pub_id_j]) # Kessler similarity
+            if (
+                (BC_table[pub_id_i][pub_id_j] >= BCTHR) # Number of common references 
+                                                        #   between id_i and id_j>=BCTHR
+                and (nR[pub_id_i] >= NRTHR)             # Number of references of id_i>=NRTHR (default=1)
+                and (nR[pub_id_j] >= NRTHR)             # Number of references of id_j>=NRTHR (default=1)
+                and (w_ij >= WTHR)                      # Kessler similarity >=WTHR (default=0)
+            ):
+                TOTW += w_ij
+                G.add_edge(pub_id_i, pub_id_j, weight=w_ij, nc=BC_table[pub_id_i][pub_id_j])
+                
+    node_label = {x:df_article.loc[df_article['pub_id'] == x,'label_article'] for x in G.nodes}
+    nx.set_node_attributes(G,node_label,'label')  
+    nx.set_node_attributes(G,nR,'nbr_references')
+    
+    dic_graph_carac = {}            
+    h = dict(G.degree).values()
+    dic_graph_carac['avg_degree'] = sum(h) * 1.0 / len(h)
+    dic_graph_carac['avg_weight'] = 2 * TOTW * 1.0 / (len(G.nodes()) * (len(G.nodes()) - 1))
+   
+    return G,dic_graph_carac
+
+def build_louvain_partition(G):
+    
+    '''Computes graph G partition into communities using Louvain algorithm.
+    The attribute community is added to the nodes.
+    '''
+    
+    # 3rd party import
+    import community as community_louvain
+    import networkx as nx
+    
+    # Compute the best partition : {pub_id:community_id}
+    partition = community_louvain.best_partition(G)
+    
+    nx.set_node_attributes(G,partition,'community_id')
+    
+    return G,partition
+
+
+def plot_coupling_graph(G,partition,dic_graph_carac,nodes_number_max=1):
+    
+    
+    # Plots the result coloring each node according to its community
+    # nodes_number_max (default = 1): minimum number of nodes in a community 
+    # to keep the community on the plot 
+    # The layout is fixed to "spring_layout"
+    # ----------------------------------------------------------------
+    
+    # 3rd party import
+    import matplotlib.cm as cm
+    import matplotlib.pyplot as plt
+    import networkx as nx
+    import pandas as pd
+    
+    
+    
+    # Suppress communities with a number of nodes less than nodes_number_max
+    df = pd.DataFrame(list(partition.items()),columns = ['pub_id','community_id']) 
+    dg = df.groupby('community_id').count().reset_index()
+    community_to_discard = list(dg[dg['pub_id']<nodes_number_max ] ['community_id'])
+    nodes_to_dicard = list(df.query('community_id in @community_to_discard')['pub_id'])
+    partition_number = max(partition.values()) - len(community_to_discard)
+    G.remove_nodes_from(nodes_to_dicard)
+    new_partition = {key:value for key,value in partition.items()
+                 if value not in community_to_discard}
+    
+    # Draw the graph
+    pos = nx.spring_layout(G)
+    # color the nodes according to their partition
+    
+    cmap = cm.get_cmap('viridis',partition_number + 1)
+    fig = plt.figure(figsize=(15,15))
+    nx.draw_networkx_nodes(G, pos, new_partition.keys(), node_size=250,
+                           cmap=cmap, node_color=list(new_partition.values()))
+    nx.draw_networkx_edges(G, pos, alpha=0.9,width=1.5, edge_color='k', style='solid',)
+
+    labels=nx.draw_networkx_labels(G,pos=pos,font_size=8,
+                                   font_color='w')
+    plt.title(f'Coupling graph \nAverage degree: {dic_graph_carac["avg_degree"]:.2f}\
+                Average weight: {dic_graph_carac["avg_weight"]:.5f}',fontsize=23,fontweight="bold")
+    plt.show()
+    
+
+def save_communities_xls(partition,in_dir,out_dir):
+    
+    '''Saves the "articles.dat" file as a .xlsx file adding the column community_id
+    of each article of the corpus after the Louvain partitioning.
+    '''
+    
+    # Standard library imports
+    from pathlib import Path
+    
+    # 3rd party import
+    import pandas as pd
+    
+    df_articles = pd.read_csv(in_dir / Path(DIC_OUTDIR_PARSING['A']),sep="\t",header=None)
+
+    df_articles['communnity'] = df_articles[0].map(partition) # Adds column community
+    df_articles.sort_values(by=['communnity',0],inplace=True)
+    df_articles.columns = ['pub_id','first_author','year','journal',
+                           'volume','page','doi','pub_type','language','title','ISSN','community_id']
+    df_articles.to_excel(out_dir / Path(FILENAME_XLSX))
+
+    
+def save_communities_gexf(G,save_dir):
+    
+    '''Save the graph "G" at Gephy (.gexf) format using full path "save_dir"
+    '''
+    
+    # Standard library imports
+    from pathlib import Path
+    
+    # 3rd party imports
+    import networkx as nx
+    
+    nx.write_gexf(G,save_dir / Path(FILENAME_GEXF))
+    
 
 def runpythonlouvain(G):
     
@@ -116,218 +334,3 @@ def networkx_to_louvain_format(communities):
     '''
     a = {idx:community for idx,community in enumerate(communities)}
     return {val:com_id for com_id in a.keys() for val in a[com_id]} 
-
-
-def build_coupling_graph(in_dir):
-    
-    '''Builds a graph(N,V) where:
-            - N is the set of the kept article id
-            - V is the set of vertices. A vertex links two articles if and only if:
-                   (i)  they share at least "NRTHR" references
-                   (ii) there the Kessler similarity w_ij is >= "WTHR"
-                   
-    The Kessler similarity is defined as: 
-                       
-                  # of common references between pub_id_i and pub_id_j
-         w_ij = ---------------------------------------------------------
-                sqrt(# references of pub_id_i * # references of pub_id_j)
-                                 
-    
-    '''
-     
-    # Standard library import
-    from collections import defaultdict
-    from more_itertools import distinct_combinations
-    from pathlib import Path
-    
-    # 3rd party import
-    import math
-    import networkx as nx
-    import pandas as pd
-
-
-    # The references and their ids are extracted from the file articles.dat (tsv format)
-    # ---------------------------------------------------------------------------------------
-
-    df_article = pd.read_csv(in_dir / Path(DIC_OUTDIR_PARSING['A']),
-                 sep='\t',
-                 header=None,
-                 usecols=[0,1,2,3,4,5]).fillna(0).astype(str)
-    df_article.columns = ['pub_id','first_author','year','journal','volume','page']
-
-    table = df_article.T.apply(lambda row : ", ".join(row[1:] )) # Builds ref: "author, year, journal, volume, page"
-                                                                       # ex:"Gordon P, 2004, SCIENCE, 306, 496"
-    table = [x.replace(', 0','') for x in table] # takes care of the unknown volume and/or page number
-                                                 # ex: "Ahn H., 2010,THESIS"
-    df_article['label_article'] = table
-
-    df_article['pub_id'] = pd.to_numeric(df_article['pub_id'])
-
-
-
-    # 1- Creates the dict named ref_table = {ref A: [list of article id (pub_id) citing ref A]}
-    # ex : ref_table = {'Bellouard Q, 2017, INT. J. HYDROG. ENERGY, 42, 13486': [0, 50],...}
-    # 2- creates the dict named nR = {pub_id: number of references of pub_id}
-    # ---------------------------------------------------------------------------------------
-
-    df_reference = pd.read_csv(in_dir / Path(DIC_OUTDIR_PARSING['R']),
-                               sep='\t',
-                               header = None,
-                               usecols=[0,1,2,3,4,5],
-                               na_filter=False).astype(str)
-    df_reference.columns = ['pub_id','first_author','year','journal','volume','page']
-
-    table = df_reference.T.apply(lambda row : ", ".join(row[1:] )) # Builds ref: "author, year, journal, volume, page"
-                                                                   # ex:"Gordon P, 2004, SCIENCE, 306, 496"
-    table = [x.replace(', 0','') for x in table] # takes care of the unknown volume and/or page number
-                                                 # ex: "Ahn H., 2010,THESIS"
-    df_reference['label_ref'] = table
-
-    df_reference['pub_id'] = pd.to_numeric(df_reference['pub_id'])
-
-    nR = df_reference.groupby('pub_id').count().to_dict()['first_author']
-
-    ref_table = {x[0]:x[1] for x in df_reference.groupby('label_ref')['pub_id']}
-
-
-    # Builds the dict of dicts BC_table such as:
-    #   BC_table = {pub_id_i:{pub_id_j: number of common references of pub_id_i and pub_id_j,...},...}
-    # ex : BC_table = {0: {50: 8, 55: 2, 121: 2, 10: 2},...}
-    #   pub_id 0 has 8 common references with pub_id 50; pub_id 0 has 2 common references with pub_id 55
-    #----------------------------------------------------------------------------------------------
-
-    BC_table = {}
-    for reference in ref_table:
-        if len(ref_table[reference]) >= RTUTHR:  # The reference is cited more than RTUTHR-1 times
-            for pub_id_i,pub_id_j  in distinct_combinations(ref_table[reference], 2):
-                if pub_id_i not in BC_table:
-                    BC_table[pub_id_i] = dict()
-                if pub_id_j not in BC_table[pub_id_i]:
-                    BC_table[pub_id_i][pub_id_j] = 0
-                BC_table[pub_id_i][pub_id_j] += 1   
-                
-    # Builds the graph netwokx objet G with edge atributes:
-    #    1-   the Kessler similarity  w_ij
-    #    2-   the number of common references between pub_id_i and pub_id_j                                 
-    #----------------------------------------------------------------------------------------------
-
-    G = nx.Graph()
-    TOTW = 0  # cummulative Kessler similarity
-    for pub_id_i in BC_table:
-        for pub_id_j in BC_table[pub_id_i]:
-            w_ij = (1.0 * BC_table[pub_id_i][pub_id_j]) \
-                   / math.sqrt(nR[pub_id_i] * nR[pub_id_j]) # Kessler similarity
-            if (
-                (BC_table[pub_id_i][pub_id_j] >= BCTHR) # Number of common references 
-                                                        #   between id_i and id_j>=BCTHR
-                and (nR[pub_id_i] >= NRTHR)             # Number of references of id_i>=NRTHR (default=1)
-                and (nR[pub_id_j] >= NRTHR)             # Number of references of id_j>=NRTHR (default=1)
-                and (w_ij >= WTHR)                      # Kessler similarity >=WTHR (default=0)
-            ):
-                TOTW += w_ij
-                G.add_edge(pub_id_i, pub_id_j, weight=w_ij, nc=BC_table[pub_id_i][pub_id_j])
-                
-    node_label = {x:df_article.loc[df_article['pub_id'] == x,'label_article'] for x in G.nodes}
-    nx.set_node_attributes(G,node_label,'label')  
-    nx.set_node_attributes(G,nR,'nbr_references')
-    
-    dic_graph_carac = {}            
-    h = dict(G.degree).values()
-    dic_graph_carac['avg_degree'] = sum(h) * 1.0 / len(h)
-    dic_graph_carac['avg_weight'] = 2 * TOTW * 1.0 / (len(G.nodes()) * (len(G.nodes()) - 1))
-   
-    return G,dic_graph_carac
-
-def build_louvain_partition(G):
-    
-    '''Computes graph G partition into communities using Louvain algorithm.
-    The attribute community is added to the nodes.
-    '''
-    
-    # 3rd party import
-    import community as community_louvain
-    import networkx as nx
-    
-    # Compute the best partition : {pub_id:community_id}
-    partition = community_louvain.best_partition(G)
-    
-    nx.set_node_attributes(G,partition,'community_id')
-    
-    return G,partition
-
-
-def plot_coupling_graph(G,partition,dic_graph_carac,nodes_number_max=10):
-    
-    
-    # Plots the result coloring each node according to its community
-    # The layout is fixed to "spring_layout"
-    # ----------------------------------------------------------------
-    
-    # 3rd party import
-    import matplotlib.cm as cm
-    import matplotlib.pyplot as plt
-    import networkx as nx
-    import pandas as pd
-    
-    
-    
-    # Suppress communities with a number of nodes less than nodes_number_max
-    df = pd.DataFrame(list(partition.items()),columns = ['pub_id','community_id']) 
-    dg = df.groupby('community_id').count().reset_index()
-    community_to_discard = list(dg[dg['pub_id']<nodes_number_max ] ['community_id'])
-    nodes_to_dicard = list(df.query('community_id in @community_to_discard')['pub_id'])
-    partition_number = max(partition.values()) - len(community_to_discard)
-    G.remove_nodes_from(nodes_to_dicard)
-    new_partition = {key:value for key,value in partition.items()
-                 if value not in community_to_discard}
-    
-    # Draw the graph
-    pos = nx.spring_layout(G)
-    # color the nodes according to their partition
-    
-    cmap = cm.get_cmap('viridis',partition_number + 1)
-    fig = plt.figure(figsize=(15,15))
-    nx.draw_networkx_nodes(G, pos, new_partition.keys(), node_size=250,
-                           cmap=cmap, node_color=list(new_partition.values()))
-    nx.draw_networkx_edges(G, pos, alpha=0.9,width=1.5, edge_color='k', style='solid',)
-
-    labels=nx.draw_networkx_labels(G,pos=pos,font_size=8,
-                                   font_color='w')
-    plt.title(f'Coupling graph \nAverage degree: {dic_graph_carac["avg_degree"]:.2f}\
-                Average weight: {dic_graph_carac["avg_weight"]:.5f}',fontsize=23,fontweight="bold")
-    plt.show()
-    
-
-def save_communities_xls(partition,in_dir,out_dir):
-    
-    '''Saves the "articles.dat" file as a .xlsx file adding the column community_id
-    of each article of the corpus after the Louvain partitioning.
-    '''
-    
-    # Standard library imports
-    from pathlib import Path
-    
-    # 3rd party import
-    import pandas as pd
-    
-    df_articles = pd.read_csv(in_dir / Path(DIC_OUTDIR_PARSING['A']),sep="\t",header=None)
-
-    df_articles['communnity'] = df_articles[0].map(partition) # Adds column community
-    df_articles.sort_values(by=['communnity',0],inplace=True)
-    df_articles.columns = ['pub_id','first_author','year','journal',
-                           'volume','page','doi','pub_type','language','title','ISSN','community_id']
-    df_articles.to_excel(out_dir / Path(FILENAME_XLSX))
-
-    
-def save_communities_gexf(G,save_dir):
-    
-    '''Save the graph "G" at Gephy (.gexf) format using full path "save_dir"
-    '''
-    
-    # Standard library imports
-    from pathlib import Path
-    
-    # 3rd party imports
-    import networkx as nx
-    
-    nx.write_gexf(G,save_dir / Path(FILENAME_GEXF))
