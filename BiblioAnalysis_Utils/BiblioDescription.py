@@ -1,6 +1,9 @@
 __all__ = ['NMAX_NODES','LABEL_MEANING', 'describe_corpus', 'plot_graph', 'plot_counts', 'plot_histo', 'treemap_item']
 
 from .BiblioParsingGlobals import DIC_OUTDIR_PARSING
+__all__ = ['NMAX_NODES','LABEL_MEANING', 'describe_corpus', 'plot_graph', 'plot_counts', 'plot_histo', 'treemap_item']
+
+from .BiblioParsingGlobals import DIC_OUTDIR_PARSING
 from .BiblioParsingGlobals import LABEL_MEANING
 
 NMAX_NODES = 100 # maximum number of nodes to keep
@@ -170,6 +173,104 @@ def describe_item(df,item,dic_distrib_item,list_cooc_nodes,list_cooc_edges ,freq
         list_cooc_edges.extend(liste_edge)
     
     del df_freq, q_item, p_item
+    
+def process_article(in_dir, out_dir, dic_distrib_item, list_cooc_nodes, list_cooc_edges):
+    
+    from pathlib import Path
+    import pandas as pd
+    
+    try:
+        df_articles = pd.read_csv(in_dir/Path(DIC_INDIR_DESCRIPTION['A']),
+                                  sep='\t',
+                                  header=None,
+                                  usecols=[0,2,3,7,8])
+
+        df_articles.rename (columns = {0:'pub_id',
+                                       3:'Source title',
+                                       2:'Year',
+                                       7:'Document Type',
+                                       8:'Language of Original Document',},
+                           inplace = True)
+
+
+        dic_distrib_item["N"] = len(df_articles)
+
+        item = "Y"                       # Deals with years
+        describe_item(df_articles[['pub_id','Year']],
+                       item,
+                       dic_distrib_item,
+                       list_cooc_nodes,
+                       list_cooc_edges,
+                       out_dir/Path(DIC_OUTDIR_DESCRIPTION[item]))
+
+        item = "J"                     # Deals with journals title (ex: PHYSICAL REVIEW B)
+        describe_item(df_articles[['pub_id','Source title']],
+                      item,
+                      dic_distrib_item,
+                      list_cooc_nodes,
+                      list_cooc_edges,
+                      out_dir/Path(DIC_OUTDIR_DESCRIPTION[item]))
+
+        item = "DT"                    # Deal with doc type (ex: article, review)
+        describe_item(df_articles[['pub_id','Document Type']],
+                      item,
+                      dic_distrib_item,
+                      list_cooc_nodes,
+                      list_cooc_edges,
+                      out_dir/Path(DIC_OUTDIR_DESCRIPTION[item]))
+
+        item = "LA"                   # Deal with language
+        describe_item(df_articles[['pub_id','Language of Original Document']],
+                      item,
+                      dic_distrib_item,
+                      list_cooc_nodes,
+                      list_cooc_edges,
+                      out_dir/Path(DIC_OUTDIR_DESCRIPTION[item]))
+        del df_articles
+    except pd.errors.EmptyDataError:
+        print(f'Note: file {DIC_INDIR_DESCRIPTION["A"]} was empty. Skipping')
+        
+def process_references(in_dir, out_dir, dic_distrib_item, list_cooc_nodes, list_cooc_edges):
+    
+    from pathlib import Path
+    import re
+    
+    import pandas as pd
+    
+    try:
+        item ='R'
+        find_0 = re.compile(r',\s?0')
+        df = pd.read_csv(in_dir / Path(DIC_INDIR_DESCRIPTION[item]),
+                         sep='\t',
+                         header=None,
+                         usecols=[0,1,2,3,4,5] ).astype(str)
+        
+
+        df['ref'] = df.apply(lambda row:re.sub(find_0,'', ', '.join(row[1:-1]))
+                                     ,axis=1)
+                         
+        describe_item(df[[0,'ref']],
+                      item,
+                      dic_distrib_item,
+                      list_cooc_nodes,
+                      list_cooc_edges,
+                      out_dir/Path(DIC_OUTDIR_DESCRIPTION[item]))
+                         
+        item = 'RJ'
+        describe_item(df[[0,3]],
+                      item,
+                      dic_distrib_item,
+                      list_cooc_nodes,
+                      list_cooc_edges,
+                      out_dir/Path(DIC_OUTDIR_DESCRIPTION[item]))
+
+
+        del df    
+    
+    except pd.errors.EmptyDataError:
+        print(f'Note: file {DIC_INDIR_DESCRIPTION["R"]} was empty. Skipping')
+
+    
 
 def process_item(in_dir, out_dir, item, usecols, dic_distrib_item, list_cooc_nodes, list_cooc_edges):
     
@@ -188,8 +289,9 @@ def process_item(in_dir, out_dir, item, usecols, dic_distrib_item, list_cooc_nod
                       list_cooc_edges,
                       out_dir/Path(DIC_OUTDIR_DESCRIPTION[item]))
         del df
-    except:
-        print(f'no file {DIC_INDIR_DESCRIPTION[item]} found')  
+        
+    except pd.errors.EmptyDataError:
+        print(f'Note: file {DIC_INDIR_DESCRIPTION[item]} was empty. Skipping') 
 
 def describe_corpus(in_dir, out_dir, verbose):
 
@@ -228,9 +330,6 @@ def describe_corpus(in_dir, out_dir, verbose):
 
     import json
     from pathlib import Path
-    import re
-
-    import pandas as pd
 
     dic_distrib_item = {}
     list_cooc_nodes = []   # Only one .json file is used to describe all the graph
@@ -238,57 +337,11 @@ def describe_corpus(in_dir, out_dir, verbose):
 
 
 
-    with open(in_dir/Path("database.dat" ), "r") as file:
+    with open(in_dir/Path("database.dat" ), "r") as file:  # read the database type wos/scopus  
         dic_distrib_item["database"] = file.read().strip("\n")
     
-    item = 'A'
-    df_articles = pd.read_csv(in_dir/Path(DIC_INDIR_DESCRIPTION[item]),
-                              sep='\t',
-                              header=None,
-                              usecols=[0,2,3,7,8])
-    
-    df_articles.rename (columns = {0:'pub_id',
-                                   3:'Source title',
-                                   2:'Year',
-                                   7:'Document Type',
-                                   8:'Language of Original Document',},
-                       inplace = True)
-    
-
-    dic_distrib_item["N"] = len(df_articles)
-
-    item = "Y"                       # Deals with years
-    describe_item(df_articles[['pub_id','Year']],
-                   item,
-                   dic_distrib_item,
-                   list_cooc_nodes,
-                   list_cooc_edges,
-                   out_dir/Path(DIC_OUTDIR_DESCRIPTION[item]))
-
-    item = "J"                     # Deals with journals title (ex: PHYSICAL REVIEW B)
-    describe_item(df_articles[['pub_id','Source title']],
-                  item,
-                  dic_distrib_item,
-                  list_cooc_nodes,
-                  list_cooc_edges,
-                  out_dir/Path(DIC_OUTDIR_DESCRIPTION[item]))
-
-    item = "DT"                    # Deal with doc type (ex: article, review)
-    describe_item(df_articles[['pub_id','Document Type']],
-                  item,
-                  dic_distrib_item,
-                  list_cooc_nodes,
-                  list_cooc_edges,
-                  out_dir/Path(DIC_OUTDIR_DESCRIPTION[item]))
-
-    item = "LA"                   # Deal with language
-    describe_item(df_articles[['pub_id','Language of Original Document']],
-                  item,
-                  dic_distrib_item,
-                  list_cooc_nodes,
-                  list_cooc_edges,
-                  out_dir/Path(DIC_OUTDIR_DESCRIPTION[item]))
-    del df_articles
+    # Deals with years, journals title, doc type and language
+    process_article(in_dir, out_dir, dic_distrib_item, list_cooc_nodes, list_cooc_edges)
 
     item = 'AU'                   # Deals with authors
     process_item(in_dir, out_dir,item,[0,2],dic_distrib_item,list_cooc_nodes,list_cooc_edges)
@@ -305,39 +358,8 @@ def describe_corpus(in_dir, out_dir, verbose):
     item = 'CU'                   # Deals with countries
     process_item(in_dir, out_dir,item,[0,2],dic_distrib_item,list_cooc_nodes,list_cooc_edges)
 
-    item = 'R'
-    try:
-        find_0 = re.compile(r',\s?0')
-        df = pd.read_csv(in_dir / Path(DIC_INDIR_DESCRIPTION[item]),
-                         sep='\t',
-                         header=None,
-                         usecols=[0,1,2,3,4,5] ).astype(str)
-        
-
-        df['ref'] = df.apply(lambda row:re.sub(find_0,'', ', '.join(row[1:-1]))
-                                     ,axis=1)
-                         
-        describe_item(df[[0,'ref']],
-                      item,
-                      dic_distrib_item,
-                      list_cooc_nodes,
-                      list_cooc_edges,
-                      out_dir/Path(DIC_OUTDIR_DESCRIPTION[item]))
-                         
-        item = 'RJ'
-        describe_item(df[[0,3]],
-                      item,
-                      dic_distrib_item,
-                      list_cooc_nodes,
-                      list_cooc_edges,
-                      out_dir/Path(DIC_OUTDIR_DESCRIPTION[item]))
-
-
-        del df    
-    
-    except:
-        print('no file references.dat found')
-
+    # Deals with references
+    process_references(in_dir, out_dir, dic_distrib_item, list_cooc_nodes, list_cooc_edges)
     
     item = 'AK'                   # Deals with authors keywords
     process_item(in_dir, out_dir,item,[0,1],dic_distrib_item,list_cooc_nodes,list_cooc_edges)

@@ -112,9 +112,8 @@ def filter_pub_id(combine,exclusion,filter_param,in_dir):
                           'LA',        # language
                           ]
         if item == 'Y': #years selection
-            Ymin = filter_param['Y']['ymin']
-            Ymax = filter_param['Y']['ymax']
-            keepid[item] = set(df.loc[(df[item] >= Ymin) & (df[item]<=Ymax)].index)
+            year = filter_param['Y']
+            keepid[item] = set(df.query('Y in @year').index)
 
         elif item == 'LA': #language selection
             languages = filter_param['LA']
