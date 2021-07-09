@@ -117,7 +117,6 @@ def build_coupling_graph(in_dir):
     #----------------------------------------------------------------------------------------------
 
     G = nx.Graph()
-    TOTW = 0  # cummulative Kessler similarity
     for pub_id_i in BC_table:
         for pub_id_j in BC_table[pub_id_i]:
             w_ij = (1.0 * BC_table[pub_id_i][pub_id_j]) \
@@ -129,19 +128,13 @@ def build_coupling_graph(in_dir):
                 and (nR[pub_id_j] >= NRTHR)             # Number of references of id_j>=NRTHR (default=1)
                 and (w_ij >= WTHR)                      # Kessler similarity >=WTHR (default=0)
             ):
-                TOTW += w_ij
                 G.add_edge(pub_id_i, pub_id_j, weight=w_ij, nc=BC_table[pub_id_i][pub_id_j])
                 
-    node_label = {x:df_article.loc[df_article['pub_id'] == x,'label_article'] for x in G.nodes}
+    node_label = {x:df_article.loc[df_article['pub_id'] == x,'label_article'].tolist()[0] for x in G.nodes}
     nx.set_node_attributes(G,node_label,'label')  
     nx.set_node_attributes(G,nR,'nbr_references')
-    
-    dic_graph_carac = {}            
-    h = dict(G.degree).values()
-    dic_graph_carac['avg_degree'] = sum(h) * 1.0 / len(h)
-    dic_graph_carac['avg_weight'] = 2 * TOTW * 1.0 / (len(G.nodes()) * (len(G.nodes()) - 1))
    
-    return G,dic_graph_carac
+    return G
 
 def build_louvain_partition(G):
     
@@ -161,7 +154,7 @@ def build_louvain_partition(G):
     return G,partition
 
 
-def plot_coupling_graph(G,partition,dic_graph_carac,nodes_number_max=1):
+def plot_coupling_graph(G,partition,nodes_number_max=1):
     
     
     # Plots the result coloring each node according to its community
@@ -198,10 +191,15 @@ def plot_coupling_graph(G,partition,dic_graph_carac,nodes_number_max=1):
                            cmap=cmap, node_color=list(new_partition.values()))
     nx.draw_networkx_edges(G, pos, alpha=0.9,width=1.5, edge_color='k', style='solid',)
 
-    labels=nx.draw_networkx_labels(G,pos=pos,font_size=8,
-                                   font_color='w')
-    plt.title(f'Coupling graph \nAverage degree: {dic_graph_carac["avg_degree"]:.2f}\
-                Average weight: {dic_graph_carac["avg_weight"]:.5f}',fontsize=23,fontweight="bold")
+    labels = nx.draw_networkx_labels(G,pos=pos,font_size=8,
+                                     font_color='w')
+                                     
+    node_degree = dict(G.degree).values()
+    mean_degree = sum(node_degree) * 1.0 / len(node_degree)
+    mean_weight = 2*sum([d[-1]['weight'] for d in G.edges(data=True)])/(len(G.nodes()) * (len(G.nodes()) - 1))
+                                   
+    plt.title(f'Coupling graph \nAverage degree: {mean_degree:.2f}\
+                Average weight: {mean_weight:.5f}',fontsize=23,fontweight="bold")
     plt.show()
     
 
