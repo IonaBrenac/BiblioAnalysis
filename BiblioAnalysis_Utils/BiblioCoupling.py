@@ -129,11 +129,21 @@ def build_coupling_graph(in_dir):
                 and (w_ij >= WTHR)                      # Kessler similarity >=WTHR (default=0)
             ):
                 G.add_edge(pub_id_i, pub_id_j, weight=w_ij, nc=BC_table[pub_id_i][pub_id_j])
-                
-    node_label = {x:df_article.loc[df_article['pub_id'] == x,'label_article'].tolist()[0] for x in G.nodes}
-    nx.set_node_attributes(G,node_label,'label')  
+    
     nx.set_node_attributes(G,nR,'nbr_references')
-   
+    
+    node_label = {x:df_article.loc[df_article['pub_id'] == x,'label_article'].tolist()[0] for x in G.nodes}
+    nx.set_node_attributes(G,node_label,'label')
+    
+    node_first_author = {x:df_article.loc[df_article['pub_id'] == x,'first_author'].tolist()[0] for x in G.nodes}
+    nx.set_node_attributes(G,node_first_author,'first_author')
+    
+    node_year = {x:df_article.loc[df_article['pub_id'] == x,'year'].tolist()[0] for x in G.nodes}
+    nx.set_node_attributes(G,node_year,'year')
+    
+    node_journal = {x:df_article.loc[df_article['pub_id'] == x,'journal'].tolist()[0] for x in G.nodes}
+    nx.set_node_attributes(G,node_journal,'journal')
+
     return G
 
 def build_louvain_partition(G):

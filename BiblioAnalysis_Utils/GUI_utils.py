@@ -618,7 +618,8 @@ def filters_selection(filters_filename,parsing_dir) :
         
     var_union_inter = tk.IntVar()
     var_exclusion = tk.IntVar()
-    tk.Label(combine_choice, text='Choose a combination mode :').grid(column=0, row=1, padx=8, pady=4)
+    tk.Label(combine_choice, text='Choose a combination mode\n between at least 2 items :'
+            ).grid(column=0, row=1, padx=8, pady=4)
     
     button_union = tk.Radiobutton(combine_choice,
                                   text = 'Union',
