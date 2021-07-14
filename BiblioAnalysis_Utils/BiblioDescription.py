@@ -1,10 +1,8 @@
 __all__ = ['NMAX_NODES','LABEL_MEANING', 'describe_corpus', 'plot_graph', 'plot_counts', 'plot_histo', 'treemap_item']
 
 from .BiblioParsingGlobals import DIC_OUTDIR_PARSING
-__all__ = ['NMAX_NODES','LABEL_MEANING', 'describe_corpus', 'plot_graph', 'plot_counts', 'plot_histo', 'treemap_item']
-
-from .BiblioParsingGlobals import DIC_OUTDIR_PARSING
 from .BiblioParsingGlobals import LABEL_MEANING
+ACRONYME_MEANING = dict(zip(LABEL_MEANING.values(),LABEL_MEANING.keys()))
 
 NMAX_NODES = 100 # maximum number of nodes to keep
 
@@ -20,7 +18,7 @@ DIC_OUTDIR_DESCRIPTION_ADD = {'DT':'freq_doctypes.dat',
 
 DIC_OUTDIR_DESCRIPTION = res = {**DIC_OUTDIR_DESCRIPTION, **DIC_OUTDIR_DESCRIPTION_ADD}
 
-# Buids a cooccurrence graph only for thes labels
+# Builds a cooccurrence graph only for these labels
 VALID_LABEL_GRAPH = ['AU', 'CU', 'S', 'S2', 'IK', 'R', 'RJ', 'I', 'AK', 'TK']
 
 def frequency_analysis(df):
@@ -490,7 +488,7 @@ def plot_counts(item_counts, file_name_counts):
     plt.xticks([])
     plt.show()
 
-def plot_histo(in_dir,item):
+def plot_histo(item_label, file_distrib_item):
 
     '''Plots the histograms of the p and q statistics (see frequency_analysis for more details).
     The data are extracted from the json file DISTRIBS_itemuse.json
@@ -501,31 +499,40 @@ def plot_histo(in_dir,item):
     import matplotlib.pyplot as plt
 
 
-    file_distrib_item = in_dir / Path('DISTRIBS_itemuse.json')
+    #file_distrib_item = in_dir / Path('DISTRIBS_itemuse.json')
     with open(file_distrib_item, "r") as read_file:
                     distrib_item = json.load(read_file)
-
+    
+    # Convert item label in acronyme using the global dictionary ACRONYME_MEANING
+    item = ACRONYME_MEANING[item_label.capitalize()]
+    
     #        Plots the q histogram
     #------------------------------------------------------
     q = distrib_item['q' + item.capitalize()]
     print("q",q)
+    xmin=q[0][0]-0.5
+    xmax= q[0][len(q[0])-1]+0.5
     fig = plt.figure(figsize=(15,7))
     plt.subplot(1,2,1)
     _ =plt.bar(q[0], q[1] , width=0.8, bottom=None)
-    plt.xlabel(f'# {LABEL_MEANING[item]}/article')
-    plt.ylabel(f'# articles')
-    plt.title(f'Histogram {LABEL_MEANING[item]}')
+    plt.xlim(xmin,xmax)
+    plt.xlabel(f'Number of {LABEL_MEANING[item]} / Article')
+    plt.ylabel(f'Number of articles')
+    plt.title(f'{LABEL_MEANING[item]} histogram')
 
     #        Plots the p histogram
     #------------------------------------------------------
     p = distrib_item['p' + item.capitalize()]
     print("p",p)
+    xmin=p[0][0]-0.5
+    xmax= p[0][len(p[0])-1]+0.5
     plt.subplot(1,2,2)
     _ = plt.bar(p[0], p[1] , width=0.8, bottom=None)
-    plt.xlabel(f'# articles / {LABEL_MEANING[item]}')
-    plt.ylabel(f'# {LABEL_MEANING[item]}')
-    plt.title(f'Histogram {LABEL_MEANING[item]}')
-    
+    plt.xlim(xmin,xmax)
+    plt.xlabel(f'Number of articles / {LABEL_MEANING[item]}')
+    plt.ylabel(f'Number of {LABEL_MEANING[item]}')
+    plt.title(f'{LABEL_MEANING[item]} histogram')
+    plt.show()
    
 def treemap_item(item_treemap, file_name_treemap):
     
@@ -561,11 +568,11 @@ def treemap_item(item_treemap, file_name_treemap):
         colors = [cm.viridis(norm(value)) for value in sizes]
         squarify.plot(sizes=sizes, label=alias, alpha=1, color = colors)
         plt.axis('off')
-        plt.title('Frequences for the top '+ str(size_limit) + ' ' + item_treemap + ' over ' + \
+        plt.title('Frequences for the top '+ str(size_limit) + ' ' + item_treemap + ' out of ' + \
                    str(total_size),fontsize=23,fontweight="bold")
         plt.show()
     
-        print(f'{"alias":<6}{item_treemap:<60}{"frequency"}')
+        print(f'{"alias":<6}{item_treemap:<60}{"counts"}')
         for i in range(0, len(alias)):
             print(f'{alias[i]:<6}{labels[i]:<60}{sizes[i]}')
         
