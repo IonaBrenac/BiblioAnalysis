@@ -18,6 +18,7 @@ TREE_MAP_ITEM = [
     ("journalkeywords", 11),
     ("titlekeywords", 12),
     ("authorskeywords", 13),
+    ("authors",14)
 ]
 
 TREE_MAP_ITEM_HELP_TEXT = '''Select the item you want to deal with.

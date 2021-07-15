@@ -2,7 +2,24 @@ __all__ = ['NMAX_NODES','LABEL_MEANING', 'describe_corpus', 'plot_graph', 'plot_
 
 from .BiblioParsingGlobals import DIC_OUTDIR_PARSING
 from .BiblioParsingGlobals import LABEL_MEANING
-ACRONYME_MEANING = dict(zip(LABEL_MEANING.values(),LABEL_MEANING.keys()))
+
+# Conversion of item choice refering to freq_....dat file names in corresponding acronymes
+ACRONYME_MEANING2 = {
+    'years': 'Y',
+    'languages': 'LA',
+    'doctypes': 'DT',
+    'countries': 'CU',
+    'institutions': 'I',
+    'journals': 'J',
+    'references': 'R',
+    'refjournals': 'RJ',
+    'subjects': 'S',
+    'subjects2': 'S2',
+   'journalkeywords': 'IK',
+    'titlekeywords': 'TK',
+    'authorskeywords': 'AK',
+    'authors':'AU'
+}
 
 NMAX_NODES = 100 # maximum number of nodes to keep
 
@@ -504,7 +521,7 @@ def plot_histo(item_label, file_distrib_item):
                     distrib_item = json.load(read_file)
     
     # Convert item label in acronyme using the global dictionary ACRONYME_MEANING
-    item = ACRONYME_MEANING[item_label.capitalize()]
+    item = ACRONYME_MEANING2[item_label]
     
     #        Plots the q histogram
     #------------------------------------------------------
