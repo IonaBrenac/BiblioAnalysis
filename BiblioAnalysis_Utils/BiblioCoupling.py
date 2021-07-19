@@ -1,5 +1,6 @@
 __all__ = ['build_coupling_graph','build_louvain_partition',
-          'plot_coupling_graph','save_communities_xls','save_communities_gexf']
+          'plot_coupling_graph','save_communities_xls','save_communities_gexf',
+          'add_item_attribute']
 
 from .BiblioParsingGlobals import DIC_OUTDIR_PARSING
            
@@ -342,3 +343,124 @@ def networkx_to_louvain_format(communities):
     '''
     a = {idx:community for idx,community in enumerate(communities)}
     return {val:com_id for com_id in a.keys() for val in a[com_id]} 
+    
+def add_item_attribute(G, item, m_max_attrs,
+                       in_dir_freq, in_dir_parsing):
+    '''
+    Adds node attributes to the graph G which nodes are the corpus article.
+    The number of these attributes is limited to m_max_attrs.
+    The attributes correspond to an item choosen among ['AK','IK','TK','S','S2','CU',
+    'I','AU']
+    where: 
+                    'AK': 'freq_authorskeywords.dat',
+                    'IK': 'freq_journalkeywords.dat',
+                    'TK': 'freq_titlekeywords.dat',
+                    'S': 'freq_subjects.dat',
+                    'S2': 'freq_subjects2.dat',
+                    'CU': 'freq_countries.dat',
+                    'I': 'freq_institutions.dat',
+                    'AU': 'freq_authors.dat'.
+    The attributes are labelled item_<i> with i=0,...,m_max_attrs-1.
+    For a given node, labelled article id, the node item_<i> attribute values are 
+    the m_max_attrs topmost itemvalues of the item, in term of frequency, of this node. 
+    The  m_max_attrs attributes are ranked by decreasing frequency values. 
+    The frequency is attached to the itemvalue.
+                    
+    ex: with m_max_attrs=2 and item= 'S2'
+    
+     id            S2_0                          S2_1       
+    125 | Behavioral Sciences(3.90) | Psychology, Biological(1.74)
+    126 | Behavioral Sciences(3.90) | Psychology, Developmental(0.62)
+    109 | Behavioral Sciences(3.90) | unknown
+    238 | Behavioral Sciences(3.90) | Psychology, Multidisciplinary(1.33)
+    470 | Zoology(1.95)             | Psychology, Biological(1.74)
+    
+    Args:
+        G (nx.Graph): coupling graph
+        item (str): item choosen as attribute
+        m_max_attrs (int): maximum number of added node attributes 
+           corresponding to the choosen item
+        in_dir_freq (Path): path to the corpus description folder
+        in_dir_parsing (Path): path to the corpus parsing folder
+        
+    Returns:
+        G (nx.Graph): graph with the added attributes  
+    '''
+
+    # Standard library imports
+    import inspect
+    from pathlib import Path
+
+    # 3rd party imports
+    import networkx as nx
+    import pandas as pd
+
+    # Local imports
+    from .BiblioDescription import DIC_OUTDIR_DESCRIPTION #{item:freq_file_name, ...}
+    from .BiblioCooc import AUTHORIZED_ITEMS_DICT
+    valid_item = AUTHORIZED_ITEMS_DICT.values()
+
+    # Check valid input arguments
+    add_item_attribute.__annotations__ = {'G': nx.Graph, 'item': str, 'm_max_attrs': int,
+                       'in_dir_freq': Path, 'in_dir_parsing': Path, 'return':nx.Graph}
+    assert item in valid_item, f"unknown item {item}"
+    args = inspect.getfullargspec(add_item_attribute).args
+    annotations = inspect.getfullargspec(add_item_attribute).annotations
+    for arg in args:
+        assert isinstance(locals()[arg],annotations[arg]), \
+                f"type {locals()[arg]} should be: {annotations[arg]}"
+
+    # Reads the list of "itemvalues" and their respective frequencies in the folder freq
+    freq_file: Path = in_dir_freq / Path(DIC_OUTDIR_DESCRIPTION[item])
+    df: pd.DataFame = pd.read_csv(freq_file,
+                                  sep=',',
+                                  usecols=[0, 2]) # choose article id,item frequency
+    dic_freq = dict(zip(df['item'],
+                        df['f']))  # Builds dic_freq {itemvalue:frequency,...}
+
+    # Reads the list of articles id and their respective itemvalues in the folder parsing
+    parsing_file: Path = in_dir_parsing / Path(
+        DIC_OUTDIR_DESCRIPTION[item][5:])  #<-- !!
+    usecols = [0, 1]  # to be suppressed in the future by naming columns
+    if item == 'CU' or item == 'AU' or item == 'I':
+        usecols = [0, 2]  # Takes care of countries.dat,
+                          # authors.dat and institutions.dat with 3 columns
+    df: pd.DataFame = pd.read_csv(parsing_file,
+                                  sep='\t',
+                                  header=None,
+                                  usecols=usecols)
+    df.columns = ['article_id', 'item_value']
+
+    dic_freq_node: dict = {}
+    for x in df.groupby('article_id'):  # Loop for article_id in corpus
+        list_item_values = list(set(
+            x[1]['item_value'].tolist()))  # Creates the list of itemvalues
+                                           # of an article without duplicates
+
+        # Creates the dic {article_id:[(itemvalue1,frequency1),(itemvalue2,frequency2)...],...}
+        # ordered with frequency1 >= frequency2>=...>=frequencym_max_attrs
+        dic_freq_node[x[0]] = sorted([(item_value, dic_freq[item_value])
+                                      for item_value in list_item_values],
+                                     key=lambda tup: tup[1],
+                                     reverse=True)[0:m_max_attrs]
+
+    # Takes care of the nodes with no itemvalues
+    nodes = set(G.nodes)
+    unaffected_nodes = nodes - set(dic_freq_node.keys())
+    for node in unaffected_nodes:
+        dic_freq_node[node] = [('unknown', 0)] * m_max_attrs
+
+    # Adds m_max_attrs node attributes to the graph G
+    dic_freq_node_attr = {}
+    for i in range(m_max_attrs):
+        for x, y in dic_freq_node.items():
+            try:
+                if y[i][0] != 'unknown':
+                    dic_freq_node_attr[x] = f'{y[i][0]}({y[i][1]:.2f})'
+                else:
+                    dic_freq_node_attr[x] = 'unknown'
+            except:
+                dic_freq_node_attr[x] = 'unknown'
+        nx.set_node_attributes(G, dic_freq_node_attr, f"{item}_{i}")
+
+    return G

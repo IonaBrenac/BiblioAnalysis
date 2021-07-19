@@ -1,4 +1,11 @@
-__all__ = ['NMAX_NODES','LABEL_MEANING', 'describe_corpus', 'plot_graph', 'plot_counts', 'plot_histo', 'treemap_item']
+__all__ = ['NMAX_NODES',
+'LABEL_MEANING', 
+'describe_corpus', 
+'plot_graph', 
+'plot_counts', 
+'plot_histo',
+ 'treemap_item',
+ 'DIC_OUTDIR_DESCRIPTION']
 
 from .BiblioParsingGlobals import DIC_OUTDIR_PARSING
 from .BiblioParsingGlobals import LABEL_MEANING

@@ -1,4 +1,9 @@
-__all__ = ['item_selection','cooc_selection','merge_database_gui','filters_selection','SAVE_CONFIG_FILTERS']
+__all__ = ['item_selection',
+           'cooc_selection',
+           'merge_database_gui',
+           'filters_selection',
+           'SAVE_CONFIG_FILTERS',
+           'coupling_attr_selection']
 
 from .BiblioParsingGlobals import DIC_OUTDIR_PARSING
 from .BiblioParsingGlobals import LABEL_MEANING
@@ -41,6 +46,7 @@ The node size is the total number of occurences of an author, keyword name,... i
 With macOS, to exit you have to kill manually the menu window.''' 
 
 GEOMETRY_COOC_SELECTION = '450x550+50+50'
+GEOMETRY_COUPLING_SELECTION = '750x450+50+50'
 
 MERGE_DATABASE_HELP_TEXT = '''Merge several databases (wos/scopus) in one database.
 You have to choose:
@@ -665,4 +671,100 @@ def filters_selection(filters_filename,parsing_dir) :
         write_file.write(jsonString)
         
     return
+    
+def coupling_attr_selection():
+    
+    '''
+    Selection of items for coupling graph treatment
+    
+    Arguments: none
+    
+    Returns:
+        ITEM_CHOICE (string): item acronyme
+        m_max_attrs (int): maximum added attributes
+
+
+    '''
+    # Standard library imports
+    import os
+    import tkinter as tk
+    from tkinter import ttk
+    from tkinter import messagebox
+    
+    # Local imports
+    from .BiblioCooc import AUTHORIZED_ITEMS_DICT # 
+    
+    global ITEM_CHOICE, m_max_attrs
+     
+    tk_root = tk.Tk()
+    tk_root.attributes("-topmost", True)
+    tk_root.geometry(GEOMETRY_COUPLING_SELECTION)
+    tk_root.title("Graph coupling GUI") 
+    
+    item_choice = ttk.LabelFrame(tk_root, text=' Item selection ')
+    item_choice.grid(column=0, row=0, padx=8, pady=4)
+    
+    size_choice = ttk.LabelFrame(tk_root, text=' Number of item values ')
+    size_choice.grid(column=1, row=0, padx=8, pady=4)
+
+
+    
+    ITEM_CHOICE = 'S'  # Default value
+    def choice(text, v):
+        global ITEM_CHOICE
+        ITEM_CHOICE = AUTHORIZED_ITEMS_DICT[text]
+    
+    m_max_attrs = 2 # Default value
+    def submit(): 
+        global m_max_attrs
+        m_max_attrs = size_entered.get()
+    
+    def help():
+        messagebox.showinfo("coupling selection info", COOC_SELECTION_HELP_TEXT)
+        
+        
+    #           Choice of the item for the coupling graph completion
+    # -------------------------------------------------------------------------------------------
+    item = [(x,i) for i,x in enumerate(AUTHORIZED_ITEMS_DICT.keys())]
+    varitem = tk.IntVar()
+    #varitem.set(item[0][1])
+
+    ttk.Label(item_choice , 
+             text='Choose an item for the coupling graph node attribute:').grid(column=0, row=1, padx=8, pady=4)
+    
+    idx_row = 2
+    for txt, val in item:
+        tk.Radiobutton(item_choice, text=txt, variable=varitem, value=val,
+            command=lambda t = txt, v=varitem: choice(t, v)).grid(column=0, row=idx_row+2, padx=8, pady=4,sticky=tk.W)
+        idx_row += 1
+     
+    #                       Selection of the maximum number of item values
+    # -------------------------------------------------------------------------------------------
+    name = tk.StringVar()
+    ttk.Label(size_choice , 
+             text='Choose the maximum \n number of item values:').grid(column=0,
+                                                                       row=0,
+                                                                       padx=8,
+                                                                       pady=4)
+    size_entered = ttk.Entry(size_choice, width=30, textvariable=name)
+    size_entered.grid(column=0, row=1, sticky=tk.W) 
+    
+
+    submit_button = ttk.Button(size_choice, text="Submit", command=submit)   
+    submit_button.grid(column=1, row=1, padx=8, pady=4) 
+    help_button = ttk.Button(size_choice, text="HELP", command=help)
+    help_button.grid(column=0, row=2, padx=8, pady=4)
+    
+    if os.name == 'nt':
+        tk.Button(size_choice, text="EXIT", command=tk_root.destroy).grid(column=0, row=3, padx=8, pady=4)
+    
+    tk_root.mainloop()
+    
+    try:
+        m_max_attrs = int(m_max_attrs)
+    except: # Takes a default value
+        m_max_attrs = 2
+    
+ 
+    return ITEM_CHOICE, m_max_attrs
 
