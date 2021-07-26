@@ -202,7 +202,7 @@ def cooc_selection() :
     item_choice = ttk.LabelFrame(tk_root, text=' Label selection ')
     item_choice.grid(column=0, row=0, padx=8, pady=4)
     
-    size_choice = ttk.LabelFrame(tk_root, text=' Sieze choice ')
+    size_choice = ttk.LabelFrame(tk_root, text=' Size choice ')
     size_choice.grid(column=1, row=0, padx=8, pady=4)
 
 

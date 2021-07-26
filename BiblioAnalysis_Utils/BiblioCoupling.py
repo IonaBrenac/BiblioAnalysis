@@ -1,5 +1,5 @@
 __all__ = ['build_coupling_graph','build_louvain_partition',
-          'plot_coupling_graph','save_communities_xls','save_communities_gexf',
+          'plot_coupling_graph','save_communities_xls','save_graph_gexf',
           'add_item_attribute']
 
 from .BiblioParsingGlobals import DIC_OUTDIR_PARSING
@@ -235,7 +235,7 @@ def save_communities_xls(partition,in_dir,out_dir):
     df_articles.to_excel(out_dir / Path(FILENAME_XLSX))
 
     
-def save_communities_gexf(G,save_dir):
+def save_graph_gexf(G,save_dir):
     
     '''Save the graph "G" at Gephy (.gexf) format using full path "save_dir"
     '''
