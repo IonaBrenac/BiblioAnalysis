@@ -3,7 +3,8 @@ __all__ = ['item_selection',
            'merge_database_gui',
            'filters_selection',
            'SAVE_CONFIG_FILTERS',
-           'coupling_attr_selection']
+           'coupling_attr_selection',
+           'Select_multi_items']
 
 from .BiblioParsingGlobals import DIC_OUTDIR_PARSING
 from .BiblioParsingGlobals import LABEL_MEANING
@@ -504,12 +505,15 @@ def function_help():
     T.insert("end",FILTERS_SELECTION_HELP_TEXT)
     top.mainloop()
 
-def filters_selection(filters_filename,parsing_dir) :
+def filters_selection(filters_filename, save_filename, parsing_dir) :
     
     '''
-    Selection of items for cooccurrences graph treatment
+    Selection of items for corpus filtering 
     
-    Arguments: none
+    Arguments: 
+        filters_filename (path): path of the json file of the filtering configuration
+        parsing_dir (path) : path of the corpus folder where the ....
+        
     
     Returns:
         ITEM_CHOICE (string): item acronyme
@@ -549,7 +553,7 @@ def filters_selection(filters_filename,parsing_dir) :
                 config_filter[item_acronyme]['mode'] = False
             
     def func(item_acronyme):
-        dg = read_item_state(item_acronyme,parsing_dir) #in_dir)
+        dg = read_item_state(item_acronyme,parsing_dir)
         select_item_attributes(dg,item_acronyme,config_filter)
         
     def ModeSelected():
@@ -666,7 +670,7 @@ def filters_selection(filters_filename,parsing_dir) :
     
     tk_root.mainloop()
     
-    with open(filters_filename, "w") as write_file:
+    with open(save_filename, "w") as write_file:
         jsonString = json.dumps(config_filter, indent=4)
         write_file.write(jsonString)
         
@@ -767,4 +771,56 @@ def coupling_attr_selection():
     
  
     return ITEM_CHOICE, m_max_attrs
+
+def Select_multi_items(list_item,mode = 'multiple'): 
+
+    """interactive selection of items among the list list-item
+    
+    Args:
+        list_item (list): list of items used for the selection
+        
+    Returns:
+        val (list): list of selected items without duplicate
+        
+    """
+    import os
+    import tkinter as tk
+    
+    global val
+
+    window = tk.Tk()
+    window.geometry(GEOMETRY_FILTERS_SELECTION)
+    window.attributes("-topmost", True)
+    if mode == 'single': 
+        title = 'Single item selection'
+    else:
+        title = 'Multiple items selection'
+    window.title(title)
+
+    yscrollbar = tk.Scrollbar(window)
+    yscrollbar.pack(side = tk.RIGHT, fill = tk.Y)
+    selectmode = tk.MULTIPLE
+    if mode == 'single':selectmode = tk.SINGLE
+    listbox = tk.Listbox(window, width=40, height=10, selectmode=selectmode,
+                     yscrollcommand = yscrollbar.set)
+
+    x = list_item
+    for idx,item in enumerate(x):
+        listbox.insert(idx, item)
+        listbox.itemconfig(idx,
+                           bg = "white" if idx % 2 == 0 else "white")
+    
+    def selected_item():
+        global val
+        val = [listbox.get(i) for i in listbox.curselection()]
+        if os.name == 'nt':
+            top.destroy()
+
+    btn = tk.Button(window, text='OK', command=selected_item)
+    btn.pack(side='bottom')
+
+    listbox.pack(padx = 10, pady = 10,expand = tk.YES, fill = "both")
+    yscrollbar.config(command = listbox.yview)
+    window.mainloop()
+    return val
 
