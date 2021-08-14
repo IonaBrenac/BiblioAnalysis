@@ -222,16 +222,18 @@ def build_keywords_wos(df_corpus=None,dic_failed=None):
     df_AK = df_corpus['ID']
     for pub_id,x in zip(df_AK.index,df_AK):
         for y in x.split(';'):
+            y = y.lower().strip()
             list_keyword.append(key_word(pub_id=pub_id,
                                          type="AK",
-                                         keyword=y.lower().strip()))
+                                         keyword=y if y != 'null' else '"null"')) # Keeps Null as a keyword 'null'
 
     df_IK = df_corpus['DE']
     for pub_id,x in zip(df_IK.index,df_IK):
         for y in x.split(';'):
+            y = y.lower().strip()
             list_keyword.append(key_word(pub_id=pub_id,
                                          type="IK",
-                                         keyword=y.lower().strip()))
+                                         keyword=y if y != 'null' else '"null"')) # Keeps Null as a keyword 'null'
 
     df_title = pd.DataFrame(df_corpus['TI'])
     df_title.columns = ['Title']

@@ -1,4 +1,6 @@
-__all__ = ['filter_corpus_new','read_config_filters']
+__all__ = ['filter_corpus_new','read_config_filters','item_filter_modification','item_values_list','filters_modification']
+
+from .GUI_utils import Select_multi_items
 
 def read_config_filters(file_config):
     """
@@ -250,4 +252,99 @@ def filter_corpus_new(in_dir, out_dir, verbose, file_config_filters):
     # Stores the filtered files 
     #save_filtered_files(tokeep,in_dir_parsing,out_dir)
     save_filtered_files(tokeep,in_dir,out_dir)
+    
+def item_filter_modification(item,item_values_list, filters_filename) :
+    '''
+    Modification of items values list in the json file of the filtering configuration
+    for corpus filtering 
+    
+    Arguments: 
+        item (str): item accronyme
+        item_values_list (list): list of item values to be put in the json file 
+        filters_filename (path): path of the json file 
+        
+    '''
+    # Standard library imports
+    import json
+
+    with open(filters_filename, "r") as read_file:
+        config_filter = json.load(read_file)
+    
+    config_filter[item]['list'] = item_values_list
+    
+    with open(filters_filename, "w") as write_file:
+        jsonString = json.dumps(config_filter, indent=4)
+        write_file.write(jsonString)
+        
+def item_values_list(item_values_file):
+    '''
+    Builds a list of item values from a file of the same structure 
+    as the text files resulting from the corpus description (".dat" extension)
+    
+    Args: 
+        item_values_file (path): path of the dat file that contains the item values (str)
+        
+    Returns:
+        item_values_select (list): list of item values
+    '''
+
+    import csv
+    item_values = []
+    with open(item_values_file, newline='') as f:
+        reader = csv.reader(f)
+        item_values = list(reader)
+    item_values_select =[]
+    for x in range(len(item_values)-1):
+        mystring = str(item_values[x])
+        start = 2
+        end = mystring.find(',', start) - 1
+        value = str(mystring[start:end]).replace("'",'"')
+        item_values_select.append(value)
+    return item_values_select
+
+def filters_modification(config_folder,file_config_filters):
+    '''
+    Modification of the filter configuration 
+    using a selection of item values saved in the file item_values_file (.dat file) 
+    of the same structure as item files resulting from corpus description
+    
+    Args:
+        config_folder (path): path of the configuration folder 
+                              containing the file item_values_file selected interactively
+        file_config_filters (path): path of the json filters configuration file
+    
+    '''
+    # Standard library imports
+    import sys
+    import os
+    import json
+    from pathlib import Path
+
+    # Local imports
+    import BiblioAnalysis_Utils as bau
+
+    # Identifying the item to be modified in the filters configuration
+    filter_item = bau.filter_item_selection()
+
+    # Setting the folders list for item_values selection list
+    folders_list = [x[0] for x in os.walk(config_folder)][1:]
+    folders_list = [x.split('/')[-1] for x in folders_list]
+    folders_list.sort()
+
+    # Selection of the folder of the item_values selection files
+    print('Please select the folder of item_values selection file via the tk window')
+    myfolder_name = bau.Select_multi_items(folders_list,'single')[0]+'/'
+    myfolder = config_folder / Path(myfolder_name)
+
+    # Setting the list of item_values selection files to be put in the filters configuration file
+    files_list = os.listdir(myfolder)
+    files_list.sort()
+    print('\nPlease select the item_values selection file via the tk window')
+    myfile = bau.Select_multi_items(files_list,'single')[0]+'/'
+
+    item_values_file = myfolder / Path(myfile)
+    item_values_list_select = bau.item_values_list(item_values_file) 
+
+    bau.item_filter_modification(filter_item,item_values_list_select, file_config_filters)
+
 

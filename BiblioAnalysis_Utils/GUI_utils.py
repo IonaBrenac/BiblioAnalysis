@@ -4,7 +4,8 @@ __all__ = ['item_selection',
            'filters_selection',
            'SAVE_CONFIG_FILTERS',
            'coupling_attr_selection',
-           'Select_multi_items']
+           'Select_multi_items',
+           'filter_item_selection']
 
 from .BiblioParsingGlobals import DIC_OUTDIR_PARSING
 from .BiblioParsingGlobals import LABEL_MEANING
@@ -59,6 +60,21 @@ You have to choose:
 With macOS, to exit you have to kill manually the menu window.''' 
 
 GEOMETRY_MERGE_GUI = '500x550+50+50'
+
+FILTERS_ITEMS_DICT = {'Authors':'AU',
+                      'Years':'Y',
+                      'Institutions':'I',
+                      'Document types':'DT',
+                      'Journals':'J',
+                      'References journals':'RJ',
+                      'Full references':'R',
+                      'Authors keywords':'AK',
+                      'Title keywords':'TK',
+                      'Journal keywords':'IK',
+                      'Countries':'CU',
+                      'Subjects':'S',
+                      'Sub-subjects':'S2',
+                        }
 
 FILTERS_SELECTION_HELP_TEXT = '''To be done'''
 
@@ -824,3 +840,58 @@ def Select_multi_items(list_item,mode = 'multiple'):
     window.mainloop()
     return val
 
+def filter_item_selection():
+    
+    '''
+    Selection of item to be modifyed in the filter configuration
+    
+    Arguments: none
+    
+    Returns:
+        ITEM_CHOICE (string): item acronyme
+
+
+    '''
+    # Standard library imports
+    import tkinter as tk
+    from tkinter import ttk
+    from tkinter import messagebox
+    
+    global ITEM_CHOICE
+     
+    tk_root = tk.Tk()
+    tk_root.attributes("-topmost", True)
+    tk_root.geometry(GEOMETRY_ITEM_SELECTION)
+    tk_root.title("Filter item selection GUI") 
+    
+    item_choice = ttk.LabelFrame(tk_root, text=' Item selection ')
+    item_choice.grid(column=0, row=0, padx=8, pady=4)
+    
+    
+    ITEM_CHOICE = 'AK'  # Default value
+    def choice(text, v):
+        global ITEM_CHOICE
+        ITEM_CHOICE = FILTERS_ITEMS_DICT[text]
+    
+    def help():
+        messagebox.showinfo("coupling selection info", COOC_SELECTION_HELP_TEXT)
+        
+        
+    #           Choice of the item for the coupling graph completion
+    # -------------------------------------------------------------------------------------------
+    item = [(x,i) for i,x in enumerate(FILTERS_ITEMS_DICT.keys())]
+    varitem = tk.IntVar()
+
+    ttk.Label(item_choice , 
+             text='Choose an item to be modifyed in the filter configuration:').grid(column=0, row=1, padx=8, pady=4)
+    
+    idx_row = 2
+    for txt, val in item:
+        tk.Radiobutton(item_choice, text=txt, variable=varitem, value=val,
+            command=lambda t = txt, v=varitem: choice(t, v)).grid(column=0, row=idx_row+2, padx=8, pady=4,sticky=tk.W)
+        idx_row += 1
+     
+    tk_root.mainloop()
+    
+ 
+    return ITEM_CHOICE
