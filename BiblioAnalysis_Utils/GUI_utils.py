@@ -790,7 +790,7 @@ def coupling_attr_selection():
 
 def Select_multi_items(list_item,mode = 'multiple'): 
 
-    """interactive selection of items among the list list-item
+    """interactive selection of items among the list list_item
     
     Args:
         list_item (list): list of items used for the selection

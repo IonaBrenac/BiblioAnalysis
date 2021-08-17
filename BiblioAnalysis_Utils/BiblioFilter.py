@@ -49,7 +49,7 @@ def save_filtered_files(tokeep,in_dir,out_dir):
     import os
     from pathlib import Path
     
-    # 3rd party import
+    # 3rd party imports
     import pandas as pd
 
     tokeep =[str(x) for x in tokeep]
@@ -90,7 +90,7 @@ def filter_pub_id(combine,exclusion,filter_param,in_dir):
     from pathlib import Path
     import re
     
-    # 3rd party import
+    # 3rd party imports
     import pandas as pd
 
 
@@ -328,7 +328,7 @@ def filters_modification(config_folder,file_config_filters):
 
     # Setting the folders list for item_values selection list
     folders_list = [x[0] for x in os.walk(config_folder)][1:]
-    folders_list = [x.split('/')[-1] for x in folders_list]
+    folders_list = [os.path.split(x)[-1] for x in folders_list]
     folders_list.sort()
 
     # Selection of the folder of the item_values selection files
