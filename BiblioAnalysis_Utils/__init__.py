@@ -8,4 +8,5 @@ from .BiblioParsingWos import *
 from .BiblioParsingUtils import *
 from .BiblioParsingGlobals import *
 from .BiblioRefs import *
+from .BiblioTempDev import *
 from .GUI_utils import *

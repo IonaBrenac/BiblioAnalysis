@@ -294,7 +294,7 @@ def item_values_list(item_values_file):
         reader = csv.reader(f)
         item_values = list(reader)
     item_values_select =[]
-    for x in range(len(item_values)-1):
+    for x in range(len(item_values)):
         mystring = str(item_values[x])
         start = 2
         end = mystring.find(',', start) - 1
