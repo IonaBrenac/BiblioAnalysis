@@ -830,7 +830,7 @@ def Select_multi_items(list_item,mode = 'multiple'):
         global val
         val = [listbox.get(i) for i in listbox.curselection()]
         if os.name == 'nt':
-            top.destroy()
+            window.destroy()
 
     btn = tk.Button(window, text='OK', command=selected_item)
     btn.pack(side='bottom')
