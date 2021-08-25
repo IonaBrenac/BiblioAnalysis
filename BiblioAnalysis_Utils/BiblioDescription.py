@@ -82,7 +82,8 @@ def frequency_analysis(df,corpus_size):
     import itertools
     import operator
     
-    df_freq = df.groupby('item').count().reset_index()
+    #df_freq = df.groupby('item').count().reset_index()
+    df_freq = df.drop_duplicates().groupby('item').count().reset_index()   #!!!!!!!!!!!!!
     df_freq.sort_values(by=['pub_id'],ascending=False,inplace=True)
     #df_freq["f"] = df_freq['pub_id']/len(df)*100 # old fashion of freq calculation
     df_freq["f"] = df_freq['pub_id']/corpus_size*100
