@@ -22,8 +22,10 @@ def cooc_graph_html_plot(G,html_file):
     map_algs(nt,alg='barnes')
     for node in nt.nodes:
         node['title'] = node['label']
-        node['size'] = node['size']
-
+        node['size'] = node['node_size']
+    for edge in nt.edges:
+        edge['title'] = str(edge['nbr_edges'])
+        edge['value'] = edge['nbr_edges']
     neighbor_map = nt.get_adj_list()
 
     dic_label = {node['id']:node['label'] for node in nt.nodes}
