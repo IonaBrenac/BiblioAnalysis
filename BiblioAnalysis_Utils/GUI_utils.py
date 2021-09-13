@@ -47,7 +47,7 @@ The node size is the total number of occurences of an author, keyword name,... i
 
 With macOS, to exit you have to kill manually the menu window.''' 
 
-GEOMETRY_COOC_SELECTION = '450x550+50+50'
+GEOMETRY_COOC_SELECTION = '410x350+50+50'
 GEOMETRY_COUPLING_SELECTION = '750x450+50+50'
 
 MERGE_DATABASE_HELP_TEXT = '''Merge several databases (wos/scopus) in one database.
@@ -221,8 +221,6 @@ def cooc_selection() :
     
     size_choice = ttk.LabelFrame(tk_root, text=' Size choice ')
     size_choice.grid(column=1, row=0, padx=8, pady=4)
-
-
     
     ITEM_CHOICE = 'AU'  # Default value
     def choice(text, v):
@@ -245,27 +243,28 @@ def cooc_selection() :
     #varitem.set(item[0][1])
 
     ttk.Label(item_choice , 
-             text='Choose an item for the co-occurrence graph:').grid(column=0, row=1, padx=8, pady=4)
+             text='Choose an item\nfor the co-occurrence graph:').grid(column=0, row=1, padx=8, pady=4)
     
     idx_row = 2
     for txt, val in item:
         tk.Radiobutton(item_choice, text=txt, variable=varitem, value=val,
-            command=lambda t = txt, v=varitem: choice(t, v)).grid(column=0, row=idx_row+2, padx=8, pady=4,sticky=tk.W)
+            command=lambda t = txt, v=varitem: choice(t, v)).grid(column=0, \
+                                    row=idx_row+2, padx=8, pady=4,sticky=tk.W)
         idx_row += 1
      
     #                                Minmum node size selection
     # -------------------------------------------------------------------------------------------
     name = tk.StringVar()
     ttk.Label(size_choice , 
-             text='Choose the minimum \n size of the nodes:').grid(column=0, row=0, padx=8, pady=4)
-    size_entered = ttk.Entry(size_choice, width=30, textvariable=name)
-    size_entered.grid(column=0, row=1, sticky=tk.W) 
+             text='Choose the minimum\nsize of the nodes:').grid(column=0, row=0, padx=8, pady=4)
+    size_entered = ttk.Entry(size_choice, width=5, textvariable=name)
+    size_entered.grid(column=0, row=1, padx=8, pady=4) #sticky=tk.W) 
     
 
     submit_button = ttk.Button(size_choice, text="Submit", command=submit)   
-    submit_button.grid(column=1, row=1, padx=8, pady=4) 
+    submit_button.grid(column=0, row=2, padx=8, pady=4) 
     help_button = ttk.Button(size_choice, text="HELP", command=help)
-    help_button.grid(column=0, row=2, padx=8, pady=4)
+    help_button.grid(column=0, row=3, padx=8, pady=4)
     
     if os.name == 'nt':
         tk.Button(size_choice, text="EXIT", command=tk_root.destroy).grid(column=0, row=3, padx=8, pady=4)
@@ -546,15 +545,36 @@ def filters_selection(filters_filename, save_filename, parsing_dir) :
     from tkinter import messagebox
     from pathlib import Path
     
-    global ITEM_CHOICE, minimum_size_node,val
-      
+    global ITEM_CHOICE, minimum_size_node,val, number_of_call
+    number_of_call = 0
+    
     try:
         with open(filters_filename, "r") as read_file:
             config_filter = json.load(read_file)
     except:
         config_filter = DEFAULT_SAVE_CONFIG_FILTER
             
-    
+    def spy_state(*args):
+        global number_of_call
+        number_of_call += 1
+        nbr_select = sum([x.get() for x in varitem] )
+        if (nbr_select<2) & (number_of_call>=len(items)):
+            button_union["state"] = "disable"
+            button_inter["state"] = "disable"
+            button_union.deselect()
+            button_inter.deselect()
+            
+            #messagebox.showwarning('you must select at leasst two items to use \n union/intersection set operation')
+            
+        else:
+            button_union["state"] = "normal"
+            button_inter["state"] = "normal"
+            if config_filter['COMBINE'] == 'union':
+                button_union.select()
+            else:
+                button_inter.select()
+            
+        
     def action_varitem():
         for idx in range(len(LABEL_MEANING)):
             if varitem[idx].get():
@@ -594,15 +614,16 @@ def filters_selection(filters_filename, save_filename, parsing_dir) :
     tk_root.attributes("-topmost", True)
     tk_root.title("Filters GUI")
     tk_root.geometry(GEOMETRY_FILTERS_SELECTION)
-    
+    tk_root.columnconfigure(0,weight=1)
+    tk_root.columnconfigure(1,weight=1)
     item_choice = ttk.LabelFrame(tk_root, text=' ')
-    item_choice.grid(column=0, row=0, padx=8, pady=4)
+    item_choice.grid(column=0, row=0, padx=8, pady=4,sticky=tk.W+tk.E)
     
     combine_exit = ttk.LabelFrame(tk_root, text=' ')
-    combine_exit.grid(column=1, row=0, padx=8, pady=4)
+    combine_exit.grid(column=1, row=0, padx=8, pady=4,sticky=tk.W+tk.E)
     
     combine_choice = ttk.LabelFrame(combine_exit, text=' ')
-    combine_choice.grid(column=0, row=0, padx=8, pady=4)
+    combine_choice.grid(column=0, row=0, padx=8, pady=4,sticky=tk.W+tk.E)
 
     exit_choice = ttk.LabelFrame(combine_exit, text='  ')
     exit_choice.grid(column=0, row=1, padx=8, pady=4)
@@ -613,36 +634,6 @@ def filters_selection(filters_filename, save_filename, parsing_dir) :
     ttk.Label(item_choice , 
              text='Choose the items for filtering').grid(column=0, row=1, padx=8, pady=4)
     
-    idx_row = 2
-    list_button = []
-    varitem = []
-    for  txt, val in items:
-        varitem.append(tk.IntVar())
-        if config_filter[ACRONYME_MEANING[txt]]['mode']:
-            tk.Checkbutton(item_choice, 
-                           text = txt, 
-                           variable = varitem[idx_row-2],command=action_varitem
-                          ).grid(column=0, row=idx_row+2, padx=8, pady=4,sticky=tk.W)
-            varitem[val].set(True)
-            button = tk.Button(item_choice, 
-                               text='SELECT', 
-                               command=functools.partial(func,ACRONYME_MEANING[txt]),
-                               state = 'normal')
-            button.grid(column=1, row=idx_row+2, padx=8, pady=4,sticky=tk.W)
-            list_button.append(button)
-        else:
-            tk.Checkbutton(item_choice, 
-                           text = txt, 
-                           variable = varitem[idx_row-2],command=action_varitem
-                          ).grid(column=0, row=idx_row+2, padx=8, pady=4,sticky=tk.W)
-            button = tk.Button(item_choice, 
-                               text='SELECT', 
-                               command=functools.partial(func,ACRONYME_MEANING[txt]),
-                               state = 'disabled')
-            button.grid(column=1, row=idx_row+2, padx=8, pady=4,sticky=tk.W)
-            list_button.append(button)
-        idx_row += 1 
-        
     var_union_inter = tk.IntVar()
     var_exclusion = tk.IntVar()
     tk.Label(combine_choice, text='Choose a combination mode\n between at least 2 items :'
@@ -652,13 +643,15 @@ def filters_selection(filters_filename, save_filename, parsing_dir) :
                                   text = 'Union',
                                   variable = var_union_inter,
                                   value=1,
-                                  command=ModeSelected)
+                                  command=ModeSelected,
+                                  state="normal")
     button_union.grid(column=0, row=2, padx=8, pady=4,sticky=tk.W)
     button_inter = tk.Radiobutton(combine_choice,
                                   text = 'Intersection',
                                   variable = var_union_inter,
                                   value=2,
-                                  command=ModeSelected)
+                                  command=ModeSelected,
+                                  state="normal")
     button_inter.grid(column=0, row=3, padx=8, pady=4,sticky=tk.W)
     
     if config_filter['COMBINE'] == 'union':
@@ -676,13 +669,43 @@ def filters_selection(filters_filename, save_filename, parsing_dir) :
         
     button_help = tk.Button(exit_choice, 
                             text='HELP', 
-                            command=func_help,
-                            state = 'normal')
-    button_help.grid(column=0, row=0, padx=8, pady=4,sticky=tk.W)
-    
+                            command=func_help)
+    button_help.grid(column=0, row=0, padx=8, pady=4,sticky=tk.E+tk.W)
     if os.name == 'nt':
         exit = tk.Button(exit_choice, text="EXIT", command=tk_root.destroy)
         exit.grid(column=0, row=1, padx=8, pady=4)
+    
+    idx_row = 2
+    list_button = []
+    varitem = []
+    for  txt, val in items:
+        check_state = tk.BooleanVar()    #<------------------------
+        check_state.trace('w',spy_state) #<------------------------
+        varitem.append(check_state)
+        if config_filter[ACRONYME_MEANING[txt]]['mode']:
+            state = 'normal'
+            varitem[val].set(True)
+        else:
+            state = 'disabled'
+            varitem[val].set(False)
+        button = tk.Button(item_choice, 
+                               text='SELECT', 
+                               command=functools.partial(func,ACRONYME_MEANING[txt]),
+                               state = state)
+        button.grid(column=1, row=idx_row+2, padx=8, pady=4,sticky=tk.W)
+        list_button.append(button)
+            
+        tk.Checkbutton(item_choice, 
+                       text = txt, 
+                       variable = varitem[idx_row-2],command=action_varitem
+                       ).grid(column=0, row=idx_row+2, padx=8, pady=4,sticky=tk.W)
+        #button = tk.Button(item_choice, 
+        #                       text='SELECT', 
+        #                       command=functools.partial(func,ACRONYME_MEANING[txt]),
+        #                       state = 'normal')
+        #button.grid(column=1, row=idx_row+2, padx=8, pady=4,sticky=tk.W+tk.E)
+        #list_button.append(button)
+        idx_row += 1 
     
     tk_root.mainloop()
     

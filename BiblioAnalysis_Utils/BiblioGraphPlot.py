@@ -1,6 +1,31 @@
 __all__ = ['coupling_graph_html_plot',
            'cooc_graph_html_plot']
 
+var_options = {
+  "nodes": {
+    "color": {
+      "border": "rgba(11,22,127,1)",
+      "background": "rgba(120,142,196,1)"
+    }
+  },
+  "edges": {
+    "color": {
+      "color": "rgba(120,142,196,1)",
+      "inherit": False
+    },
+    "smooth": False
+  },
+  "physics": {
+    "enabled": False,
+    "barnesHut": {
+      "gravitationalConstant": -80000,
+      "springLength": 250,
+      "springConstant": 0.001
+    },
+    "minVelocity": 0.75
+  }
+}
+
 def cooc_graph_html_plot(G,html_file):
     
     from pyvis.network import Network
@@ -14,28 +39,57 @@ def cooc_graph_html_plot(G,html_file):
         if alg == 'hr':
             g.hrepulsion()
     
-    nt = Network(height=500, width=500, 
-                 bgcolor='#222222', 
-                 font_color='white',notebook=False)
+    dic_tot_edges ={node:G.degree(node,'nbr_edges') for node in G.nodes}
+    
+    nt = Network(height=1000, width=1000, 
+                 bgcolor='#EAEDED', 
+                 font_color='black',notebook=False)
+
     # populates the nodes and edges data structures
     nt.from_nx(G)
+    dic_node_label = {str(node['id']):node['label'] for node in nt.nodes}
     map_algs(nt,alg='barnes')
-    for node in nt.nodes:
+    
+    for edge in nt.edges:
+        edge['title'] = edge['nbr_edges']
+        edge['value'] = edge['nbr_edges']
+    
+    for node in nt.nodes:     
         node['title'] = node['label']
         node['size'] = node['node_size']
-    for edge in nt.edges:
-        edge['title'] = str(edge['nbr_edges'])
-        edge['value'] = edge['nbr_edges']
+        node['tot_edges'] = dic_tot_edges[node['id']]
+        node['nbr_edges_to'] = {}
+        for edge in nt.edges:
+            if edge['from'] == node['id']:
+                node_to_label = dic_node_label[str(edge['to'])]
+                node['nbr_edges_to'][node_to_label] = edge['nbr_edges']
+            if edge['to'] == node['id']:
+                node_from_label = dic_node_label[str(edge['from'])]
+                node['nbr_edges_to'][node_from_label]=edge['nbr_edges']
+    
+    
     neighbor_map = nt.get_adj_list()
-
-    dic_label = {node['id']:node['label'] for node in nt.nodes}
+    
+    dic_label_main = {node['id']: str(node['node_size']) + '-' \
+                                 + node['label'] + ' (' \
+                                 + str(node['tot_edges']) + ')' for node in nt.nodes}
+    dic_label_neighbors = {}
+    for node in nt.nodes:
+        dic_label_neighbors[node['id']] = []
+        for key in node['nbr_edges_to'].keys():
+            dic_label_neighbors[node['id']].append(key + ' (' + str(node['nbr_edges_to'][key]) + ')')
+        dic_label_neighbors[node['id']].sort()    
+    
     # add neighbor data to node hover data
     for node in nt.nodes:
         idd = node['id'] 
-        title = '<b>'+dic_label[idd] + '</b>'+ '<br>' +'<br>'.join([dic_label[i] for i in neighbor_map[idd]])
+        title = '<b>'+dic_label_main[idd] + '</b>'+ '<br>' +'<br>'\
+                .join([dic_label_neighbors[idd][i] for i in range(len(dic_label_neighbors[idd]))])
         node['title'] = title
+    #nt.set_options(options)
     nt.show_buttons()
     nt.show(html_file)
+
 
 def coupling_graph_html_plot(G,html_file):
     
