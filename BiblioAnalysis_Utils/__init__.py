@@ -3,6 +3,7 @@ from .BiblioCoupling import *
 from .BiblioDescription import *
 from .BiblioFilter import *
 from .BiblioGeneralGlobals import *
+from .BiblioGlobals import *
 from .BiblioGraphPlot import *
 from .BiblioParsingScopus import *
 from .BiblioParsingWos import *

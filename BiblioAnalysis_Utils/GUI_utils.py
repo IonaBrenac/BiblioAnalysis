@@ -7,8 +7,10 @@ __all__ = ['item_selection',
            'Select_multi_items',
            'filter_item_selection']
 
-from .BiblioParsingGlobals import DIC_OUTDIR_PARSING
-from .BiblioParsingGlobals import LABEL_MEANING
+from .BiblioGlobals import (DIC_OUTDIR_PARSING,
+                            LABEL_MEANING,
+                            COOC_AUTHORIZED_ITEMS_DICT)
+
 ACRONYME_MEANING = dict(zip(LABEL_MEANING.values(),LABEL_MEANING.keys()))
 
 TREE_MAP_ITEM = [
@@ -207,8 +209,6 @@ def cooc_selection() :
     from tkinter import ttk
     from tkinter import messagebox
     
-    from .BiblioCooc import AUTHORIZED_ITEMS_DICT
-    
     global ITEM_CHOICE, minimum_size_node
      
     tk_root = tk.Tk()
@@ -225,7 +225,7 @@ def cooc_selection() :
     ITEM_CHOICE = 'AU'  # Default value
     def choice(text, v):
         global ITEM_CHOICE
-        ITEM_CHOICE = AUTHORIZED_ITEMS_DICT[text]
+        ITEM_CHOICE = COOC_AUTHORIZED_ITEMS_DICT[text]
     
     minimum_size_node = 1 # Default value
     def submit(): 
@@ -238,7 +238,7 @@ def cooc_selection() :
         
     #                               Choice of the item for the cooccurrence graph
     # -------------------------------------------------------------------------------------------
-    item = [(x,i) for i,x in enumerate(AUTHORIZED_ITEMS_DICT.keys())]
+    item = [(x,i) for i,x in enumerate(COOC_AUTHORIZED_ITEMS_DICT.keys())]
     varitem = tk.IntVar()
     #varitem.set(item[0][1])
 
@@ -734,9 +734,6 @@ def coupling_attr_selection():
     from tkinter import ttk
     from tkinter import messagebox
     
-    # Local imports
-    from .BiblioCooc import AUTHORIZED_ITEMS_DICT # 
-    
     global ITEM_CHOICE, m_max_attrs
      
     tk_root = tk.Tk()
@@ -755,7 +752,7 @@ def coupling_attr_selection():
     ITEM_CHOICE = 'S'  # Default value
     def choice(text, v):
         global ITEM_CHOICE
-        ITEM_CHOICE = AUTHORIZED_ITEMS_DICT[text]
+        ITEM_CHOICE = COOC_AUTHORIZED_ITEMS_DICT[text]
     
     m_max_attrs = 2 # Default value
     def submit(): 
@@ -768,7 +765,7 @@ def coupling_attr_selection():
         
     #           Choice of the item for the coupling graph completion
     # -------------------------------------------------------------------------------------------
-    item = [(x,i) for i,x in enumerate(AUTHORIZED_ITEMS_DICT.keys())]
+    item = [(x,i) for i,x in enumerate(COOC_AUTHORIZED_ITEMS_DICT.keys())]
     varitem = tk.IntVar()
     #varitem.set(item[0][1])
 
