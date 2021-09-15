@@ -1,49 +1,31 @@
-__all__ = ['NMAX_NODES',
-'LABEL_MEANING', 
-'describe_corpus', 
-'plot_graph', 
-'plot_counts', 
-'plot_histo',
- 'treemap_item',
- 'DIC_OUTDIR_DESCRIPTION']
+"""BiblioDescription module is a set of functions useful for articles coupling analysis
+   in a bibliographic corpus.
+   More specifically, a coupling graph G(nodes, edges) is generated where:
+       - the nodes are the articles of the corpus with predefined attributes 
+         and interactively defined attributes;
+       - the edges connect two articles when they share at least a minimum number of refererences.
+         The edge attributes are the number of shared references and the Kessler similarity.
+         
+"""
 
-from .BiblioParsingGlobals import DIC_OUTDIR_PARSING
-from .BiblioParsingGlobals import LABEL_MEANING
+__all__ = ['NMAX_NODES', 
+           'describe_corpus', 
+           'plot_graph', 
+           'plot_counts', 
+           'plot_histo',
+           'treemap_item']
 
-# Conversion of item choice refering to freq_....dat file names in corresponding acronymes
-ACRONYME_MEANING2 = {
-    'years': 'Y',
-    'languages': 'LA',
-    'doctypes': 'DT',
-    'countries': 'CU',
-    'institutions': 'I',
-    'journals': 'J',
-    'references': 'R',
-    'refjournals': 'RJ',
-    'subjects': 'S',
-    'subjects2': 'S2',
-   'journalkeywords': 'IK',
-    'titlekeywords': 'TK',
-    'authorskeywords': 'AK',
-    'authors':'AU'
-}
+from .BiblioGlobals import (DIC_OUTDIR_PARSING,
+                            DIC_OUTDIR_DESCRIPTION,
+                            LABEL_MEANING,
+                            NAME_MEANING,
+                            VALID_LABEL_GRAPH,
+                           )
 
 NMAX_NODES = 100 # maximum number of nodes to keep
 
 DIC_INDIR_DESCRIPTION = DIC_OUTDIR_PARSING
 
-DIC_OUTDIR_DESCRIPTION = {acronym:'freq_'+file for acronym,file in DIC_OUTDIR_PARSING.items()}
-
-DIC_OUTDIR_DESCRIPTION_ADD = {'DT':'freq_doctypes.dat',
-                              'J':'freq_journals.dat',
-                              'LA':'freq_languages.dat',
-                              'RJ':'freq_refjournals.dat',
-                              'Y':'freq_years.dat'}
-
-DIC_OUTDIR_DESCRIPTION = res = {**DIC_OUTDIR_DESCRIPTION, **DIC_OUTDIR_DESCRIPTION_ADD}
-
-# Builds a cooccurrence graph only for these labels
-VALID_LABEL_GRAPH = ['AU', 'CU', 'S', 'S2', 'IK', 'R', 'RJ', 'I', 'AK', 'TK']
 
 def frequency_analysis(df,corpus_size):
 
@@ -104,6 +86,7 @@ def frequency_analysis(df,corpus_size):
     
     del df_freq_stat
     return df_freq, q_item, p_item
+
 
 def generate_cooc(df,item):
 
@@ -197,6 +180,7 @@ def describe_item(df,item,dic_distrib_item,list_cooc_nodes,list_cooc_edges ,freq
         list_cooc_edges.extend(liste_edge)
     
     del df_freq, q_item, p_item
+
     
 def process_article(in_dir, out_dir, dic_distrib_item, list_cooc_nodes, list_cooc_edges):
     
@@ -252,8 +236,7 @@ def process_article(in_dir, out_dir, dic_distrib_item, list_cooc_nodes, list_coo
         del df_articles
     except pd.errors.EmptyDataError:
         print(f'Note: file {DIC_INDIR_DESCRIPTION["A"]} was empty. Skipping')
-        
-    
+            
         
 def process_references(in_dir, out_dir, dic_distrib_item, list_cooc_nodes, list_cooc_edges):
     
@@ -294,8 +277,7 @@ def process_references(in_dir, out_dir, dic_distrib_item, list_cooc_nodes, list_
     
     except pd.errors.EmptyDataError:
         print(f'Note: file {DIC_INDIR_DESCRIPTION["R"]} was empty. Skipping')
-
-    
+  
 
 def process_item(in_dir, out_dir, item, usecols, dic_distrib_item, list_cooc_nodes, list_cooc_edges):
     
@@ -409,6 +391,7 @@ def describe_corpus(in_dir, out_dir, database_type, verbose):
     with open(out_dir / Path('coocnetworks.json'),'w') as file:
         json.dump(dic_cooc,file,indent=4)
 
+        
 def plot_graph(in_dir,item):
 
     '''plot the communities graph which nodes and edges are extracted from
@@ -493,6 +476,7 @@ def plot_graph(in_dir,item):
     
     return G
 
+
 def plot_counts(item_counts, file_name_counts):
 
     '''Plots a distribution curve from the frequency_analysis .
@@ -517,6 +501,7 @@ def plot_counts(item_counts, file_name_counts):
     plt.xticks([])
     plt.show()
 
+    
 def plot_histo(item_label, file_distrib_item):
 
     '''Plots the histograms of the p and q statistics (see frequency_analysis for more details).
@@ -533,7 +518,7 @@ def plot_histo(item_label, file_distrib_item):
                     distrib_item = json.load(read_file)
     
     # Convert item label in acronyme using the global dictionary ACRONYME_MEANING
-    item = ACRONYME_MEANING2[item_label]
+    item = NAME_MEANING[item_label]
     
     #        Plots the q histogram
     #------------------------------------------------------
@@ -562,7 +547,8 @@ def plot_histo(item_label, file_distrib_item):
     plt.ylabel(f'Number of {LABEL_MEANING[item]}')
     plt.title(f'{LABEL_MEANING[item]} histogram')
     plt.show()
-   
+
+    
 def treemap_item(item_treemap, file_name_treemap):
     
     # Standard library imports

@@ -1,4 +1,4 @@
-"""BiblioCooc module is a set of functions usefull for co-occurence analysis
+"""BiblioCooc module is a set of functions useful for co-occurence analysis
    of items in a bibliographic corpus.
    More specifically, a co-occurrence graph G(nodes, edges) is generated where:
        - the nodes are the item values of an item present in the corpus 

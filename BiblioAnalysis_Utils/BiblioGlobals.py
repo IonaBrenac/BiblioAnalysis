@@ -3,37 +3,81 @@
 
 '''
 
-__all__ = ['DIC_OUTDIR_PARSING','LABEL_MEANING','COOC_AUTHORIZED_ITEMS','COOC_AUTHORIZED_ITEMS_DICT']
+__all__ = ['DIC_OUTDIR_PARSING',
+           'DIC_OUTDIR_DESCRIPTION',
+           'LABEL_MEANING',
+           'NAME_MEANING',
+           'VALID_LABEL_GRAPH',
+           'COOC_AUTHORIZED_ITEMS',
+           'COOC_AUTHORIZED_ITEMS_DICT',
+           'COUPL_AUTHORIZED_ITEMS',
+           'COUPL_FILENAME_XLSX',
+           'COUPL_FILENAME_GEXF',]
 
-DIC_OUTDIR_PARSING = {'K':'keywords.dat',
+DIC_OUTDIR_PARSING = {'A':'articles.dat',
+                      'AU':'authors.dat',
+                      'AD':'addresses.dat',
+                      'CU':'countries.dat',
+                      'I':'institutions.dat',
                       'AK':'authorskeywords.dat',
                       'IK':'journalkeywords.dat',
                       'TK':'titlekeywords.dat',
                       'S':'subjects.dat',
                       'S2':'subjects2.dat',
-                      'AD':'addresses.dat',
-                      'CU':'countries.dat',
-                      'I':'institutions.dat',
-                      'AU':'authors.dat',
                       'R':'references.dat',
-                      'A':'articles.dat'}
+                      'K':'keywords.dat'
+                      }
 
-LABEL_MEANING = {'AU':'Authors',          # ex: Faure-Vincent J, De Vito E, Simonato J-P
-                 'AK':'Authors keywords', # ex: BIOMASS, SOLAR FUEL
+DIC_OUTDIR_DESCRIPTION = {acronym:'freq_'+file for acronym,file in DIC_OUTDIR_PARSING.items()}
+
+DIC_OUTDIR_DESCRIPTION_ADD = {'DT':'freq_doctypes.dat',
+                              'J':'freq_journals.dat',
+                              'LA':'freq_languages.dat',
+                              'RJ':'freq_refjournals.dat',
+                              'Y':'freq_years.dat'}
+
+DIC_OUTDIR_DESCRIPTION = res = {**DIC_OUTDIR_DESCRIPTION, **DIC_OUTDIR_DESCRIPTION_ADD}
+
+LABEL_MEANING = {'AU':'Authors',          # ex: Nom1 J, Nom2 E, Nom3 J-P
                  'CU':'Countries',        # ex: France, United States
-                 'DT':'Document types',   # ex: review, article, proceding
-                 'I':'Institutions',      # ex: CEA-Liten, CEA/CNRS/IRIG
-                 'J':'Journals',          # ex: Conference Paper, Article 
+                 'I':'Institutions',      # ex: Acronyme1, Acronyme2
+                 'DT':'Document types',   # ex: Review, Article, Proceeding
+                 'J':'Journals',          
+                 'AK':'Authors keywords', # ex: BIOMASS, SOLAR FUEL
                  'IK':'Journal keywords',
-                 'LA':'Languages',        # ex: English, French
+                 'TK':'Title keywords',
+                 'S':'Subjects',          # ex: Chemical Engineering,Engineering 
+                 'S2':'Sub-subjects',     # ex: Applied Mathematics, Organic Chemistry                 
                  'R':'References',
                  'RJ':'References journals',
-                 'S':'Subjects',          # ex: Chemical Engineering,Engineering 
-                 'S2':'Sub-subjects',     # ex: Applied Mathematics, Organic Chemistry
-                 'TK':'Title keywords',
+                 'LA':'Languages',        # ex: English, French
                  'Y':'Years'}             # ex: 2019
     
-COOC_AUTHORIZED_ITEMS = ['AK','AU','CU','IK','S','S2','TK']
+NAME_MEANING = {'years': 'Y',
+                'languages': 'LA',
+                'doctypes': 'DT',
+                'countries': 'CU',
+                'institutions': 'I',
+                'journals': 'J',
+                'references': 'R',
+                'refjournals': 'RJ',
+                'subjects': 'S',
+                'subjects2': 'S2',
+                'journalkeywords': 'IK',
+                'titlekeywords': 'TK',
+                'authorskeywords': 'AK',
+                'authors':'AU'}
+
+COOC_AUTHORIZED_ITEMS = ['AU','CU','AK','IK','TK','S','S2']
+
 COOC_AUTHORIZED_ITEMS_DICT = {label:name for name,label in LABEL_MEANING.items() 
                                     if name in COOC_AUTHORIZED_ITEMS}
 
+COUPL_AUTHORIZED_ITEMS = ['AU','CU','I','AK','IK','TK','S','S2']
+
+COUPL_FILENAME_XLSX = 'biblio_network.xlsx'
+
+COUPL_FILENAME_GEXF = 'biblio_network.gexf'
+
+# To build a cooccurrence graph only for these labels
+VALID_LABEL_GRAPH = ['AU', 'CU', 'S', 'S2', 'IK', 'R', 'RJ', 'I', 'AK', 'TK']

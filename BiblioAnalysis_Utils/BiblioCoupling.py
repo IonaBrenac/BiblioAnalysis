@@ -1,44 +1,57 @@
+"""BiblioCoupling module is a set of functions useful for articles coupling analysis
+   in a bibliographic corpus.
+   More specifically, a coupling graph G(nodes, edges) is generated where:
+       - the nodes are the articles of the corpus with predefined attributes 
+         and interactively defined attributes;
+       - the edges connect two articles when they share at least a minimum number of refererences.
+         The edge attributes are the number of shared references and the Kessler similarity.
+         
+"""
+
 __all__ = ['build_coupling_graph','build_louvain_partition',
           'plot_coupling_graph','save_communities_xls','save_graph_gexf',
           'add_item_attribute']
 
-from .BiblioParsingGlobals import DIC_OUTDIR_PARSING
+from .BiblioGlobals import (DIC_OUTDIR_PARSING,DIC_OUTDIR_DESCRIPTION, 
+                            COUPL_FILENAME_XLSX,COUPL_FILENAME_GEXF,COUPL_AUTHORIZED_ITEMS)
            
-BCTHR = 1 # minimum number of shared references to keep a link (default 1)
+BCTHR = 1  # minimum number of shared references to keep an edge (default 1)
 
 RTUTHR = 2 # minimum time of use in the corpus to count a reference in the 
-           #shared references (default 2)
+           # shared references (default 2)
 
-WTHR = 0 # minimum weight to keep a link (default 0)
+WTHR = 0   # minimum weight to keep a link (default 0)
 
-NRTHR = 1 # minimum number of references to keep a node (default 1)
+NRTHR = 1  # minimum number of references to keep a node (default 1)
 
-NRUNS = 1 # number of time the louvain algorithm is run for a given network, 
-          # the best partition being kept (default 1)
+NRUNS = 1  # number of time the louvain algorithm is run for a given network, 
+           # the best partition being kept (default 1)
        
 SIZECUT = 10
-verbose = True
-
-FILENAME_GEXF = 'biblio_network.gexf'
-FILENAME_XLSX = 'biblio_network.xlsx'
 
 def build_coupling_graph(in_dir):
     
-    '''Builds a graph G(N,V) where:
-            - N is the set of nodes with two attributes: article id and number of references
-            - V is the set of vertices. A vertex links two articles if and only if:
+    '''The "build_coupling_graph" function builds a corpus coupling graph G(N,E) where:
+            - N is the set of nodes with two attributes: article ID and number of references
+            - E is the set of edges. An edge links two articles if and only if:
                    (i)   they share at least "BCTHR" references
                    (ii)  each article has at least "NRTHR" references
                    (iii) their Kessler similarity w_ij is >= "WTHR"
-              A vertex has two attributes: number of shared references 
-                                           and the Kessler similarity     
-    The Kessler similarity is defined as: 
+              An edge has two attributes: number of shared references 
+                                          and the Kessler similarity     
+       The Kessler similarity is defined as: 
                        
                   # of common references between pub_id_i and pub_id_j
          w_ij = ---------------------------------------------------------
                 sqrt(# references of pub_id_i * # references of pub_id_j)
                                  
-    It returns the networkx object G
+       Args:
+           in_dir (Path): folder path of the corpus parsed files generated 
+                          by the BiblioParsingWos module or the BiblioParsingScopus module.
+       
+       Returns:
+           G (networkx object): corpus coupling graph.
+        
     '''
      
     # Standard library import
@@ -62,9 +75,9 @@ def build_coupling_graph(in_dir):
     df_article.columns = ['pub_id','first_author','year','journal','volume','page']
 
     table_art = df_article.apply(lambda row : ", ".join(row[1:]),axis=1) # Builds ref: "author, year, journal, volume, page"
-                                                                     # ex:"Gordon P, 2004, SCIENCE, 306, 496"
+                                                                     # ex:"Name S., 2004, SCIENCE, 306, 496"
     table_art = [x.replace(', 0','') for x in table_art] # takes care of the unknown volume and/or page number
-                                                 # ex: "Ahn H., 2010,THESIS"
+                                                 # ex: "Name S., 2010, THESIS"
     df_article['label_article'] = table_art
 
     df_article['pub_id'] = pd.to_numeric(df_article['pub_id'])
@@ -84,9 +97,9 @@ def build_coupling_graph(in_dir):
     df_reference.columns = ['pub_id','first_author','year','journal','volume','page']
 
     table = df_reference.apply(lambda row : ", ".join(row[1:]), axis=1) # Builds ref: "author, year, journal, volume, page"
-                                                                        # ex:"Gordon P, 2004, SCIENCE, 306, 496"
+                                                                        # ex:"Name S., 2004, SCIENCE, 306, 496"
     table = [x.replace(', 0','') for x in table] # takes care of the unknown volume and/or page number
-                                                 # ex: "Ahn H., 2010,THESIS"
+                                                 # ex: "Name S., 2010, THESIS"
     df_reference['label_ref'] = table
 
     df_reference['pub_id'] = pd.to_numeric(df_reference['pub_id'])
@@ -147,10 +160,25 @@ def build_coupling_graph(in_dir):
 
     return G
 
+
 def build_louvain_partition(G):
     
-    '''Computes graph G partition into communities using Louvain algorithm.
-    The attribute community is added to the nodes.
+    '''The "build_louvain_partition" function computes corpus-coupling-graph G partition
+       into communities using the Louvain algorithm, 
+       (see https://buildmedia.readthedocs.org/media/pdf/python-louvain/latest/python-louvain.pdf).
+       The attribute community is added to the nodes of the graph G.
+       
+       Args:
+           G (networkx object): initial corpus coupling graph.
+       
+       Returns:
+           results (tuple): [G, partition,] where
+               G (networkx object): corpus coupling graph with community ID
+                                    as supplementary node attribute;
+               partition (dict): Louvain partition of the corpus coupling graph G 
+                                 where dict keys are the pub IDs 
+                                 and the dict values are the community IDs. 
+       
     '''
     
     # 3rd party import
@@ -162,229 +190,54 @@ def build_louvain_partition(G):
     
     nx.set_node_attributes(G,partition,'community_id')
     
-    return G,partition
+    results=[G,partition,]    
+    return results
 
 
-def plot_coupling_graph(G,partition,nodes_number_max=1):
-    
-    
-    # Plots the result coloring each node according to its community
-    # nodes_number_max (default = 1): minimum number of nodes in a community 
-    # to keep the community on the plot 
-    # The layout is fixed to "spring_layout"
-    # ----------------------------------------------------------------
-    
-    # 3rd party import
-    import matplotlib.cm as cm
-    import matplotlib.pyplot as plt
-    import networkx as nx
-    import pandas as pd
-    
-    
-    
-    # Suppress communities with a number of nodes less than nodes_number_max
-    df = pd.DataFrame(list(partition.items()),columns = ['pub_id','community_id']) 
-    dg = df.groupby('community_id').count().reset_index()
-    community_to_discard = list(dg[dg['pub_id']<nodes_number_max ] ['community_id'])
-    nodes_to_dicard = list(df.query('community_id in @community_to_discard')['pub_id'])
-    partition_number = max(partition.values()) - len(community_to_discard)
-    G.remove_nodes_from(nodes_to_dicard)
-    new_partition = {key:value for key,value in partition.items()
-                 if value not in community_to_discard}
-    
-    # Draw the graph
-    pos = nx.spring_layout(G)
-    # color the nodes according to their partition
-    
-    cmap = cm.get_cmap('viridis',partition_number + 1)
-    fig = plt.figure(figsize=(15,15))
-    nx.draw_networkx_nodes(G, pos, new_partition.keys(), node_size=250,
-                           cmap=cmap, node_color=list(new_partition.values()))
-    nx.draw_networkx_edges(G, pos, alpha=0.9,width=1.5, edge_color='k', style='solid',)
-
-    labels = nx.draw_networkx_labels(G,pos=pos,font_size=8,
-                                     font_color='w')
-                                     
-    node_degree = dict(G.degree).values()
-    mean_degree = sum(node_degree) * 1.0 / len(node_degree)
-    mean_weight = 2*sum([d[-1]['weight'] for d in G.edges(data=True)])/(len(G.nodes()) * (len(G.nodes()) - 1))
-                                   
-    plt.title(f'Coupling graph \nAverage degree: {mean_degree:.2f}\
-                Average weight: {mean_weight:.5f}',fontsize=23,fontweight="bold")
-    plt.show()
-    
-
-def save_communities_xls(partition,in_dir,out_dir):
-    
-    '''Saves the "articles.dat" file as a .xlsx file adding the column community_id
-    of each article of the corpus after the Louvain partitioning.
-    '''
-    
-    # Standard library imports
-    from pathlib import Path
-    
-    # 3rd party import
-    import pandas as pd
-    
-    df_articles = pd.read_csv(in_dir / Path(DIC_OUTDIR_PARSING['A']),sep="\t",header=None)
-
-    df_articles['communnity'] = df_articles[0].map(partition) # Adds column community
-    df_articles.sort_values(by=['communnity',0],inplace=True)
-    df_articles.columns = ['pub_id','first_author','year','journal',
-                           'volume','page','doi','pub_type','language','title','ISSN','community_id']
-    df_articles.to_excel(out_dir / Path(FILENAME_XLSX))
-
-    
-def save_graph_gexf(G,save_dir):
-    
-    '''Save the graph "G" at Gephy (.gexf) format using full path "save_dir"
-    '''
-    
-    # Standard library imports
-    from pathlib import Path
-    
-    # 3rd party imports
-    import networkx as nx
-    
-    nx.write_gexf(G,save_dir / Path(FILENAME_GEXF))
-    
-
-def runpythonlouvain(G):
-    
-    '''Used to analyse a corpus at level "len(foo_dendrogram) - 1)" of the graph G dendrogram.
-    Author: Sebastian Grauwin (http://sebastian-grauwin.com/bibliomaps/)
-    
-    Args:
-        G (networkx object): corpus graph
-        
-    Returns:
-        dendrogram: see https://buildmedia.readthedocs.org/media/pdf/python-louvain/latest/python-louvain.pdf
-        partition: see https://buildmedia.readthedocs.org/media/pdf/python-louvain/latest/python-louvain.pdf
-        modularity: see https://buildmedia.readthedocs.org/media/pdf/python-louvain/latest/python-louvain.pdf
-    '''
-    
-    # 3rd party import
-    import community as community_louvain
-    
-    max_modularity = -1
-    for run in range(NRUNS):
-        if NRUNS > 1:
-            print(f'......run {run + 1}/{NRUNS}')
-        foo_dendrogram = community_louvain.generate_dendrogram(G, part_init=None)
-        partition_foo = community_louvain.partition_at_level(foo_dendrogram, len(foo_dendrogram) - 1)
-        modularity = community_louvain.modularity(partition_foo, G)
-        if modularity > max_modularity:
-            max_modularity = modularity
-            partition = partition_foo.copy()
-            dendrogram = foo_dendrogram.copy()
-            
-    return [dendrogram, partition, modularity]
-
-def graph_community(G):
-        
-    '''Used to analyse a corpus at two levels of the graph G dendrogram in a way
-    that the size of all the communities are <= SIZECUT 
-    Author: Sebastian Grauwin (http://sebastian-grauwin.com/bibliomaps/)
-    
-    Args:
-        G (networkx object): corpus graph
-        
-    Returns:
-        louvain_partition (dict): partition of the corpus 
-    '''
-    
-    import community as community_louvain
-
-    dendrogram, part, max_mod = runpythonlouvain(G)
-    part2 = part.copy()
-    to_update = {}
-
-    communities_id,nodes_id =set(part.values()), list(part.keys())
-    for community_id in communities_id:
-        list_nodes = [nodes for nodes in part.keys() if part[nodes] == community_id]
-
-        if len(list_nodes) > SIZECUT: # split clusters of size > SIZECUT
-            H = G.subgraph(list_nodes).copy()
-            [dendo2, partfoo, mod] = runpythonlouvain(H)
-            dendo2 = community_louvain.generate_dendrogram(H, part_init=None)
-            partfoo = community_louvain.partition_at_level(dendo2, len(dendo2) - 1)
-            # add prefix code
-            for aaa in partfoo.keys():
-                partfoo[aaa] = (community_id + 1) * 1000 + partfoo[aaa]
-            nb_comm = len(set(partfoo.values()))
-            if verbose:
-                print(
-                    "... ==> cluster %d (N=%d records) was split in %d sub-clusters, Q=%.3f"
-                    % (community_id, len(list_nodes), nb_comm, mod)
-                )
-            part2.update(partfoo)
-        else:  # for communities of less than SIZECUT nodes, shift the com label as well
-            for n in list_nodes:
-                to_update[n] = ""
-    for n in to_update:
-        part2[n] += 1
-
-    # ... save partitions
-    louvain_partition = dict()
-    for lev in range(len(dendrogram)):
-        louvain_partition[lev] = community_louvain.partition_at_level(dendrogram, lev)
-    # .. I want communtity labels starting from 1 instead of 0 for top level
-    for k in louvain_partition[len(dendrogram) - 1].keys():
-        louvain_partition[len(dendrogram) - 1][k] += 1
-    louvain_partition[len(dendrogram)] = part2
-    
-    return louvain_partition
-
-def networkx_to_louvain_format(communities):
-    
-    '''Transforms the tuple ({pub_id_1.1,pub_id_1.2,pup_id_1.3,...},{pub_id_2.1,pub_id_2.2,pub_id_2.3,...},...) 
-    generated by the networkx community algorithms into the set {pub_id:community_id} as generated by the Louvain
-    algorithm.
-    '''
-    a = {idx:community for idx,community in enumerate(communities)}
-    return {val:com_id for com_id in a.keys() for val in a[com_id]} 
-    
 def add_item_attribute(G, item, m_max_attrs,
                        in_dir_freq, in_dir_parsing):
-    '''
-    Adds node attributes to the graph G which nodes are the corpus article.
-    The number of these attributes is limited to m_max_attrs.
-    The attributes correspond to an item choosen among ['AK','IK','TK','S','S2','CU',
-    'I','AU']
-    where: 
-                    'AK': 'freq_authorskeywords.dat',
-                    'IK': 'freq_journalkeywords.dat',
-                    'TK': 'freq_titlekeywords.dat',
-                    'S': 'freq_subjects.dat',
-                    'S2': 'freq_subjects2.dat',
-                    'CU': 'freq_countries.dat',
-                    'I': 'freq_institutions.dat',
-                    'AU': 'freq_authors.dat'.
-    The attributes are labelled item_<i> with i=0,...,m_max_attrs-1.
-    For a given node, labelled article id, the node item_<i> attribute values are 
-    the m_max_attrs topmost itemvalues of the item, in term of frequency, of this node. 
-    The  m_max_attrs attributes are ranked by decreasing frequency values. 
-    The frequency is attached to the itemvalue.
-                    
-    ex: with m_max_attrs=2 and item= 'S2'
     
-     id            S2_0                          S2_1       
-    125 | Behavioral Sciences(3.90) | Psychology, Biological(1.74)
-    126 | Behavioral Sciences(3.90) | Psychology, Developmental(0.62)
-    109 | Behavioral Sciences(3.90) | unknown
-    238 | Behavioral Sciences(3.90) | Psychology, Multidisciplinary(1.33)
-    470 | Zoology(1.95)             | Psychology, Biological(1.74)
-    
-    Args:
-        G (nx.Graph): coupling graph
-        item (str): item choosen as attribute
-        m_max_attrs (int): maximum number of added node attributes 
-           corresponding to the choosen item
-        in_dir_freq (Path): path to the corpus description folder
-        in_dir_parsing (Path): path to the corpus parsing folder
+    '''The 'add_item_attribute' function adds node attributes to the corpus coupling graph G.
+       The number of these attributes is limited to m_max_attrs.
+       
+       The attributes correspond to an item selected in COUPL_AUTHORIZED_ITEMS 
+       defined in BiblioGlobals module.
+       
+       The attributes are labelled item_<i> with i=0,...,m_max_attrs-1.
         
-    Returns:
-        G (nx.Graph): graph with the added attributes  
+       For a given node, labelled article id, the node item_<i> attribute values are 
+       the m_max_attrs topmost itemvalues of the item, in term of frequency, of this node. 
+       The  m_max_attrs attributes are ranked by decreasing frequency values. 
+       The frequency is attached to the itemvalue.
+                    
+       Example: 
+       
+       with m_max_attrs=2 and item= 'S2'
+    
+                id            S2_0                          S2_1
+                
+                125 | Behavioral Sciences(3.90) | Psychology, Biological(1.74)
+                
+                126 | Behavioral Sciences(3.90) | Psychology, Developmental(0.62)
+                
+                109 | Behavioral Sciences(3.90) | unknown
+                
+                238 | Behavioral Sciences(3.90) | Psychology, Multidisciplinary(1.33)
+                
+                470 | Zoology(1.95)             | Psychology, Biological(1.74)
+                
+    
+       Args:
+           G (networkx object): corpus coupling graph.
+           item (str): the item choosen as attribute.
+           m_max_attrs (int): maximum number of added node attributes 
+                              corresponding to the choosen item.
+           in_dir_freq (Path): folder path of the corpus description results.
+           in_dir_parsing (Path): folder path of the corpus parsing results.
+        
+       Returns:
+           G (networkx object): corpus coupling graph with the added attributes.
+        
     '''
 
     # Standard library imports
@@ -396,9 +249,7 @@ def add_item_attribute(G, item, m_max_attrs,
     import pandas as pd
 
     # Local imports
-    from .BiblioDescription import DIC_OUTDIR_DESCRIPTION #{item:freq_file_name, ...}
-    from .BiblioCooc import AUTHORIZED_ITEMS_DICT
-    valid_item = AUTHORIZED_ITEMS_DICT.values()
+    valid_item = COUPL_AUTHORIZED_ITEMS
 
     # Check valid input arguments
     add_item_attribute.__annotations__ = {'G': nx.Graph, 'item': str, 'm_max_attrs': int,
@@ -464,3 +315,202 @@ def add_item_attribute(G, item, m_max_attrs,
         nx.set_node_attributes(G, dic_freq_node_attr, f"{item}_{i}")
 
     return G
+
+
+def plot_coupling_graph(G,partition,nodes_number_max=1):
+    
+    '''The "plot_coupling_graph" function plots corpus coupling graph G 
+       coloring each node according to its community using networkx package.
+       The layout is fixed to "spring_layout".
+       
+       Args:
+           G (networkx object): corpus coupling graph with community ID 
+                                as supplementary node attribute.
+           partition (dict): Louvain partition of the corpus coupling graph G 
+                             where dict keys are the pub IDs 
+                             and the dict values are the community IDs.
+           nodes_number_max (int): minimum number of nodes in a community 
+                                   to keep the community on the plot (default = 1).
+       
+    '''
+    
+    # 3rd party import
+    import matplotlib.cm as cm
+    import matplotlib.pyplot as plt
+    import networkx as nx
+    import pandas as pd
+       
+    # Suppress communities with a number of nodes less than nodes_number_max
+    df = pd.DataFrame(list(partition.items()),columns = ['pub_id','community_id']) 
+    dg = df.groupby('community_id').count().reset_index()
+    community_to_discard = list(dg[dg['pub_id']<nodes_number_max ] ['community_id'])
+    nodes_to_dicard = list(df.query('community_id in @community_to_discard')['pub_id'])
+    partition_number = max(partition.values()) - len(community_to_discard)
+    G.remove_nodes_from(nodes_to_dicard)
+    new_partition = {key:value for key,value in partition.items()
+                 if value not in community_to_discard}
+    
+    # Draw the graph
+    pos = nx.spring_layout(G)
+    cmap = cm.get_cmap('viridis',partition_number + 1)
+    fig = plt.figure(figsize=(15,15))
+        # color the nodes according to their partition
+    nx.draw_networkx_nodes(G, pos, new_partition.keys(), node_size=250,
+                           cmap=cmap, node_color=list(new_partition.values()))
+    nx.draw_networkx_edges(G, pos, alpha=0.9,width=1.5, edge_color='k', style='solid',)
+    labels = nx.draw_networkx_labels(G,pos=pos,font_size=8,
+                                     font_color='w')                                 
+    node_degree = dict(G.degree).values()
+    
+    # Compute usefull information for the plot title
+    mean_degree = sum(node_degree) * 1.0 / len(node_degree)
+    mean_weight = 2*sum([d[-1]['weight'] for d in G.edges(data=True)])/(len(G.nodes()) * (len(G.nodes()) - 1))                    
+    plt.title(f'Coupling graph \nAverage degree: {mean_degree:.2f}\
+                Average weight: {mean_weight:.5f}',fontsize=23,fontweight="bold")
+    plt.show()
+    
+
+def save_communities_xls(partition,in_dir,out_dir):
+    
+    '''The "save_communities_xls" function saves the "articles.dat" file as an EXCEL file 
+       adding a column that contains the community ID of each article of the corpus.
+       The filename is defined by COUPL_FILENAME_XLSX global in BiblioGlobals module.
+       
+       Args:
+           partition (dict): Louvain partition of the corpus coupling graph G 
+                             where dict keys are the pub IDs 
+                             and the dict values are the community IDs.
+           in_dir (Path): folder path of the corpus parsed files generated 
+                          by the BiblioParsingWos module or the BiblioParsingScopus module.
+           out_dir (Path): folder path where the EXEL file COUPL_FILENAME_XLSX is saved.
+       
+    '''
+    
+    # Standard library imports
+    from pathlib import Path
+    
+    # 3rd party import
+    import pandas as pd
+    
+    df_articles = pd.read_csv(in_dir / Path(DIC_OUTDIR_PARSING['A']),sep="\t",header=None)
+
+    df_articles['communnity'] = df_articles[0].map(partition) # Adds column community
+    df_articles.sort_values(by=['communnity',0],inplace=True)
+    df_articles.columns = ['pub_id','first_author','year','journal',
+                           'volume','page','doi','pub_type','language','title','ISSN','community_id']
+    df_articles.to_excel(out_dir / Path(COUPL_FILENAME_XLSX))
+
+    
+def save_graph_gexf(G,save_dir):
+    
+    '''The "save_graph_gexf" function saves graph "G" in Gephy  format (.gexf).
+       The filename is defined by COUPL_FILENAME_GEXF global in BiblioGlobals module.
+       
+       Args:
+           G (networkx object): corpus coupling graph.
+           save_dir (Path): folder path where the Gephy file COUPL_FILENAME_GEXF is saved.
+       
+    '''
+    
+    # Standard library imports
+    from pathlib import Path
+    
+    # 3rd party imports
+    import networkx as nx
+    
+    nx.write_gexf(G,save_dir / Path(COUPL_FILENAME_GEXF))
+    
+
+def runpythonlouvain(G):
+    
+    '''The "runpythonlouvain" function  is used to analyse a corpus 
+       at level "len(foo_dendrogram) - 1)" of the corpus coupling graph G dendrogram, 
+       (see https://buildmedia.readthedocs.org/media/pdf/python-louvain/latest/python-louvain.pdf).
+       Author: Sebastian Grauwin (http://sebastian-grauwin.com/bibliomaps/)
+    
+       Args:
+           G (networkx object): corpus coupling graph.
+        
+       Returns:
+           results (tuple): [dendrogram, partition, modularity,] where
+               dendrogram [list of dict]: a list of partitions, ie dictionnaries 
+                                          where keys of the i+1 dict are the values of the i dict;
+               partition (dict): Louvain partition of the corpus coupling graph G 
+                                 where dict keys are the pub IDs 
+                                 and the dict values are the community IDs;
+               modularity [float]: modularity.
+    
+    '''
+    
+    # 3rd party import
+    import community as community_louvain
+    
+    max_modularity = -1
+    for run in range(NRUNS):
+        if NRUNS > 1:
+            print(f'......run {run + 1}/{NRUNS}')
+        foo_dendrogram = community_louvain.generate_dendrogram(G, part_init=None)
+        partition_foo = community_louvain.partition_at_level(foo_dendrogram, len(foo_dendrogram) - 1)
+        modularity = community_louvain.modularity(partition_foo, G)
+        if modularity > max_modularity:
+            max_modularity = modularity
+            partition = partition_foo.copy()
+            dendrogram = foo_dendrogram.copy()
+    
+    results = [dendrogram, partition, modularity,]
+    return results
+
+
+def graph_community(G):
+        
+    '''The 'graph_community' function is used to analyse a corpus at 
+       two levels of the dendrogram of the corpus coupling graph G 
+       in a way that the size of all the communities are <= SIZECUT.
+       Author: Sebastian Grauwin (http://sebastian-grauwin.com/bibliomaps/)
+    
+       Args:
+           G (networkx object): corpus coupling graph.
+        
+       Returns:
+           louvain_partition (dict): partition of the corpus coupling graph G. 
+    
+    '''
+
+    # 3rd party import    
+    import community as community_louvain
+
+    dendrogram, part, max_mod = runpythonlouvain(G)
+    part2 = part.copy()
+    to_update = {}
+
+    communities_id,nodes_id =set(part.values()), list(part.keys())
+    for community_id in communities_id:
+        list_nodes = [nodes for nodes in part.keys() if part[nodes] == community_id]
+
+        if len(list_nodes) > SIZECUT: # split clusters of size > SIZECUT
+            H = G.subgraph(list_nodes).copy()
+            [dendo2, partfoo, mod] = runpythonlouvain(H)
+            dendo2 = community_louvain.generate_dendrogram(H, part_init=None)
+            partfoo = community_louvain.partition_at_level(dendo2, len(dendo2) - 1)
+            # add prefix code
+            for aaa in partfoo.keys():
+                partfoo[aaa] = (community_id + 1) * 1000 + partfoo[aaa]
+            nb_comm = len(set(partfoo.values()))
+            # "community_id" cluster ("len(list_nodes)" records) is split in nb_comm sub-clusters
+            part2.update(partfoo)
+        else:  # for communities of less than SIZECUT nodes, shift the com label as well
+            for n in list_nodes:
+                to_update[n] = ""
+    for n in to_update:
+        part2[n] += 1
+
+    # ... save partitions
+    louvain_partition = dict()
+    for lev in range(len(dendrogram)):
+        louvain_partition[lev] = community_louvain.partition_at_level(dendrogram, lev)
+    # .. set communtity labels starting from 1 instead of 0 for top level
+    for k in louvain_partition[len(dendrogram) - 1].keys():
+        louvain_partition[len(dendrogram) - 1][k] += 1
+    louvain_partition[len(dendrogram)] = part2
+    
+    return louvain_partition

@@ -129,9 +129,10 @@ def coupling_graph_html_plot(G,html_file):
         if alg == 'hr':
             g.hrepulsion()
 
-    nt = Network('500px', width='500px', 
-                 bgcolor='#222222', 
-                 font_color='white',notebook=False)
+    nt = Network(height=1000, width=1000, 
+                 bgcolor='#EAEDED', 
+                 font_color='black',notebook=False)        
+
     # populates the nodes and edges data structures
     nt.from_nx(G)
     map_algs(nt,alg='barnes')
