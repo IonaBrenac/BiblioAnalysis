@@ -47,7 +47,8 @@ def cooc_graph_html_plot(G,html_file):
 
     # populates the nodes and edges data structures
     nt.from_nx(G)
-    dic_node_label = {str(node['id']):node['label'] for node in nt.nodes}
+    dic_node_label = {str(node['id']):str(node['node_size'])+ '-'\
+                      + node['label'] for node in nt.nodes}
     map_algs(nt,alg='barnes')
     
     for edge in nt.edges:
@@ -89,7 +90,7 @@ def cooc_graph_html_plot(G,html_file):
     #nt.set_options(options)
     nt.show_buttons()
     nt.show(html_file)
-
+    
 
 def coupling_graph_html_plot(G,html_file):
     
