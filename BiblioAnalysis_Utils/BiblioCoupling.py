@@ -172,26 +172,30 @@ def build_louvain_partition(G):
            G (networkx object): initial corpus coupling graph.
        
        Returns:
-           results (tuple): [G, partition,] where
-               G (networkx object): corpus coupling graph with community ID
-                                    as supplementary node attribute;
-               partition (dict): Louvain partition of the corpus coupling graph G 
-                                 where dict keys are the pub IDs 
-                                 and the dict values are the community IDs. 
+           louvain_part (namedtuple): 
+               louvain_part.G (networkx object): corpus coupling graph with community ID
+                                                 as supplementary node attribute;
+               louvain_part.partition (dict): Louvain partition of the corpus coupling graph G 
+                                              where dict keys are the pub IDs 
+                                              and the dict values are the community IDs. 
        
     '''
+    # standard library imports
+    from collections import namedtuple
     
     # 3rd party import
     import community as community_louvain
     import networkx as nx
+    
+    named_tup_results = namedtuple('results', ['G','partition',])
     
     # Compute the best partition : {pub_id:community_id}
     partition = community_louvain.best_partition(G)
     
     nx.set_node_attributes(G,partition,'community_id')
     
-    results=[G,partition,]    
-    return results
+    louvain_part = named_tup_results(G, partition,)   
+    return louvain_part
 
 
 def add_item_attribute(G, item, m_max_attrs,
@@ -421,7 +425,7 @@ def save_graph_gexf(G,save_dir):
     nx.write_gexf(G,save_dir / Path(COUPL_FILENAME_GEXF))
     
 
-def runpythonlouvain(G):
+def runpythonlouvain(G): # unused 
     
     '''The "runpythonlouvain" function  is used to analyse a corpus 
        at level "len(foo_dendrogram) - 1)" of the corpus coupling graph G dendrogram, 
@@ -441,9 +445,13 @@ def runpythonlouvain(G):
                modularity [float]: modularity.
     
     '''
+    # standard library imports
+    from collections import namedtuple
     
     # 3rd party import
     import community as community_louvain
+    
+    named_tup_results = namedtuple('results', ['dendrogram','partition','modularity',])
     
     max_modularity = -1
     for run in range(NRUNS):
@@ -457,11 +465,11 @@ def runpythonlouvain(G):
             partition = partition_foo.copy()
             dendrogram = foo_dendrogram.copy()
     
-    results = [dendrogram, partition, modularity,]
-    return results
+    louvain_part = named_tup_results(dendrogram, partition, modularity,) 
+    return louvain_part
 
 
-def graph_community(G):
+def graph_community(G): # unused
         
     '''The 'graph_community' function is used to analyse a corpus at 
        two levels of the dendrogram of the corpus coupling graph G 
