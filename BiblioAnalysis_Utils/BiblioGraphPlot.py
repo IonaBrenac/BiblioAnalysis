@@ -92,36 +92,31 @@ def cooc_graph_html_plot(G,html_file):
     nt.show(html_file)
     
 
-def coupling_graph_html_plot(G,html_file):
+def coupling_graph_html_plot(G,html_file,community_id,attr_dic,colored_attr,
+                             colored_values,shaped_attr,color_nodes):
     
     from pyvis.network import Network
     import json
     import networkx as nx
-    # Attention limited to 22 communities
-    color_nodes = {0: '#B03A13',
-                   1: '#B04513',
-                   2: '#B05213',
-                   3: '#B05F13',
-                   4: '#B06913',
-                   5: '#B07113',
-                   6: '#B07E13',
-                   7: '#B08E13', 
-                   8: '#B09E13',
-                   9: '#B0A313',
-                   10: '#A6B013',
-                   11: '#81B013',
-                   12: '#6FB013',
-                   13: '#52B013',
-                   14: '#38B013',
-                   15: '#13B01E',
-                   16: '#13B0AB',
-                   17: '#139EB0',
-                   18: '#1389B0',
-                   19: '#1374B0',
-                   20: '#1367B0',
-                   21: '#1357B0',
-                   22: '#134DB0'}
-
+    
+    SG = G.__class__()
+    if community_id != 'all':
+        # Builds a sub-graph from G limited to the community 'community_id'
+        selected_nodes = {n:d['community_id'] for n,d in G.nodes().items() \
+                          if d['community_id'] == int(community_id)}
+        nodes_list = list(selected_nodes.keys())
+        SG.add_nodes_from((n, G.nodes[n]) for n in nodes_list)
+        SG.add_edges_from((n, nbr, d)
+                for n, nbrs in G.adj.items() if n in nodes_list
+                for nbr, d in nbrs.items() if nbr in nodes_list)
+        SG.graph.update(G.graph)
+    else:
+        SG = G
+    
+    # sets colored attributes keys  
+    attr_nbr = attr_dic[colored_attr]
+    attr_keys = [colored_attr + '_' + str(i) for i in range(attr_nbr)]
+     
     def map_algs(g,alg='barnes'):
         if alg == 'barnes':
             g.barnes_hut()
@@ -130,12 +125,13 @@ def coupling_graph_html_plot(G,html_file):
         if alg == 'hr':
             g.hrepulsion()
 
+    
     nt = Network(height=1000, width=1000, 
                  bgcolor='#EAEDED', 
                  font_color='black',notebook=False)        
 
-    # populates the nodes and edges data structures
-    nt.from_nx(G)
+    # populates the nodes data structures
+    nt.from_nx(SG)
     map_algs(nt,alg='barnes')
 
     for node in nt.nodes:
@@ -149,13 +145,21 @@ def coupling_graph_html_plot(G,html_file):
                                     or 'AK_' in key
                                     or 'S_' in key
                                     or 'S2_' in key])
+        
         node['size'] = node['nbr_references']
-        node['color'] = color_nodes[node['community_id']]
-        node['label'] = str(node['community_id'])
-        if node['community_id']%2:
+        
+        node['label'] = str(node['id'])
+
+        attr_labels = [node[attr_keys[i]][:node[attr_keys[i]].find('(')] for i in range(attr_nbr)]
+        if attr_labels[0] in colored_values.keys():
+            node['color'] = color_nodes[int(colored_values[attr_labels[0]])]
+        else:
+            node['color'] = color_nodes['uncolor']
+        
+        if shaped_attr in attr_labels :
             node['shape'] = 'triangle'
         else:
             node['shape'] = 'dot'
-
+    
     nt.show_buttons()
     nt.show(html_file)
