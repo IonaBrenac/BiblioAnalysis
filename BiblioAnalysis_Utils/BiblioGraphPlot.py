@@ -93,7 +93,7 @@ def cooc_graph_html_plot(G,html_file):
     
 
 def coupling_graph_html_plot(G,html_file,community_id,attr_dic,colored_attr,
-                             colored_values,shaped_attr,color_nodes):
+                             colored_values,shaped_attr,color_nodes,heading):
     
     from pyvis.network import Network
     import json
@@ -128,7 +128,7 @@ def coupling_graph_html_plot(G,html_file,community_id,attr_dic,colored_attr,
     
     nt = Network(height=1000, width=1000, 
                  bgcolor='#EAEDED', 
-                 font_color='black',notebook=False)        
+                 font_color='black',notebook=False, heading= heading)        
 
     # populates the nodes data structures
     nt.from_nx(SG)
@@ -161,5 +161,5 @@ def coupling_graph_html_plot(G,html_file,community_id,attr_dic,colored_attr,
         else:
             node['shape'] = 'dot'
     
-    nt.show_buttons()
+    nt.show_buttons(filter_=['physics'])
     nt.show(html_file)

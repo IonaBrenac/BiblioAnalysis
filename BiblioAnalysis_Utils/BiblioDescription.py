@@ -1,10 +1,5 @@
-"""BiblioDescription module is a set of functions useful for articles coupling analysis
-   in a bibliographic corpus.
-   More specifically, a coupling graph G(nodes, edges) is generated where:
-       - the nodes are the articles of the corpus with predefined attributes 
-         and interactively defined attributes;
-       - the edges connect two articles when they share at least a minimum number of refererences.
-         The edge attributes are the number of shared references and the Kessler similarity.
+"""BiblioDescription module is a set of functions useful for a bibliographic corpus description.
+   More specifically, the frequency occurence of the item values is computed for each of the parsing items.
          
 """
 
@@ -90,7 +85,7 @@ def frequency_analysis(df,corpus_size):
 
 def generate_cooc(df,item):
 
-    '''Builds a coocurence undirected graph (N,V) where:
+    '''Builds a cooccurence undirected graph (N,V) where:
             - the set N of nodes is the set of the NMAX_NODES prominent items in term of occurrence
        frequency (by default NMAX_NODES=100)
             - the set of edges connecting two items sitting in the the same article
