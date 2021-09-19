@@ -267,7 +267,7 @@ def cooc_selection() :
     help_button.grid(column=0, row=3, padx=8, pady=4)
     
     if os.name == 'nt':
-        tk.Button(size_choice, text="EXIT", command=tk_root.destroy).grid(column=0, row=3, padx=8, pady=4)
+        tk.Button(size_choice, text="EXIT", command=tk_root.destroy).grid(column=0, row=4, padx=8, pady=4)
     
     tk_root.mainloop()
     
@@ -796,7 +796,7 @@ def coupling_attr_selection():
     help_button.grid(column=0, row=3, padx=8, pady=4)
     
     if os.name == 'nt':
-        tk.Button(size_choice, text="EXIT", command=tk_root.destroy).grid(column=0, row=3, padx=8, pady=4)
+        tk.Button(size_choice, text="EXIT", command=tk_root.destroy).grid(column=0, row=4, padx=8, pady=4)
     
     tk_root.mainloop()
     
