@@ -50,7 +50,7 @@ The node size is the total number of occurences of an author, keyword name,... i
 With macOS, to exit you have to kill manually the menu window.''' 
 
 GEOMETRY_COOC_SELECTION = '410x350+50+50'
-GEOMETRY_COUPLING_SELECTION = '750x450+50+50'
+GEOMETRY_COUPLING_SELECTION = '470x350+50+50'
 
 MERGE_DATABASE_HELP_TEXT = '''Merge several databases (wos/scopus) in one database.
 You have to choose:
@@ -770,7 +770,7 @@ def coupling_attr_selection():
     #varitem.set(item[0][1])
 
     ttk.Label(item_choice , 
-             text='Choose an item for the coupling graph node attribute:').grid(column=0, row=1, padx=8, pady=4)
+             text='Choose an item\nfor the coupling graph node attribute:').grid(column=0, row=1, padx=8, pady=4)
     
     idx_row = 2
     for txt, val in item:
@@ -786,14 +786,14 @@ def coupling_attr_selection():
                                                                        row=0,
                                                                        padx=8,
                                                                        pady=4)
-    size_entered = ttk.Entry(size_choice, width=30, textvariable=name)
-    size_entered.grid(column=0, row=1, sticky=tk.W) 
+    size_entered = ttk.Entry(size_choice, width=5, textvariable=name)
+    size_entered.grid(column=0, row=1, padx=10, pady=4)
     
 
     submit_button = ttk.Button(size_choice, text="Submit", command=submit)   
-    submit_button.grid(column=1, row=1, padx=8, pady=4) 
+    submit_button.grid(column=0, row=2, padx=8, pady=4) 
     help_button = ttk.Button(size_choice, text="HELP", command=help)
-    help_button.grid(column=0, row=2, padx=8, pady=4)
+    help_button.grid(column=0, row=3, padx=8, pady=4)
     
     if os.name == 'nt':
         tk.Button(size_choice, text="EXIT", command=tk_root.destroy).grid(column=0, row=3, padx=8, pady=4)

@@ -26,7 +26,7 @@ var_options = {
   }
 }
 
-def cooc_graph_html_plot(G,html_file):
+def cooc_graph_html_plot(G,html_file,heading):
     
     from pyvis.network import Network
     import networkx as nx
@@ -43,7 +43,7 @@ def cooc_graph_html_plot(G,html_file):
     
     nt = Network(height=1000, width=1000, 
                  bgcolor='#EAEDED', 
-                 font_color='black',notebook=False)
+                 font_color='black',notebook=False,heading = heading)
 
     # populates the nodes and edges data structures
     nt.from_nx(G)
@@ -67,8 +67,7 @@ def cooc_graph_html_plot(G,html_file):
             if edge['to'] == node['id']:
                 node_from_label = dic_node_label[str(edge['from'])]
                 node['nbr_edges_to'][node_from_label]=edge['nbr_edges']
-    
-    
+
     neighbor_map = nt.get_adj_list()
     
     dic_label_main = {node['id']: str(node['node_size']) + '-' \
@@ -76,10 +75,16 @@ def cooc_graph_html_plot(G,html_file):
                                  + str(node['tot_edges']) + ')' for node in nt.nodes}
     dic_label_neighbors = {}
     for node in nt.nodes:
-        dic_label_neighbors[node['id']] = []
+        id = node['id']
+        dic_label_neighbors[id] = []
         for key in node['nbr_edges_to'].keys():
-            dic_label_neighbors[node['id']].append(key + ' (' + str(node['nbr_edges_to'][key]) + ')')
-        dic_label_neighbors[node['id']].sort()    
+            dic_label_neighbors[id].append(key + ' (' + str(node['nbr_edges_to'][key]) + ')')
+        # Sorting neighbors size
+        neighbors_size = [int(dic_label_neighbors[id][i][:dic_label_neighbors[id][i].find('-')]) \
+                   for i in range(len(dic_label_neighbors[id]))]
+        sizes_tup = list(zip(neighbors_size,dic_label_neighbors[id])) 
+        sizes_tup = sorted(sizes_tup, key=lambda sizes_tup: sizes_tup[0], reverse=True)
+        dic_label_neighbors[id] = [tup[1] for tup in sizes_tup]                   
     
     # add neighbor data to node hover data
     for node in nt.nodes:
@@ -88,7 +93,7 @@ def cooc_graph_html_plot(G,html_file):
                 .join([dic_label_neighbors[idd][i] for i in range(len(dic_label_neighbors[idd]))])
         node['title'] = title
     #nt.set_options(options)
-    nt.show_buttons()
+    nt.show_buttons(filter_=['physics'])
     nt.show(html_file)
     
 
