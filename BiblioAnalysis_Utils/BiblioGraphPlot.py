@@ -98,10 +98,10 @@ def cooc_graph_html_plot(G,html_file,heading):
     
 
 def coupling_graph_html_plot(G,html_file,community_id,attr_dic,colored_attr,
-                             colored_values,shaped_attr,color_nodes,heading):
+                             colored_values,shaped_attr,nodes_colors,edges_color,
+                             background_color,font_color,heading):
     
     from pyvis.network import Network
-    import json
     import networkx as nx
     
     SG = G.__class__()
@@ -117,6 +117,7 @@ def coupling_graph_html_plot(G,html_file,community_id,attr_dic,colored_attr,
         SG.graph.update(G.graph)
     else:
         SG = G
+    dic_tot_edges ={node:SG.degree(node,'nc') for node in SG.nodes}
     
     # sets colored attributes keys  
     attr_nbr = attr_dic[colored_attr]
@@ -132,16 +133,19 @@ def coupling_graph_html_plot(G,html_file,community_id,attr_dic,colored_attr,
 
     
     nt = Network(height=1000, width=1000, 
-                 bgcolor='#EAEDED', 
-                 font_color='black',notebook=False, heading= heading)        
+                 bgcolor=background_color, 
+                 font_color=font_color,notebook=False, heading= heading)        
 
     # populates the nodes data structures
     nt.from_nx(SG)
     map_algs(nt,alg='barnes')
 
     for node in nt.nodes:
+        node['size'] = node['nbr_references']
         node['title'] = 'community_id: ' + str(node['community_id'])+ '<br>'
         node['title'] += 'pub_id:'+ str(node['id'])+ '<br>'
+        node['title'] += 'refs number:'+ str(node['size'])+ '<br>'
+        node['title'] += 'shared refs:'+ str(dic_tot_edges[node['id']])+ '<br>'
         node['title'] += '<br>'.join([key + ': ' + str(node[key]) 
                                     for key in node.keys()
                                     if 'CU_' in key
@@ -151,20 +155,23 @@ def coupling_graph_html_plot(G,html_file,community_id,attr_dic,colored_attr,
                                     or 'S_' in key
                                     or 'S2_' in key])
         
-        node['size'] = node['nbr_references']
-        
         node['label'] = str(node['id'])
 
         attr_labels = [node[attr_keys[i]][:node[attr_keys[i]].find('(')] for i in range(attr_nbr)]
         if attr_labels[0] in colored_values.keys():
-            node['color'] = color_nodes[int(colored_values[attr_labels[0]])]
+            node['color'] = nodes_colors[int(colored_values[attr_labels[0]])]
         else:
-            node['color'] = color_nodes['uncolor']
+            node['color'] = nodes_colors['uncolor']
         
         if shaped_attr in attr_labels :
             node['shape'] = 'triangle'
         else:
             node['shape'] = 'dot'
+    
+    for edge in nt.edges:
+        edge['title'] = edge['nc']
+        edge['color'] = edges_color
+        edge['value'] = edge['nc']
     
     nt.show_buttons(filter_=['physics'])
     nt.show(html_file)

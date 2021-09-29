@@ -24,7 +24,7 @@ DIC_INDIR_DESCRIPTION = DIC_OUTDIR_PARSING
 
 def frequency_analysis(df,corpus_size):
 
-    '''Builds the dataframe "df_freq" and the arrays "q_item" and "p_item" from the dataframe "df".
+    '''The 'frequency_analysis' function builds the dataframe "df_freq" and the arrays "q_item" and "p_item" from the dataframe "df".
     The dataframe "df" consists in two columns named "pub_id" and "item":
 
      ex_a:              pub_id   item
@@ -33,7 +33,7 @@ def frequency_analysis(df,corpus_size):
                     2     1     item_c
                     3     2     item_a
 
-    The dataframe "df" consists in three columns named "pub_id" "item" and "f" as (for ex_a):
+    The dataframe "df_freq" consists in three columns named "pub_id" "item" and "f" as (for ex_a):
 
                         item   count    f
                     0  item_a    2      50
