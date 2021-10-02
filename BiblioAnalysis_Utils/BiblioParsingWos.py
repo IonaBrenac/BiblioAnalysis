@@ -242,12 +242,12 @@ def build_keywords_wos(df_corpus=None,dic_failed=None):
         for token in df_TK.loc[pub_id,'kept_tokens']:
             list_keyword.append(key_word(pub_id=pub_id,
                                              type="TK",
-                                             keyword=token))
+                                             keyword=token if y != 'null' else '"null"')) # Keeps Null as a keyword 'null'
 
     list_keyword = sorted(list_keyword, key=attrgetter('pub_id'))
     df_keyword = pd.DataFrame.from_dict({'pub_id':[s.pub_id for s in list_keyword],
                                          'type':[s.type for s in list_keyword],
-                                         'keyword':[s.keyword for s in list_keyword]})
+                                         'keyword':[s.keyword for s in list_keyword]}) 
     
     df_failed = df_keyword[df_keyword["keyword"] == ""]
     for type in ["AK","IK","TK"]:

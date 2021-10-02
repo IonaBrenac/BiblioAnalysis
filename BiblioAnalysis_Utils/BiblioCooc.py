@@ -1,12 +1,43 @@
-"""BiblioCooc module is a set of functions useful for co-occurence analysis
-   of items in a bibliographic corpus.
-   More specifically, a co-occurrence graph G(nodes, edges) is generated where:
-       - the nodes are the item values of an item present in the corpus 
-         (ex: item = 'S', nodes = "subject 1","subject 2"...)
-       - the edges connect two nodes when the two corresponding item values occure 
-         at least in one article of the corpus
-         
 """
+.. module:: BiblioCooc
+   :platform: MacOS, Windows
+   :synopsis: The `BiblioCooc` module is a set of functions useful for co-occurrence analysis
+   of the parsing items of a bibliographic corpus.
+   
+   More specifically, a co-occurrence graph G(nodes, edges) is generated where:
+
+   - the nodes are the item values of a parsing item of the corpus;
+
+    (ex: item = "S", nodes = "subject 1","subject 2"...)
+
+   - the edges connect two nodes when the two corresponding item values occure 
+   at least in one article of the corpus.
+              
+
+.. moduleauthor:: Anonimous
+
+The `BiblioCooc` module is a set of functions useful for co-occurrence analysis
+of the parsing items of a bibliographic corpus.
+
+More specifically, a co-occurrence graph G(nodes, edges) is generated where:
+
+- the nodes are the item values of a parsing item of the corpus;
+
+  (ex: item = "S", nodes = "subject 1","subject 2"...)
+
+- the edges connect two nodes when the two corresponding item values occure 
+  at least in one article of the corpus.
+  
+The `BiblioCooc` module imports globals from the `BiblioGeneralGlobals` module and `BiblioGlobals` module 
+of the `BiblioAnalysis_Utils` package.
+
+The functions externally callable are `build_item_cooc`and `plot_cooc_graph`.
+
+The `build_item_cooc` function calls the following local functions of the module: 
+`generate_cooc_graph`, `write_cooc_gexf` and `write_cooc_gdf`.
+
+"""
+
 __all__ = ["build_item_cooc", "plot_cooc_graph"]
 
 from .BiblioGeneralGlobals import COUNTRIES_GPS
@@ -15,46 +46,47 @@ from .BiblioGlobals import (
     LABEL_MEANING,
     COOC_AUTHORIZED_ITEMS,
     COOC_AUTHORIZED_ITEMS_DICT,
+    COOC_COLOR_NODES,
 )
-
-COOC_COLOR_NODES = {
-    "Y": "255,255,0",  # default color for gephi display
-    "J": "150,0,150",
-    "AU": "20,50,255",
-    "IK": "255,0,255",
-    "AK": "255,0,255",
-    "TK": "205,0,205",
-    "S": "50,0,150",
-    "S2": "50,0,150",
-    "R": "255,0,0",
-    "RJ": "255,97,0",
-    "I": "0,255,0",
-    "CU": "0,255,255",
-    "LA": "0,180,0",
-    "DT": "0,180,0",
-}
 
 
 def build_item_cooc(item, in_dir, out_dir, size_min=1):
 
-    """The "build_item_cooc" function builds a networkx object graph G for the item "item".
-       In addition, the graph is stored in the folder out_dir in two formats: .gdf and .gexf.
+    """
+    The `build_item_cooc` function builds a networkx graph G for the item `item`.
+    In addition, the graph is stored in the folder `out_dir` in two formats: `.gdf` and `.gexf`.
+    
+    Globals:
+        COOC_AUTHORIZED_ITEMS
+        
+        COOC_COLOR_NODES
+        
+        DIC_OUTDIR_PARSING
        
     Args:
-       item (str): item from the global COOC_AUTHORIZED_ITEMS list.
-       in_dir (Path): folder path of the parsed files generated 
-                      by the BiblioParsingWos module or the BiblioParsingScopus module.
-       out_dir (Path): folder path where the graph files (.gdf and .gexf) are stored.
-       size_min (int): threshold of item-value occurence for keeping the item value 
-                       as a node.
+        item (str): item from the global `COOC_AUTHORIZED_ITEMS` list.
+        
+        in_dir (Path): folder path of the parsed files generated 
+                       by the `BiblioParsingWos` module or the `BiblioParsingScopus` module.
+                       
+        out_dir (Path): folder path where the graph files (`.gdf` and `.gexf`) are stored.
+        
+        size_min (int): threshold of item-value occurrence for keeping the item value 
+                        as a node.
+                        
                        
     Returns:
-       G (networkx object): co-occurence graph of the item "item"
+        `networkx object`: Co-occurrence graph `G` of the item `item`
+        
        
-       
+    Raises:   
+        TypeError: if the graph is not a networkx graph. 
+        
+        
     """
 
     # Standard library import
+    from collections import namedtuple
     import os
     from pathlib import Path
 

@@ -10,6 +10,7 @@ __all__ = ['DIC_OUTDIR_PARSING',
            'VALID_LABEL_GRAPH',
            'COOC_AUTHORIZED_ITEMS',
            'COOC_AUTHORIZED_ITEMS_DICT',
+           'COOC_COLOR_NODES',
            'COUPL_AUTHORIZED_ITEMS',
            'COUPL_FILENAME_XLSX',
            'COUPL_FILENAME_GEXF',]
@@ -72,6 +73,23 @@ COOC_AUTHORIZED_ITEMS = ['AU','CU','AK','IK','TK','S','S2']
 
 COOC_AUTHORIZED_ITEMS_DICT = {label:name for name,label in LABEL_MEANING.items() 
                                     if name in COOC_AUTHORIZED_ITEMS}
+
+COOC_COLOR_NODES = {
+    "Y": "255,255,0",  # default color for gephi display
+    "J": "150,0,150",
+    "AU": "20,50,255",
+    "IK": "255,0,255",
+    "AK": "255,0,255",
+    "TK": "205,0,205",
+    "S": "50,0,150",
+    "S2": "50,0,150",
+    "R": "255,0,0",
+    "RJ": "255,97,0",
+    "I": "0,255,0",
+    "CU": "0,255,255",
+    "LA": "0,180,0",
+    "DT": "0,180,0",
+}
 
 COUPL_AUTHORIZED_ITEMS = ['AU','CU','I','AK','IK','TK','S','S2']
 
