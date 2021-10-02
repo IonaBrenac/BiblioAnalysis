@@ -293,7 +293,7 @@ def add_item_attribute(G, item, m_max_attrs,
                                            # of an article without duplicates
 
         # Creates the dic {article_id:[(itemvalue1,frequency1),(itemvalue2,frequency2)...],...}
-        # ordered with frequency1 >= frequency2>=...>=frequencym_max_attrs
+        # ordered with frequency1 >= frequency2 >= ... >= frequency<m_max_attrs>
         dic_freq_node[x[0]] = sorted([(item_value, dic_freq[item_value])
                                       for item_value in list_item_values],
                                      key=lambda tup: tup[1],

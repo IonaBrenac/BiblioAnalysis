@@ -402,13 +402,14 @@ def build_keywords_scopus(df_corpus=None,dic_failed=None):
         if list_keywords_AK != ['']:
             for keyword_AK in list_keywords_AK:
                 keyword_AK = keyword_AK.strip()
+                if keyword_AK == 'null': keyword_AK = 'unknown' # replace Null by the keyword 'unknown'
                 list_keyword.append(key_word(pub_id=pub_id,
                                              type="AK",
-                                             keyword=keyword_AK if y != 'null' else '"null"')) # Keeps Null as a keyword 'null'
+                                             keyword=keyword_AK))
         else:
             list_keyword.append(key_word(pub_id=pub_id,
                                              type="AK",
-                                             keyword='"null"')) # Keeps Null as a keyword 'null'
+                                             keyword='unknown')) # replace '' by the keyword 'unknown'
 
     df_IK = df_corpus['Index Keywords'].fillna('')
     for pub_id,keywords_IK in zip(df_IK.index,df_IK):
@@ -416,21 +417,24 @@ def build_keywords_scopus(df_corpus=None,dic_failed=None):
         if list_keywords_IK != ['']:
             for keyword_IK in list_keywords_IK:
                 keyword_IK = keyword_IK.strip()
+                if keyword_IK == 'null': keyword_IK = 'unknown' # replace Null by the keyword 'unknown'
                 list_keyword.append(key_word(pub_id=pub_id,
                                              type="IK",
-                                             keyword=keyword_IK if y != 'null' else '"null"')) # Keeps Null as a keyword 'null'
+                                             keyword=keyword_IK))
         else:
             list_keyword.append(key_word(pub_id=pub_id,
                                              type="IK",
-                                             keyword='"null"')) # Keeps Null as a keyword 'null'
+                                             keyword='unknown')) # replace '' by the keyword 'unknown'
 
     df_title = pd.DataFrame(df_corpus['Title'].fillna(''))
     df_TK,list_of_words_occurrences = build_title_keywords(df_title)
     for pub_id in df_TK.index:
         for token in df_TK.loc[pub_id,'kept_tokens']:
+            token = token.strip()
+            if token == 'null': token = 'unknown' # replace Null by the keyword 'unknown'
             list_keyword.append(key_word(pub_id=pub_id,
                                              type="TK",
-                                             keyword=token if y != 'null' else '"null"')) # Keeps Null as a keyword 'null'
+                                             keyword=token))
 
     list_keyword = sorted(list_keyword, key=attrgetter('pub_id'))
     df_keyword = pd.DataFrame.from_dict({'pub_id':[s.pub_id for s in list_keyword],

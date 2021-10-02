@@ -223,26 +223,30 @@ def build_keywords_wos(df_corpus=None,dic_failed=None):
     for pub_id,x in zip(df_AK.index,df_AK):
         for y in x.split(';'):
             y = y.lower().strip()
+            if y == 'null': y = 'unknown' # set Null as the keyword 'unknown'
             list_keyword.append(key_word(pub_id=pub_id,
                                          type="AK",
-                                         keyword=y if y != 'null' else '"null"')) # Keeps Null as a keyword 'null'
+                                         keyword=y))
 
     df_IK = df_corpus['DE']
     for pub_id,x in zip(df_IK.index,df_IK):
         for y in x.split(';'):
             y = y.lower().strip()
+            if y == 'null': y = 'unknown' # set Null as the keyword 'unknown'
             list_keyword.append(key_word(pub_id=pub_id,
                                          type="IK",
-                                         keyword=y if y != 'null' else '"null"')) # Keeps Null as a keyword 'null'
+                                         keyword=y))
 
     df_title = pd.DataFrame(df_corpus['TI'])
     df_title.columns = ['Title']
     df_TK,list_of_words_occurrences = build_title_keywords(df_title)
     for pub_id in df_TK.index:
         for token in df_TK.loc[pub_id,'kept_tokens']:
+            token = token.lower().strip()
+            if token == 'null': token = 'unknown' # set Null as the keyword 'unknown'
             list_keyword.append(key_word(pub_id=pub_id,
                                              type="TK",
-                                             keyword=token if y != 'null' else '"null"')) # Keeps Null as a keyword 'null'
+                                             keyword=token)) 
 
     list_keyword = sorted(list_keyword, key=attrgetter('pub_id'))
     df_keyword = pd.DataFrame.from_dict({'pub_id':[s.pub_id for s in list_keyword],
