@@ -1,6 +1,7 @@
 __all__ = ['filter_corpus_new','read_config_filters','item_filter_modification','item_values_list','filters_modification']
 
-from .GUI_utils import Select_multi_items
+from .BiblioGui import (Select_multi_items,
+                        filter_item_selection,)
 
 def read_config_filters(file_config):
     """
@@ -52,7 +53,7 @@ def save_filtered_files(tokeep,in_dir,out_dir):
     # 3rd party imports
     import pandas as pd
 
-    tokeep =[str(x) for x in tokeep]
+    #tokeep =[str(x) for x in tokeep] ! not clear, to be understood (generate empty filtered corpus)
 
     for file in [file  for file in os.listdir(in_dir)
                  if file.endswith('.dat')]:
@@ -320,11 +321,8 @@ def filters_modification(config_folder,file_config_filters):
     import json
     from pathlib import Path
 
-    # Local imports
-    import BiblioAnalysis_Utils as bau
-
     # Identifying the item to be modified in the filters configuration
-    filter_item = bau.filter_item_selection()
+    filter_item = filter_item_selection()
 
     # Setting the folders list for item_values selection list
     folders_list = [x[0] for x in os.walk(config_folder)][1:]
@@ -333,18 +331,18 @@ def filters_modification(config_folder,file_config_filters):
 
     # Selection of the folder of the item_values selection files
     print('Please select the folder of item_values selection file via the tk window')
-    myfolder_name = bau.Select_multi_items(folders_list,'single')[0]+'/'
+    myfolder_name = Select_multi_items(folders_list,'single')[0]+'/'
     myfolder = config_folder / Path(myfolder_name)
 
     # Setting the list of item_values selection files to be put in the filters configuration file
     files_list = os.listdir(myfolder)
     files_list.sort()
     print('\nPlease select the item_values selection file via the tk window')
-    myfile = bau.Select_multi_items(files_list,'single')[0]+'/'
+    myfile = Select_multi_items(files_list,'single')[0]+'/'
 
     item_values_file = myfolder / Path(myfile)
-    item_values_list_select = bau.item_values_list(item_values_file) 
+    item_values_list_select = item_values_list(item_values_file) 
 
-    bau.item_filter_modification(filter_item,item_values_list_select, file_config_filters)
+    item_filter_modification(filter_item,item_values_list_select, file_config_filters)
 
 

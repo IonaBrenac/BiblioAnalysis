@@ -5,7 +5,8 @@ __all__ = ['item_selection',
            'SAVE_CONFIG_FILTERS',
            'coupling_attr_selection',
            'Select_multi_items',
-           'filter_item_selection']
+           'filter_item_selection',
+           'select_folder_gui',]
 
 from .BiblioGlobals import (DIC_OUTDIR_PARSING,
                             LABEL_MEANING,
@@ -912,6 +913,78 @@ def filter_item_selection():
         idx_row += 1
      
     tk_root.mainloop()
-    
- 
+
     return ITEM_CHOICE
+
+def select_folder_gui(in_dir,title):
+    
+    '''
+    Interactive selection of a folder.
+    
+    Args: 
+        in_dir (str): name of the initial folder.
+        title (str): title of the tk window. 
+    
+    Returns:
+        `(str)`: name of the selected folder
+
+    '''
+    # Standard library imports
+    import os
+    import re
+    import tkinter as tk
+    from tkinter import ttk
+    from tkinter import messagebox
+    from tkinter import filedialog
+    
+    global out_dir
+    
+    # set the tk window geometry 
+    width = 10 * len(title + 5 * ' ')
+    height = "210"
+    
+    win = tk.Tk()
+    win.attributes("-topmost", True)
+    win.geometry(str(width) + 'x' + str(height) )
+    win.title('Folder selection window') 
+    
+    folder_select = tk.LabelFrame(win, text=title, font=('Aerial 18 bold'))
+    folder_select.grid(column=0, row=0, padx=30, pady=4)
+    
+    folder_choice = tk.LabelFrame(win, text='Selected folder', font=('Aerial 18 bold'))
+    folder_choice.grid(column=0, row=1, padx=30, pady=4)
+    
+    help_choice = tk.LabelFrame(win)
+    help_choice.grid(column=0, row=2, padx=30, pady=4)
+    
+    def outdir_folder_choice():
+        global out_dir
+        out_dir = filedialog.askdirectory(initialdir=in_dir,title=title)
+        thr = 30
+        pos_list = [m.start() for m in re.finditer('/', out_dir)]
+        for i in range(len(pos_list)):
+            if pos_list[-i] >= thr : mid_pos = i
+        out_dir1 = str(out_dir)[0:pos_list[-mid_pos]]
+        out_dir2 = str(out_dir)[pos_list[-mid_pos]:]
+        folder_label1 = ttk.Label(folder_choice, text=out_dir1, font=13)
+        folder_label1.grid(column=0, row=1, padx=8, pady=4)
+        out_dir2 = str(out_dir)[pos_list[-mid_pos]:]
+        folder_label2 = ttk.Label(folder_choice, text=out_dir2, font=13)
+        folder_label2.grid(column=0, row=2, padx=8, pady=4)
+    
+    def help():
+        messagebox.showinfo('Folder selection info', '')
+    
+    outdir_button = ttk.Button(folder_select,text='Select',command=outdir_folder_choice)
+    outdir_button.grid(column=0, row=1, padx=40, pady=4)
+
+    help_button = ttk.Button(help_choice, text="HELP", command=help)
+    help_button.grid(column=0, row=1, padx=20, pady=4)
+    
+    
+    if os.name == 'nt': # Work with Windows not MacOS
+        tk.Button(folder_choice, text="EXIT", command=win.destroy).grid(column=1, row=1, padx=8, pady=4)
+    
+    win.mainloop()
+    
+    return out_dir

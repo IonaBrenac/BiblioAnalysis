@@ -43,8 +43,9 @@ def build_title_keywords(df):
     '''
 
     # Standard library imports
-    from collections import Counter
     import operator
+    from collections import Counter
+   
     
     # 3rd party imports
     import nltk

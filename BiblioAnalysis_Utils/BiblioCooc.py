@@ -1,29 +1,12 @@
 """
-.. module:: BiblioCooc
-   :platform: MacOS, Windows
-   :synopsis: The `BiblioCooc` module is a set of functions useful for co-occurrence analysis
-   of the parsing items of a bibliographic corpus.
-   
-   More specifically, a co-occurrence graph G(nodes, edges) is generated where:
-
-   - the nodes are the item values of a parsing item of the corpus;
-
-    (ex: item = "S", nodes = "subject 1","subject 2"...)
-
-   - the edges connect two nodes when the two corresponding item values occure 
-   at least in one article of the corpus.
-              
-
-.. moduleauthor:: Anonimous
-
 The `BiblioCooc` module is a set of functions useful for co-occurrence analysis
 of the parsing items of a bibliographic corpus.
 
-More specifically, a co-occurrence graph G(nodes, edges) is generated where:
+More specifically, a co-occurrence graph `G(nodes, edges)` is generated where:
 
 - the nodes are the item values of a parsing item of the corpus;
 
-  (ex: item = "S", nodes = "subject 1","subject 2"...)
+  (ex:  for `item = "S"`, `nodes = subject 1,subject 2...`)
 
 - the edges connect two nodes when the two corresponding item values occure 
   at least in one article of the corpus.
@@ -55,34 +38,24 @@ def build_item_cooc(item, in_dir, out_dir, size_min=1):
     """
     The `build_item_cooc` function builds a networkx graph G for the item `item`.
     In addition, the graph is stored in the folder `out_dir` in two formats: `.gdf` and `.gexf`.
-    
-    Globals:
-        COOC_AUTHORIZED_ITEMS
-        
-        COOC_COLOR_NODES
-        
-        DIC_OUTDIR_PARSING
        
     Args:
-        item (str): item from the global `COOC_AUTHORIZED_ITEMS` list.
-        
+        item (str): item from the global `COOC_AUTHORIZED_ITEMS` list.        
         in_dir (Path): folder path of the parsed files generated 
-                       by the `BiblioParsingWos` module or the `BiblioParsingScopus` module.
-                       
-        out_dir (Path): folder path where the graph files (`.gdf` and `.gexf`) are stored.
-        
+                       by the `BiblioParsingWos` module or the `BiblioParsingScopus` module.       
+        out_dir (Path): folder path where the graph files (`.gdf` and `.gexf`) are stored.        
         size_min (int): threshold of item-value occurrence for keeping the item value 
-                        as a node.
-                        
+                        as a node.                       
                        
     Returns:
-        `networkx object`: Co-occurrence graph `G` of the item `item`
-        
+        `networkx object`: Co-occurrence graph `G` of the item `item`        
        
     Raises:   
         TypeError: if the graph is not a networkx graph. 
         
-        
+    Note:
+        The globals `COOC_AUTHORIZED_ITEMS`, `COOC_COLOR_NODES` and `DIC_OUTDIR_PARSING` are used.
+    
     """
 
     # Standard library import
@@ -119,69 +92,79 @@ def build_item_cooc(item, in_dir, out_dir, size_min=1):
 
 def generate_cooc_graph(df_corpus=None, size_min=1, item=None):
 
-    """The "generate_cooc_graph" function builds a coocurence networkx object G(N,E) 
-       out of the dataframe df_corpus composed of two columns : 
-       pub_id (article identifier) and item (item value).
+    """The `generate_cooc_graph` function builds a co-occurrence networkx object `G(N,E)` 
+    out of the dataframe `df_corpus` composed of two columns : 
+    `pub_id` (article identifier) and `item` (item value).
        
-       Example:
-          pub_id     item
-             0       item1
-             0       item2
-             1       item1
-             1       item1
-             1       item3 
-             1       item3
-             2       item4
-             2       item5
-             2       unknown
+    Example:
+        ========= =======
+         pub_id    item    
+        ========= =======    
+             0      item1  
+             0      item2       
+             1      item1     
+             1      item1     
+             1      item3      
+             1      item3     
+             2      item4      
+             2      item5   
+             2    unknown 
+        ========= =======
     
-       First df_corpus is cleaned by eliminating duplicated rows or with item "unknown".
-       
-       Example:
-          pub_id     item
-             0       item1
-             0       item2
-             1       item1
-             1       item3 
-             2       item4
-             2       item5
-             
-       The set of nodes N is the set of the items {item1,item2,item3,...}.
-       The set of edges E is the set of tuples {(item_i,item_j),...} where:   
-          (i)   item_i and item_j are related to the same pub_id;
-          (ii)  item_i != item_j;
-          (iii) (item_i,item_j) is equivalent to (item_j,item_i).
-     
-       Example:
-          N = {item1,item2,item3,item4,item5}, E={(item1,item2),(item1,item3), (item4,item5)}.
-     
-       The size of the node associated with item_i is the number of occurrences of item_i 
-       that should be >= than size_min.
-       
-       Example:
-          size of node_item1 = 2, size of node_item2 = 1
-     
-       The weight w_ij of an edge is the number of occurrences of the tuple (item_i,item_j) in the
-       list of tuples [(item_i,item_j),...] where item_i and item_j are 
-         (i)   related to the same pub_id;
-         (ii)  item_i != item_j; 
-         (iii) (item_i,item_j) is equivalent to (item_j,item_i).
-     
-       The nodes have one id and two attributes: the size of the node and its label. 
-     
-       The edges have two attributes: their weight w_ij and their Kessler similarity defined as: 
-
-                                                        w_ij
-                               kess_ij = ----------------------------------------
-                                          sqrt(size(node_i) * sqrt(size(node_j)
+    First, `df_corpus` is cleaned by eliminating duplicated rows or with the item-value `unknown`.
+    This results in:
+        ========= =======
+         pub_id    item    
+        ========= =======    
+           0      item1  
+           0      item2    
+           1      item1    
+           1      item3          
+           2      item4     
+           2      item5  
+        ========= =======     
     
-       Args:
-           df_corpus (dataframe): dataframe structured as |pub_id|item|.
-           size_min (int): minimum size of the nodes to be kept.
+    The set of nodes `N` is the set of the items `{item1,item2,item3,...}`.
+    The set of edges `E` is the set of tuples `{(item_i,item_j),...}` where:   
+          1.  `item_i` and `item_j` are related to the same `pub_id`;
+          2.  `item_i` and `item_j` are different;
+          3.  `(item_i,item_j)` and `(item_j,item_i)` are equivalent.
+     
+    This means:
+          `N = {item1,item2,item3,item4,item5}`
+          
+          `E={(item1,item2),(item1,item3),(item4,item5)}`.
+     
+    The size of the node associated with `item_i` is the number of occurrences of `item_i` 
+    that should be >= than `size_min`. So we have: 
+    
+        size of `item1` node is 2
         
-       Returns:
-           G (networkx object): co-occurence graph of the item "item"; 
-                                G=None if the graph has only one node.
+        size of `item2` node is 1
+     
+    The weight `w_ij` of an edge is the number of occurrences of the tuple `(item_i,item_j)` in the
+    list of tuples `[(item_i,item_j),...]` where: 
+         1.  `item_i` and `item_j` are related to the same `pub_id`;
+         2.  `item_i` and `item_j` are different; 
+         3.  `(item_i,item_j)` and `(item_j,item_i)` are equivalent.
+     
+    The nodes have one ID and two attributes: the size of the node and its label. 
+    If `item = "CU"`, the longitude and latitude (in degree) of the country capital 
+    are added as attributes of the node to be compatible with the Geo Layout of Gephy.
+     
+    The edges have two attributes: the edge weight `w_ij` and its Kessler similarity `kess_ij`.
+    The Kessler similarity of the edge of the nodes `node_i` and node_j` is defined as:                              
+    
+    .. math:: kess_{ij} = \\frac{w_{ij}}{\\sqrt{size(node\_i) . size(node\_j)}} 
+    
+    Args:
+        df_corpus (dataframe): dataframe structured as `|pub_id|item|`.
+        size_min (int): minimum size of the nodes to be kept.
+        item (str): item label (ex: "AU", "CU") of which co-occurrence graph is generated.
+
+    Returns:
+        `networkx object`: co-occurrence graph `G` of the item `item`; 
+                          `G=None` if the graph has only one node.
         
     """
 
@@ -196,7 +179,7 @@ def generate_cooc_graph(df_corpus=None, size_min=1, item=None):
     import pandas as pd
 
     #                           Cleaning of the dataframe
-    # -----------------------------------------------------------------------------------------------
+    # -----------------------------------------------------------------------------------------
     df_corpus.drop_duplicates(inplace=True)  # Keeps unique occurrence of an item
     # per article
     df_corpus.drop(
@@ -217,7 +200,7 @@ def generate_cooc_graph(df_corpus=None, size_min=1, item=None):
     df_corpus.drop(index_to_drop, inplace=True)  # Cleaning of the dataframe
 
     #                 Building the set of nodes and the set of edges
-    # ------------------------------------------------------------------------------------------------
+    # -----------------------------------------------------------------------------------------
     df_corpus.columns = ["pub_id", "item"]
     nodes_id = list(
         set(df_corpus["item"])
@@ -251,7 +234,7 @@ def generate_cooc_graph(df_corpus=None, size_min=1, item=None):
                         weight[edge] += 1
         del df_corpus
         #                            Building the networx object graph G
-        # ------------------------------------------------------------------------------------------------
+        # -------------------------------------------------------------------------------------
         G = nx.Graph()
 
         G.add_nodes_from(dic_nodes.values())
@@ -291,15 +274,19 @@ def generate_cooc_graph(df_corpus=None, size_min=1, item=None):
 
 def plot_cooc_graph(G, item, size_min=1, node_size_ref=30):
 
-    """The "plot_cooc_graph" plots the co-occurrenre graph G.
+    """The `plot_cooc_graph` function plots the co-occurrence graph G.
        The layout is fixed as "spring_layout".
     
     Args:
-        G (networkx ogject): a co-occurence graph built using 
-                             the function "generate_cooc_graph".
+        G (networkx ogject): a co-occurrence graph built using 
+                             the function `generate_cooc_graph`.
         item (str): item name (ex: "Authors", "Country"...).
         size_min (int): minimum size of the kept nodes.
         Node_size_ref (int): maximum size of a node.
+    
+    Note:
+        The global `COOC_AUTHORIZED_ITEMS` is used.
+    
      
     """
 
@@ -329,7 +316,7 @@ def plot_cooc_graph(G, item, size_min=1, node_size_ref=30):
     )
     labels = nx.draw_networkx_labels(G, pos=pos, font_size=8, font_color="w")
     plt.title(
-        "Cooccurrence graph for item "
+        "Co-occurrence graph for item "
         + title_item_dict[item]
         + "\nNode minimum size: "
         + str(size_min),
@@ -342,42 +329,37 @@ def plot_cooc_graph(G, item, size_min=1, node_size_ref=30):
 
 def write_cooc_gexf(G, filename):
 
-    """The "write_cooc_gexf" function saves the graph "G" 
-       in Gephy (.gexf) format using full path filename.
-       If item = "CU", the longitude and latitude (in °) of the country capital 
-       are added as attributes of the node to be compatible with the Geo Layout of Gephy.
+    """The `write_cooc_gexf` function saves the graph `G"`
+       in Gephy (`.gexf`) format using full path filename.
        
     Args:
-        G (networkx ogject): a co-occurence graph built using 
-                             the function "generate_cooc_graph".
-        filename (Path): full path for saving the Gephy file (.gexf).
+        G (networkx ogject): a co-occurrence graph built using 
+                             the function `generate_cooc_graph`.
+        filename (Path): full path for saving the Gephy file (`.gexf`).
         
     """
-
-    # Standard library imports
-    from pathlib import Path
 
     # 3rd party imports
     import networkx as nx
 
-    assert isinstance(G, nx.classes.graph.Graph), "G should be networkx Graph"
+    assert isinstance(G, nx.classes.graph.Graph), "G should be a networkx Graph"
 
     nx.write_gexf(G, filename)
 
 
 def write_cooc_gdf(G, item, color, filename):
 
-    """The "write_cooc_gdf" function saves the graph "G" 
-       in Gephy (.gdf) format using full path filename.
-       If item = "CU", the longitude and latitude (in °) of the country capital 
+    """The `write_cooc_gdf` function saves the graph `G` 
+       in Gephy (`.gdf`) format using full path filename.
+       If `item = "CU"`, the longitude and latitude (in degree) of the country capital 
        are added as attributes of the node to be compatible with the Geo Layout of Gephy.
        
     Args:
-        G (networkx ogject): a co-occurence graph built using 
-                             the function "generate_cooc_graph".
+        G (networkx ogject): a co-occurrence graph built using 
+                             the function `generate_cooc_graph`.
         item (str): label of the item. 
-        color (str): color of the nodes in rgb format ex: "150,0,150".                    
-        filename (Path): full path for saving the Gephy file (.gdf).
+        color (str): color of the nodes in rgb format (ex: "150,0,150").                    
+        filename (Path): full path for saving the Gephy file (`.gdf`).
     
     """
 
@@ -385,7 +367,7 @@ def write_cooc_gdf(G, item, color, filename):
     import math
     import networkx as nx
 
-    assert isinstance(G, nx.classes.graph.Graph), "G should be networkx Graph"
+    assert isinstance(G, nx.classes.graph.Graph), "G should be a networkx Graph"
 
     with open(filename, "w") as f_gephi:
         nodes_label = nx.get_node_attributes(G, "label")
