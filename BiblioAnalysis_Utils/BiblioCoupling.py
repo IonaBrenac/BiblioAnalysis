@@ -1,6 +1,6 @@
-"""BiblioCoupling module is a set of functions useful for articles coupling analysis
+"""The `BiblioCoupling` module is a set of functions useful for articles coupling analysis
    in a bibliographic corpus.
-   More specifically, a coupling graph G(nodes, edges) is generated where:
+   More specifically, a coupling graph `G(nodes, edges)` is generated where:
        - the nodes are the articles of the corpus with predefined attributes 
          and interactively defined attributes;
        - the edges connect two articles when they share at least a minimum number of refererences.
@@ -8,26 +8,20 @@
          
 """
 
-__all__ = ['build_coupling_graph','build_louvain_partition',
-          'plot_coupling_graph','save_communities_xls','save_graph_gexf',
-          'add_item_attribute']
+__all__ = ['build_coupling_graph',
+           'build_louvain_partition',
+           'plot_coupling_graph',
+           'save_communities_xls',
+           'save_graph_gexf',
+           'add_item_attribute',]
 
-from .BiblioGlobals import (DIC_OUTDIR_PARSING,DIC_OUTDIR_DESCRIPTION, 
-                            COUPL_FILENAME_XLSX,COUPL_FILENAME_GEXF,COUPL_AUTHORIZED_ITEMS)
-           
-BCTHR = 1  # minimum number of shared references to keep an edge (default 1)
+# Globals used from .BiblioSpecificGlobals: COUPL_AUTHORIZED_ITEMS,
+#                                           COUPL_FILENAME_GEXF,
+#                                           COUPL_FILENAME_XLSX, 
+#                                           COUPL_GLOBAL_VALUES,
+#                                           DIC_OUTDIR_DESCRIPTION,
+#                                           DIC_OUTDIR_PARSING 
 
-RTUTHR = 2 # minimum time of use in the corpus to count a reference in the 
-           # shared references (default 2)
-
-WTHR = 0   # minimum weight to keep a link (default 0)
-
-NRTHR = 1  # minimum number of references to keep a node (default 1)
-
-NRUNS = 1  # number of time the louvain algorithm is run for a given network, 
-           # the best partition being kept (default 1)
-       
-SIZECUT = 10
 
 def build_coupling_graph(in_dir):
     
@@ -63,11 +57,20 @@ def build_coupling_graph(in_dir):
     import math
     import networkx as nx
     import pandas as pd
-
-
+    
+    # Local imports
+    from .BiblioSpecificGlobals import DIC_OUTDIR_PARSING
+    from .BiblioSpecificGlobals import COUPL_GLOBAL_VALUES
+    
+    BCTHR = COUPL_GLOBAL_VALUES['BCTHR']
+    RTUTHR = COUPL_GLOBAL_VALUES['RTUTHR']
+    WTHR = COUPL_GLOBAL_VALUES['WTHR']
+    NRTHR = COUPL_GLOBAL_VALUES['NRTHR']
+    
     # The references and their ids are extracted from the file articles.dat (tsv format)
     # ---------------------------------------------------------------------------------------
 
+    # TO DO: set columns by names 
     df_article = pd.read_csv(in_dir / Path(DIC_OUTDIR_PARSING['A']),
                  sep='\t',
                  header=None,
@@ -253,12 +256,13 @@ def add_item_attribute(G, item, m_max_attrs,
     import pandas as pd
 
     # Local imports
-    valid_item = COUPL_AUTHORIZED_ITEMS
+    from .BiblioSpecificGlobals import DIC_OUTDIR_DESCRIPTION
+    from .BiblioSpecificGlobals import COUPL_AUTHORIZED_ITEMS
 
     # Check valid input arguments
     add_item_attribute.__annotations__ = {'G': nx.Graph, 'item': str, 'm_max_attrs': int,
                        'in_dir_freq': Path, 'in_dir_parsing': Path, 'return':nx.Graph}
-    assert item in valid_item, f"unknown item {item}"
+    assert item in COUPL_AUTHORIZED_ITEMS, f"unknown item {item}"
     args = inspect.getfullargspec(add_item_attribute).args
     annotations = inspect.getfullargspec(add_item_attribute).annotations
     for arg in args:
@@ -396,6 +400,10 @@ def save_communities_xls(partition,in_dir,out_dir):
     # 3rd party import
     import pandas as pd
     
+    # Local imports
+    from .BiblioSpecificGlobals import DIC_OUTDIR_PARSING
+    from .BiblioSpecificGlobals import COUPL_FILENAME_XLSX
+    
     df_articles = pd.read_csv(in_dir / Path(DIC_OUTDIR_PARSING['A']),sep="\t",header=None)
 
     df_articles['communnity'] = df_articles[0].map(partition) # Adds column community
@@ -422,12 +430,15 @@ def save_graph_gexf(G,save_dir):
     # 3rd party imports
     import networkx as nx
     
+    # Local imports
+    from .BiblioSpecificGlobals import COUPL_FILENAME_GEXF
+    
     nx.write_gexf(G,save_dir / Path(COUPL_FILENAME_GEXF))
     
 
-def runpythonlouvain(G): # unused 
+def _runpythonlouvain(G): # unused function 
     
-    '''The "runpythonlouvain" function  is used to analyse a corpus 
+    '''The "_runpythonlouvain" function  is used to analyse a corpus 
        at level "len(foo_dendrogram) - 1)" of the corpus coupling graph G dendrogram, 
        (see https://buildmedia.readthedocs.org/media/pdf/python-louvain/latest/python-louvain.pdf).
        Author: Sebastian Grauwin (http://sebastian-grauwin.com/bibliomaps/)
@@ -451,6 +462,10 @@ def runpythonlouvain(G): # unused
     # 3rd party import
     import community as community_louvain
     
+    # TO DO: move NRUNS in COUPL_GLOBAL_VALUES if _runpythonlouvain is used.
+    NRUNS = 1 # number of time the louvain algorithm is run for a given network,
+              # the best partition being kept.
+    
     named_tup_results = namedtuple('results', ['dendrogram','partition','modularity',])
     
     max_modularity = -1
@@ -469,7 +484,7 @@ def runpythonlouvain(G): # unused
     return louvain_part
 
 
-def graph_community(G): # unused
+def _graph_community(G): # unused function
         
     '''The 'graph_community' function is used to analyse a corpus at 
        two levels of the dendrogram of the corpus coupling graph G 
@@ -486,8 +501,11 @@ def graph_community(G): # unused
 
     # 3rd party import    
     import community as community_louvain
+    
+    # TO DO: move SIZECUT in COUPL_GLOBAL_VALUES if _graph_community is used
+    SIZECUT = 10 # Upper limit of size communities
 
-    dendrogram, part, max_mod = runpythonlouvain(G)
+    dendrogram, part, max_mod = _runpythonlouvain(G)
     part2 = part.copy()
     to_update = {}
 
@@ -497,7 +515,7 @@ def graph_community(G): # unused
 
         if len(list_nodes) > SIZECUT: # split clusters of size > SIZECUT
             H = G.subgraph(list_nodes).copy()
-            [dendo2, partfoo, mod] = runpythonlouvain(H)
+            [dendo2, partfoo, mod] = _runpythonlouvain(H)
             dendo2 = community_louvain.generate_dendrogram(H, part_init=None)
             partfoo = community_louvain.partition_at_level(dendo2, len(dendo2) - 1)
             # add prefix code

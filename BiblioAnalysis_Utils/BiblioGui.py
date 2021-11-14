@@ -8,7 +8,7 @@ __all__ = ['item_selection',
            'filter_item_selection',
            'select_folder_gui',]
 
-from .BiblioGlobals import (DIC_OUTDIR_PARSING,
+from .BiblioSpecificGlobals import (DIC_OUTDIR_PARSING,
                             LABEL_MEANING,
                             COOC_AUTHORIZED_ITEMS_DICT)
 
@@ -960,8 +960,8 @@ def select_folder_gui(in_dir,title):
     def outdir_folder_choice():
         global out_dir
         out_dir = filedialog.askdirectory(initialdir=in_dir,title=title)
-        thr = 30
-        pos_list = [m.start() for m in re.finditer('/', out_dir)]
+        thr = 0.6 * len(title + 5 * ' ')
+        pos_list = [m.start() for m in re.finditer(r'[\\/]', out_dir)]
         for i in range(len(pos_list)):
             if pos_list[-i] >= thr : mid_pos = i
         out_dir1 = str(out_dir)[0:pos_list[-mid_pos]]

@@ -1,30 +1,23 @@
-"""BiblioDescription module is a set of functions useful for a bibliographic corpus description.
+"""The `BiblioDescription` module is a set of functions useful for a bibliographic corpus description.
    More specifically, the frequency occurence of the item values is computed for each of the parsing items.
          
 """
 
-__all__ = ['NMAX_NODES', 
-           'describe_corpus', 
+__all__ = ['describe_corpus', 
            'plot_graph', 
            'plot_counts', 
            'plot_histo',
            'treemap_item']
 
-from .BiblioGlobals import (DIC_OUTDIR_PARSING,
-                            DIC_OUTDIR_DESCRIPTION,
-                            LABEL_MEANING,
-                            NAME_MEANING,
-                            VALID_LABEL_GRAPH,
-                           )
-
-NMAX_NODES = 100 # maximum number of nodes to keep
-
-DIC_INDIR_DESCRIPTION = DIC_OUTDIR_PARSING
+# Globals used from .BiblioSpecificGlobals: COOC_NETWORKS_FILE, DIC_OUTDIR_PARSING, 
+#                                           DIC_OUTDIR_DESCRIPTION, DISTRIBS_ITEM_FILE,
+#                                           LABEL_MEANING, NAME_MEANING, NMAX_NODES,
+#                                           VALID_LABEL_GRAPH
 
 
-def frequency_analysis(df,corpus_size):
+def _frequency_analysis(df,corpus_size):
 
-    '''The 'frequency_analysis' function builds the dataframe "df_freq" and the arrays "q_item" and "p_item" from the dataframe "df".
+    '''The '_frequency_analysis' function builds the dataframe "df_freq" and the arrays "q_item" and "p_item" from the dataframe "df".
     The dataframe "df" consists in two columns named "pub_id" and "item":
 
      ex_a:              pub_id   item
@@ -55,7 +48,7 @@ def frequency_analysis(df,corpus_size):
     for ex_a we have: [[1,2],[4,2]]
 
     '''
-    #Standard library imports
+    # Standard library imports
     import itertools
     import operator
     
@@ -83,7 +76,7 @@ def frequency_analysis(df,corpus_size):
     return df_freq, q_item, p_item
 
 
-def generate_cooc(df,item):
+def _generate_cooc(df,item):
 
     '''Builds a cooccurence undirected graph (N,V) where:
             - the set N of nodes is the set of the NMAX_NODES prominent items in term of occurrence
@@ -102,8 +95,11 @@ def generate_cooc(df,item):
 
     '''
 
+    # Standard library imports
     from collections import defaultdict
-
+    
+    # Local imports
+    from .BiblioSpecificGlobals import NMAX_NODES
 
     #                           Builds nodes
     #----------------------------------------------------------------------------
@@ -153,23 +149,28 @@ def generate_cooc(df,item):
     del dict_node, dg, dic_item_to_keep
     return liste_node, liste_edge
 
-def describe_item(df,item,dic_distrib_item,list_cooc_nodes,list_cooc_edges ,freq_filename):
+
+def _describe_item(df,item,dic_distrib_item,list_cooc_nodes,list_cooc_edges ,freq_filename):
 
     '''Builds the dataframe "df_freq" and the arrays "q_item" and "p_item for :
     item = 'AU','AK','CU', 'DT', 'I', 'J', 'IK', 'LA', 'R', 'RJ', 'S', 'S2', 'TK', 'Y'
        Builds the coocurence undirected graph
     item = 'AU', 'CU', 'S', 'S2', 'K', 'R', 'RJ', 'I', 'AK', 'TK'
     '''
+    
+    # Local imports
+    from .BiblioSpecificGlobals import VALID_LABEL_GRAPH
+    
     corpus_size = dic_distrib_item["N"] 
     df.columns = ['pub_id','item']
-    df_freq, q_item, p_item = frequency_analysis(df,corpus_size)
+    df_freq, q_item, p_item = _frequency_analysis(df,corpus_size)
     df_freq.to_csv(freq_filename,sep=',', index = False)
 
     dic_distrib_item["q"+item.capitalize()] = q_item
     dic_distrib_item["p"+item.capitalize()] = p_item
 
     if item in VALID_LABEL_GRAPH:
-        liste_node, liste_edge = generate_cooc(df,item)
+        liste_node, liste_edge = _generate_cooc(df,item)
 
         list_cooc_nodes.extend(liste_node)
         list_cooc_edges.extend(liste_edge)
@@ -177,13 +178,20 @@ def describe_item(df,item,dic_distrib_item,list_cooc_nodes,list_cooc_edges ,freq
     del df_freq, q_item, p_item
 
     
-def process_article(in_dir, out_dir, dic_distrib_item, list_cooc_nodes, list_cooc_edges):
+def _process_article(in_dir, out_dir, dic_distrib_item, list_cooc_nodes, list_cooc_edges):
     
+    # Standard library imports
     from pathlib import Path
+    
+    # 3rd party imports
     import pandas as pd
     
+    # Local imports
+    from .BiblioSpecificGlobals import DIC_OUTDIR_PARSING
+    from .BiblioSpecificGlobals import DIC_OUTDIR_DESCRIPTION
+    
     try:
-        df_articles = pd.read_csv(in_dir/Path(DIC_INDIR_DESCRIPTION['A']),
+        df_articles = pd.read_csv(in_dir/Path(DIC_OUTDIR_PARSING['A']),
                                   sep='\t',
                                   header=None,
                                   usecols=[0,2,3,7,8])
@@ -198,7 +206,7 @@ def process_article(in_dir, out_dir, dic_distrib_item, list_cooc_nodes, list_coo
         dic_distrib_item["N"] = len(df_articles)
 
         item = "Y"                       # Deals with years
-        describe_item(df_articles[['pub_id','Year']],
+        _describe_item(df_articles[['pub_id','Year']],
                        item,
                        dic_distrib_item,
                        list_cooc_nodes,
@@ -206,7 +214,7 @@ def process_article(in_dir, out_dir, dic_distrib_item, list_cooc_nodes, list_coo
                        out_dir/Path(DIC_OUTDIR_DESCRIPTION[item]))
 
         item = "J"                     # Deals with journals title (ex: PHYSICAL REVIEW B)
-        describe_item(df_articles[['pub_id','Source title']],
+        _describe_item(df_articles[['pub_id','Source title']],
                       item,
                       dic_distrib_item,
                       list_cooc_nodes,
@@ -214,7 +222,7 @@ def process_article(in_dir, out_dir, dic_distrib_item, list_cooc_nodes, list_coo
                       out_dir/Path(DIC_OUTDIR_DESCRIPTION[item]))
 
         item = "DT"                    # Deal with doc type (ex: article, review)
-        describe_item(df_articles[['pub_id','Document Type']],
+        _describe_item(df_articles[['pub_id','Document Type']],
                       item,
                       dic_distrib_item,
                       list_cooc_nodes,
@@ -222,7 +230,7 @@ def process_article(in_dir, out_dir, dic_distrib_item, list_cooc_nodes, list_coo
                       out_dir/Path(DIC_OUTDIR_DESCRIPTION[item]))
 
         item = "LA"                   # Deal with language
-        describe_item(df_articles[['pub_id','Language of Original Document']],
+        _describe_item(df_articles[['pub_id','Language of Original Document']],
                       item,
                       dic_distrib_item,
                       list_cooc_nodes,
@@ -230,20 +238,26 @@ def process_article(in_dir, out_dir, dic_distrib_item, list_cooc_nodes, list_coo
                       out_dir/Path(DIC_OUTDIR_DESCRIPTION[item]))
         del df_articles
     except pd.errors.EmptyDataError:
-        print(f'Note: file {DIC_INDIR_DESCRIPTION["A"]} was empty. Skipping')
+        print(f'Note: file {DIC_OUTDIR_PARSING["A"]} was empty. Skipping')
             
         
-def process_references(in_dir, out_dir, dic_distrib_item, list_cooc_nodes, list_cooc_edges):
+def _process_references(in_dir, out_dir, dic_distrib_item, list_cooc_nodes, list_cooc_edges):
     
-    from pathlib import Path
+    # Standard library imports
     import re
+    from pathlib import Path
     
+    # 3rd party imports
     import pandas as pd
+    
+    # Local imports
+    from .BiblioSpecificGlobals import DIC_OUTDIR_PARSING
+    from .BiblioSpecificGlobals import DIC_OUTDIR_DESCRIPTION
     
     try:
         item ='R'
         find_0 = re.compile(r',\s?0')
-        df = pd.read_csv(in_dir / Path(DIC_INDIR_DESCRIPTION[item]),
+        df = pd.read_csv(in_dir / Path(DIC_OUTDIR_PARSING[item]),
                          sep='\t',
                          header=None,
                          usecols=[0,1,2,3,4,5] ).astype(str)
@@ -252,7 +266,7 @@ def process_references(in_dir, out_dir, dic_distrib_item, list_cooc_nodes, list_
         df['ref'] = df.apply(lambda row:re.sub(find_0,'', ', '.join(row[1:-1]))
                                      ,axis=1)
                          
-        describe_item(df[[0,'ref']],
+        _describe_item(df[[0,'ref']],
                       item,
                       dic_distrib_item,
                       list_cooc_nodes,
@@ -260,7 +274,7 @@ def process_references(in_dir, out_dir, dic_distrib_item, list_cooc_nodes, list_
                       out_dir/Path(DIC_OUTDIR_DESCRIPTION[item]))
                          
         item = 'RJ'
-        describe_item(df[[0,3]],
+        _describe_item(df[[0,3]],
                       item,
                       dic_distrib_item,
                       list_cooc_nodes,
@@ -271,20 +285,27 @@ def process_references(in_dir, out_dir, dic_distrib_item, list_cooc_nodes, list_
         del df    
     
     except pd.errors.EmptyDataError:
-        print(f'Note: file {DIC_INDIR_DESCRIPTION["R"]} was empty. Skipping')
+        print(f'Note: file {DIC_OUTDIR_PARSING["R"]} was empty. Skipping')
   
 
-def process_item(in_dir, out_dir, item, usecols, dic_distrib_item, list_cooc_nodes, list_cooc_edges):
+def _process_item(in_dir, out_dir, item, usecols, dic_distrib_item, list_cooc_nodes, list_cooc_edges):
     
+    # Standard library imports
     from pathlib import Path
+    
+    # 3rd party imports
     import pandas as pd
     
+    # Local imports
+    from .BiblioSpecificGlobals import DIC_OUTDIR_PARSING
+    from .BiblioSpecificGlobals import DIC_OUTDIR_DESCRIPTION
+    
     try:
-        df = pd.read_csv(in_dir / Path(DIC_INDIR_DESCRIPTION[item]),
+        df = pd.read_csv(in_dir / Path(DIC_OUTDIR_PARSING[item]),
                              sep='\t',
                              header=None,
                              usecols=usecols)
-        describe_item(df,
+        _describe_item(df,
                       item,
                       dic_distrib_item,
                       list_cooc_nodes,
@@ -293,8 +314,9 @@ def process_item(in_dir, out_dir, item, usecols, dic_distrib_item, list_cooc_nod
         del df
         
     except pd.errors.EmptyDataError:
-        print(f'Note: file {DIC_INDIR_DESCRIPTION[item]} was empty. Skipping') 
+        print(f'Note: file {DIC_OUTDIR_PARSING[item]} was empty. Skipping') 
 
+        
 def describe_corpus(in_dir, out_dir, database_type, verbose):
 
     '''Using the files xxxx.dat generated by the parsing function biblio_parser and stored in
@@ -303,7 +325,7 @@ def describe_corpus(in_dir, out_dir, database_type, verbose):
     home path//BiblioAnalysis Data/
     |-- myprojectname/
     |   |-- freq/
-    |   |   |-- coocnetworks.json, DISTRIBS_itemuse.json
+    |   |   |-- COOC_NETWORKS_FILE, DISTRIBS_ITEM_FILE 
     |   |   |-- freq_authors.dat, freq_authorskeywords.dat, freq_countries.dat
     |   |   |-- freq_doctypes.dat, freq_institutions.dat, freq_journals.dat
     |   |   |-- freq_keywords.dat, freq_languages.dat, freq_references.dat
@@ -330,60 +352,63 @@ def describe_corpus(in_dir, out_dir, database_type, verbose):
 
     '''
 
+    # Standard library imports
     import json
     from pathlib import Path
-
+    
+    # Local imports
+    from .BiblioSpecificGlobals import COOC_NETWORKS_FILE
+    from .BiblioSpecificGlobals import DISTRIBS_ITEM_FILE
+    
     dic_distrib_item = {}
     list_cooc_nodes = []   # Only one .json file is used to describe all the graph
-    list_cooc_edges = []   # these list are extended at each call of describe_item
-
-
+    list_cooc_edges = []   # these list are extended at each call of _describe_item function
 
     #with open(in_dir/Path("database.dat" ), "r") as file:  # read the database type wos/scopus  
         #dic_distrib_item["database"] = file.read().strip("\n")
     dic_distrib_item["database"] = database_type    
     
     # Deals with years, journals title, doc type and language
-    process_article(in_dir, out_dir, dic_distrib_item, list_cooc_nodes, list_cooc_edges)
+    _process_article(in_dir, out_dir, dic_distrib_item, list_cooc_nodes, list_cooc_edges)
     corpus_size = dic_distrib_item["N"]
 
     item = 'AU'                   # Deals with authors
-    process_item(in_dir, out_dir,item,[0,2],dic_distrib_item,list_cooc_nodes,list_cooc_edges)
+    _process_item(in_dir, out_dir,item,[0,2],dic_distrib_item,list_cooc_nodes,list_cooc_edges)
    
     item = 'S'                    # Deals with subjects
-    process_item(in_dir, out_dir,item,[0,1],dic_distrib_item,list_cooc_nodes,list_cooc_edges)
+    _process_item(in_dir, out_dir,item,[0,1],dic_distrib_item,list_cooc_nodes,list_cooc_edges)
 
     item = 'S2'                   # Deals with subject2 
-    process_item(in_dir, out_dir,item,[0,1],dic_distrib_item,list_cooc_nodes,list_cooc_edges)
+    _process_item(in_dir, out_dir,item,[0,1],dic_distrib_item,list_cooc_nodes,list_cooc_edges)
 
     item = 'I'                    # Deals with institutions
-    process_item(in_dir, out_dir,item,[0,2],dic_distrib_item,list_cooc_nodes,list_cooc_edges)
+    _process_item(in_dir, out_dir,item,[0,2],dic_distrib_item,list_cooc_nodes,list_cooc_edges)
 
     item = 'CU'                   # Deals with countries
-    process_item(in_dir, out_dir,item,[0,2],dic_distrib_item,list_cooc_nodes,list_cooc_edges)
+    _process_item(in_dir, out_dir,item,[0,2],dic_distrib_item,list_cooc_nodes,list_cooc_edges)
 
     # Deals with references
-    process_references(in_dir, out_dir, dic_distrib_item, list_cooc_nodes, list_cooc_edges)
+    _process_references(in_dir, out_dir, dic_distrib_item, list_cooc_nodes, list_cooc_edges)
     
     item = 'AK'                   # Deals with authors keywords
-    process_item(in_dir, out_dir,item,[0,1],dic_distrib_item,list_cooc_nodes,list_cooc_edges)
+    _process_item(in_dir, out_dir,item,[0,1],dic_distrib_item,list_cooc_nodes,list_cooc_edges)
     
     item = 'IK'                   # Deals journal keywords
-    process_item(in_dir, out_dir,item,[0,1],dic_distrib_item,list_cooc_nodes,list_cooc_edges)
+    _process_item(in_dir, out_dir,item,[0,1],dic_distrib_item,list_cooc_nodes,list_cooc_edges)
     
     item = 'TK'                   # Deals with title keywords
-    process_item(in_dir, out_dir,item,[0,1],dic_distrib_item,list_cooc_nodes,list_cooc_edges)
+    _process_item(in_dir, out_dir,item,[0,1],dic_distrib_item,list_cooc_nodes,list_cooc_edges)
     
 
     #                    creates two json files
     #---------------------------------------------------------------------
-    with open(out_dir / Path('DISTRIBS_itemuse.json'),'w') as file:
+    with open(out_dir / Path(DISTRIBS_ITEM_FILE),'w') as file:
         json.dump(dic_distrib_item,file,indent=4)
 
     dic_cooc = {}
     dic_cooc['nodes'] = list_cooc_nodes
     dic_cooc['links'] = list_cooc_edges
-    with open(out_dir / Path('coocnetworks.json'),'w') as file:
+    with open(out_dir / Path(COOC_NETWORKS_FILE),'w') as file:
         json.dump(dic_cooc,file,indent=4)
 
         
@@ -408,17 +433,22 @@ def plot_graph(in_dir,item):
     Returns the graph G.
     '''
 
+    # Standard library imports
     import json
-    from pathlib import Path
     import pprint
-
-
+    from pathlib import Path
+    
+    # 3rd party imports
     import community as community_louvain
     import matplotlib.cm as cm
     import matplotlib.pyplot as plt
     import networkx as nx
     import numpy as np
     import pandas as pd
+    
+    # Local imports
+    from .BiblioSpecificGlobals import LABEL_MEANING
+    from .BiblioSpecificGlobals import VALID_LABEL_GRAPH
 
 
     assert (item in VALID_LABEL_GRAPH),\
@@ -474,19 +504,15 @@ def plot_graph(in_dir,item):
 
 def plot_counts(item_counts, file_name_counts):
 
-    '''Plots a distribution curve from the frequency_analysis .
+    '''Plots a distribution curve from the frequency analysis .
     The data are extracted from the freq_xxxx.dat files 
     built by the funtion describe_corpus
     '''
-
-    # Standard library imports
-    import pandas as pd
-    import sys
+    
+    # 3rd party imports
     import matplotlib.pyplot as plt
-    from matplotlib import cm
-    from matplotlib import colors
-    from pathlib import Path
-
+    import pandas as pd
+    
     df = pd.read_csv(file_name_counts, sep= ',')
 
     #        Scatter plot 
@@ -499,14 +525,20 @@ def plot_counts(item_counts, file_name_counts):
     
 def plot_histo(item_label, file_distrib_item):
 
-    '''Plots the histograms of the p and q statistics (see frequency_analysis for more details).
+    '''Plots the histograms of the p and q statistics (see _frequency_analysis function for more details).
     The data are extracted from the json file DISTRIBS_itemuse.json
     built by the funtion describe_corpus
     '''
 
+    # Standard library imports
     import json
+    
+    # 3rd party imports
     import matplotlib.pyplot as plt
-
+    
+    # Local imports
+    from .BiblioSpecificGlobals import LABEL_MEANING
+    from .BiblioSpecificGlobals import NAME_MEANING
 
     #file_distrib_item = in_dir / Path('DISTRIBS_itemuse.json')
     with open(file_distrib_item, "r") as read_file:
@@ -545,17 +577,13 @@ def plot_histo(item_label, file_distrib_item):
 
     
 def treemap_item(item_treemap, file_name_treemap):
-    
-    # Standard library imports
-    import pandas as pd
-    import sys
-    import matplotlib.pyplot as plt
-    from matplotlib import cm
-    from matplotlib import colors
-    from pathlib import Path
 
     # 3rd party imports
-    import squarify    # pip install squarify (algorithm for treemap)
+    import matplotlib.pyplot as plt
+    import pandas as pd
+    import squarify    # algorithm for treemap
+    from matplotlib import cm
+    from matplotlib import colors
         
     df = pd.read_csv(file_name_treemap, sep= ',')
     all_labels = list(df['item'])

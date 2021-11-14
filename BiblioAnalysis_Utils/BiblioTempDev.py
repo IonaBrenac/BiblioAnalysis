@@ -1,6 +1,6 @@
 __all__ = ['temporaldev_itemvalues_freq','read_config_temporaldev','write_config_temporaldev','temporaldev_result_toxlsx']
 
-from .BiblioDescription import DIC_OUTDIR_DESCRIPTION
+from .BiblioSpecificGlobals import DIC_OUTDIR_DESCRIPTION
 
 def temporaldev_itemvalues_freq(keyword_filters ,items, years, corpuses_folder):
     

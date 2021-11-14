@@ -17,23 +17,19 @@ of the `BiblioAnalysis_Utils` package.
 The functions externally callable are `build_item_cooc`and `plot_cooc_graph`.
 
 The `build_item_cooc` function calls the following local functions of the module: 
-`generate_cooc_graph`, `write_cooc_gexf` and `write_cooc_gdf`.
+`_generate_cooc_graph`, `_write_cooc_gexf` and `_write_cooc_gdf`.
 
 """
 
 __all__ = ["build_item_cooc", "plot_cooc_graph"]
 
-from .BiblioGeneralGlobals import COUNTRIES_GPS
-from .BiblioGlobals import (
-    DIC_OUTDIR_PARSING,
-    LABEL_MEANING,
-    COOC_AUTHORIZED_ITEMS,
-    COOC_AUTHORIZED_ITEMS_DICT,
-    COOC_COLOR_NODES,
-)
+# Globals used from .BiblioGeneralGlobals: COUNTRIES_GPS
+# Globals used from .BiblioSpecificGlobals: COOC_AUTHORIZED_ITEMS, COOC_AUTHORIZED_ITEMS_DICT, 
+#                                           COOC_COLOR_NODES, DIC_OUTDIR_PARSING,
+#                                           NODE_SIZE_REF, SIZE_MIN
 
 
-def build_item_cooc(item, in_dir, out_dir, size_min=1):
+def build_item_cooc(item, in_dir, out_dir, size_min=None):
 
     """
     The `build_item_cooc` function builds a networkx graph G for the item `item`.
@@ -45,7 +41,7 @@ def build_item_cooc(item, in_dir, out_dir, size_min=1):
                        by the `BiblioParsingWos` module or the `BiblioParsingScopus` module.       
         out_dir (Path): folder path where the graph files (`.gdf` and `.gexf`) are stored.        
         size_min (int): threshold of item-value occurrence for keeping the item value 
-                        as a node.                       
+                        as a node (default: 1).                       
                        
     Returns:
         `networkx object`: Co-occurrence graph `G` of the item `item`        
@@ -65,6 +61,14 @@ def build_item_cooc(item, in_dir, out_dir, size_min=1):
 
     # 3rd party imports
     import pandas as pd
+    
+    # Local imports
+    from .BiblioSpecificGlobals import COOC_AUTHORIZED_ITEMS
+    from .BiblioSpecificGlobals import COOC_COLOR_NODES
+    from .BiblioSpecificGlobals import DIC_OUTDIR_PARSING
+    from .BiblioSpecificGlobals import SIZE_MIN
+    
+    if size_min==None: size_min = SIZE_MIN
 
     assert item in COOC_AUTHORIZED_ITEMS, f"unknown item: {item}"
 
@@ -74,25 +78,25 @@ def build_item_cooc(item, in_dir, out_dir, size_min=1):
     df = df[[0, num_col]]
     df.columns = ["pub_id", "item"]
 
-    G = generate_cooc_graph(df_corpus=df, size_min=size_min, item=item)
+    G = _generate_cooc_graph(df, size_min, item)
     del df
 
     if G is not None:
         filename_out_prefix = "cooc_" + item + "_thr" + str(size_min)
-        write_cooc_gdf(
+        _write_cooc_gdf(
             G,
             item,
             COOC_COLOR_NODES[item],
             out_dir / Path(filename_out_prefix + ".gdf"),
         )
-        write_cooc_gexf(G, out_dir / Path(filename_out_prefix + ".gexf"))
+        _write_cooc_gexf(G, out_dir / Path(filename_out_prefix + ".gexf"))
 
     return G
 
 
-def generate_cooc_graph(df_corpus=None, size_min=1, item=None):
+def _generate_cooc_graph(df_corpus, size_min, item):
 
-    """The `generate_cooc_graph` function builds a co-occurrence networkx object `G(N,E)` 
+    """The `_generate_cooc_graph` function builds a co-occurrence networkx object `G(N,E)` 
     out of the dataframe `df_corpus` composed of two columns : 
     `pub_id` (article identifier) and `item` (item value).
        
@@ -159,7 +163,7 @@ def generate_cooc_graph(df_corpus=None, size_min=1, item=None):
     
     Args:
         df_corpus (dataframe): dataframe structured as `|pub_id|item|`.
-        size_min (int): minimum size of the nodes to be kept.
+        size_min (int): minimum size of the nodes to be kept (default: 1).
         item (str): item label (ex: "AU", "CU") of which co-occurrence graph is generated.
 
     Returns:
@@ -175,8 +179,9 @@ def generate_cooc_graph(df_corpus=None, size_min=1, item=None):
     # 3rd party import
     import math
     import networkx as nx
-    import numpy as np
-    import pandas as pd
+    
+    # Local imports
+    from .BiblioGeneralGlobals import COUNTRIES_GPS
 
     #                           Cleaning of the dataframe
     # -----------------------------------------------------------------------------------------
@@ -272,14 +277,14 @@ def generate_cooc_graph(df_corpus=None, size_min=1, item=None):
     return G
 
 
-def plot_cooc_graph(G, item, size_min=1, node_size_ref=30):
+def plot_cooc_graph(G, item, size_min=None, node_size_ref=None):
 
     """The `plot_cooc_graph` function plots the co-occurrence graph G.
        The layout is fixed as "spring_layout".
     
     Args:
         G (networkx ogject): a co-occurrence graph built using 
-                             the function `generate_cooc_graph`.
+                             the function `_generate_cooc_graph`.
         item (str): item name (ex: "Authors", "Country"...).
         size_min (int): minimum size of the kept nodes.
         Node_size_ref (int): maximum size of a node.
@@ -291,10 +296,19 @@ def plot_cooc_graph(G, item, size_min=1, node_size_ref=30):
     """
 
     # 3rd party import
-    import matplotlib.cm as cm
-    import matplotlib.pyplot as plt
-    import networkx as nx
+    # import matplotlib.cm as cm  # for futur use
     import numpy as np
+    import networkx as nx
+    import matplotlib.pyplot as plt
+    
+    # Local imports
+    from .BiblioSpecificGlobals import COOC_AUTHORIZED_ITEMS
+    from .BiblioSpecificGlobals import COOC_AUTHORIZED_ITEMS_DICT
+    from .BiblioSpecificGlobals import NODE_SIZE_REF
+    from .BiblioSpecificGlobals import SIZE_MIN
+    
+    if node_size_ref==None: size_min = NODE_SIZE_REF
+    if size_min==None: size_min = SIZE_MIN    
 
     pos = nx.spring_layout(G)
     node_sizes = np.array(list(nx.get_node_attributes(G, "node_size").values()))
@@ -327,14 +341,14 @@ def plot_cooc_graph(G, item, size_min=1, node_size_ref=30):
     plt.show()
 
 
-def write_cooc_gexf(G, filename):
+def _write_cooc_gexf(G, filename):
 
-    """The `write_cooc_gexf` function saves the graph `G"`
+    """The `_write_cooc_gexf` function saves the graph `G"`
        in Gephy (`.gexf`) format using full path filename.
        
     Args:
         G (networkx ogject): a co-occurrence graph built using 
-                             the function `generate_cooc_graph`.
+                             the function `_generate_cooc_graph`.
         filename (Path): full path for saving the Gephy file (`.gexf`).
         
     """
@@ -347,16 +361,16 @@ def write_cooc_gexf(G, filename):
     nx.write_gexf(G, filename)
 
 
-def write_cooc_gdf(G, item, color, filename):
+def _write_cooc_gdf(G, item, color, filename):
 
-    """The `write_cooc_gdf` function saves the graph `G` 
+    """The `_write_cooc_gdf` function saves the graph `G` 
        in Gephy (`.gdf`) format using full path filename.
        If `item = "CU"`, the longitude and latitude (in degree) of the country capital 
        are added as attributes of the node to be compatible with the Geo Layout of Gephy.
        
     Args:
         G (networkx ogject): a co-occurrence graph built using 
-                             the function `generate_cooc_graph`.
+                             the function `_generate_cooc_graph`.
         item (str): label of the item. 
         color (str): color of the nodes in rgb format (ex: "150,0,150").                    
         filename (Path): full path for saving the Gephy file (`.gdf`).
@@ -366,6 +380,9 @@ def write_cooc_gdf(G, item, color, filename):
     # 3rd party import
     import math
     import networkx as nx
+    
+    # Local imports
+    from .BiblioGeneralGlobals import COUNTRIES_GPS
 
     assert isinstance(G, nx.classes.graph.Graph), "G should be a networkx Graph"
 

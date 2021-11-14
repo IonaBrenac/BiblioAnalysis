@@ -2,15 +2,11 @@ __all__ = ['build_title_keywords','country_normalization',
            'merge_database','name_normalizer',
           'biblio_parser']
 
-from .BiblioGeneralGlobals import ALIAS_UK
-from .BiblioGeneralGlobals import COUNTRIES
-from .BiblioGeneralGlobals import CHANGE
-from .BiblioGeneralGlobals import USA_STATES
+# Globals used from .BiblioGeneralGlobals: ALIAS_UK, COUNTRIES, CHANGE
+# Globals used from .BiblioSpecificGlobals: BLACKLISTED_WORDS, INST_FILTER_DIC, 
+#                                   NLTK_VALID_TAG_LIST, NOUN_MINIMUM_OCCURRENCES
 
-from .BiblioParsingGlobals import NLTK_VALID_TAG_LIST
-from .BiblioParsingGlobals import NOUN_MINIMUM_OCCURRENCES
-from .BiblioParsingGlobals import BLACKLISTED_WORDS
-       
+
 def build_title_keywords(df):
     
     '''Given the dataframe 'df' with one column 'title':
@@ -45,11 +41,15 @@ def build_title_keywords(df):
     # Standard library imports
     import operator
     from collections import Counter
-   
-    
+       
     # 3rd party imports
     import nltk
     import numpy as np
+    
+    # Local imports
+    from .BiblioSpecificGlobals import NLTK_VALID_TAG_LIST
+    from .BiblioSpecificGlobals import NOUN_MINIMUM_OCCURRENCES
+    from .BiblioSpecificGlobals import BLACKLISTED_WORDS
     
     def tokenizer(text):
         
@@ -97,6 +97,10 @@ def country_normalization(country):
     Normalize the country name for coherence seeking between wos and scopus corpuses.
     '''
 
+    # Local imports
+    from .BiblioGeneralGlobals import ALIAS_UK
+    from .BiblioGeneralGlobals import COUNTRIES
+    
     country_clean = country
     if country not in COUNTRIES:
         if country in  ALIAS_UK:
@@ -134,6 +138,9 @@ def merge_database(database,filename,in_dir,out_dir):
 
     # 3rd party imports
     import pandas as pd
+    
+    # Local imports
+    from .BiblioSpecificGlobals import USECOLS_SCOPUS
 
     list_data_base = []
     list_df = []
@@ -177,7 +184,9 @@ def name_normalizer(text):
     import functools
     import re
     import unicodedata
-
+    
+    # Local imports
+    from .BiblioGeneralGlobals import CHANGE
 
     nfc = functools.partial(unicodedata.normalize,'NFD')
     
@@ -213,17 +222,21 @@ def name_normalizer(text):
            
     return text
 
-def biblio_parser(in_dir_parsing, out_dir_parsing, database, expert, rep_utils):
+def biblio_parser(in_dir_parsing, out_dir_parsing, database, expert, rep_utils, inst_filter_dic=None):
     
     '''Chooses the appropriate parser to parse wos or scopus databases.
     '''
     
+    # Local imports
     from .BiblioParsingScopus import biblio_parser_scopus
     from .BiblioParsingWos import biblio_parser_wos
+    from .BiblioSpecificGlobals import INST_FILTER_DIC
+    
+    if inst_filter_dic== None: inst_filter_dic = INST_FILTER_DIC
     
     if database == "wos":
-        biblio_parser_wos(in_dir_parsing, out_dir_parsing)
+        biblio_parser_wos(in_dir_parsing, out_dir_parsing, inst_filter_dic)
     elif database == "scopus":
-        biblio_parser_scopus(in_dir_parsing, out_dir_parsing, rep_utils)
+        biblio_parser_scopus(in_dir_parsing, out_dir_parsing, rep_utils, inst_filter_dic)
     else:
         raise Exception("Sorry, unrecognized database {database} : should be wos or scopus ")
