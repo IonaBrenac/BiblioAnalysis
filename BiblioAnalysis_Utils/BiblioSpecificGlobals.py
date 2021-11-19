@@ -4,6 +4,7 @@
 '''
 
 __all__ = ['BLACKLISTED_WORDS',
+           'COL_NAMES',
            'COOC_AUTHORIZED_ITEMS',
            'COOC_AUTHORIZED_ITEMS_DICT',
            'COOC_COLOR_NODES',
@@ -41,6 +42,49 @@ __all__ = ['BLACKLISTED_WORDS',
 #####################
 
 BLACKLISTED_WORDS = [] #['null','nan'] for title keywords
+
+COL_NAMES = {'articles':    ['Authors',
+                             'Year',
+                             'Source title',
+                             'Volume',
+                             'Page start',
+                             'DOI',
+                             'Document Type',
+                             'Language of Original Document',
+                             'Title',
+                             'ISSN'],
+             'references':  ['pub_id',
+                             'author',
+                             'year',                             
+                             'journal',
+                             'volume',
+                             'page'],
+             'authors':     ['pub_id',
+                             'idx_author',
+                             'co_author'],
+             'keywords':    ['pub_id',
+                             'type',
+                             'keyword'],
+             'address':     ['pub_id',
+                             'idx_address',
+                             'address'],
+             'country':     ['pub_id',
+                             'idx_address',
+                             'country'],
+             'institution': ['pub_id',
+                             'idx_address',
+                             'institution'],
+             'auth_inst':   ['pub_id',
+                             'idx_author',
+                             'address',
+                             'country',
+                             'institution',
+                             'secondary_institutions'],
+             'subject':     ['pub_id',
+                             'subject'],
+             'sub_subject': ['pub_id',
+                             'sub_subject']
+            }
 
 COOC_AUTHORIZED_ITEMS = ['AU','CU','AK','IK','TK','S','S2']
 
@@ -131,7 +175,7 @@ FOLDER_NAMES = {'rawdata':     'rawdata',
                 'cooccurrence':'cooc',
                }
 
-HEADER = False
+HEADER = True
 
 # Authors affiliations filter (default: None) as a dict keyed by:
 #    - 'secondary_inst': list of institution names (str) to be selected

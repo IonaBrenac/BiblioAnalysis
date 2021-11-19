@@ -178,7 +178,7 @@ def _describe_item(df,item,dic_distrib_item,list_cooc_nodes,list_cooc_edges ,fre
     del df_freq, q_item, p_item
 
     
-def _process_article(in_dir, out_dir, dic_distrib_item, list_cooc_nodes, list_cooc_edges):
+def _process_article(in_dir, out_dir, usecols, dic_distrib_item, list_cooc_nodes, list_cooc_edges):
     
     # Standard library imports
     from pathlib import Path
@@ -241,7 +241,7 @@ def _process_article(in_dir, out_dir, dic_distrib_item, list_cooc_nodes, list_co
         print(f'Note: file {DIC_OUTDIR_PARSING["A"]} was empty. Skipping')
             
         
-def _process_references(in_dir, out_dir, dic_distrib_item, list_cooc_nodes, list_cooc_edges):
+def _process_references(in_dir, out_dir, usecols, dic_distrib_item, list_cooc_nodes, list_cooc_edges):
     
     # Standard library imports
     import re
@@ -259,14 +259,13 @@ def _process_references(in_dir, out_dir, dic_distrib_item, list_cooc_nodes, list
         find_0 = re.compile(r',\s?0')
         df = pd.read_csv(in_dir / Path(DIC_OUTDIR_PARSING[item]),
                          sep='\t',
-                         header=None,
-                         usecols=[0,1,2,3,4,5] ).astype(str)
+                         usecols=usecols).astype(str)
         
 
         df['ref'] = df.apply(lambda row:re.sub(find_0,'', ', '.join(row[1:-1]))
                                      ,axis=1)
                          
-        _describe_item(df[[0,'ref']],
+        _describe_item(df[[usecols[0],'ref']],
                       item,
                       dic_distrib_item,
                       list_cooc_nodes,
@@ -274,13 +273,12 @@ def _process_references(in_dir, out_dir, dic_distrib_item, list_cooc_nodes, list
                       out_dir/Path(DIC_OUTDIR_DESCRIPTION[item]))
                          
         item = 'RJ'
-        _describe_item(df[[0,3]],
+        _describe_item(df[[usecols[0],usecols[3]]],
                       item,
                       dic_distrib_item,
                       list_cooc_nodes,
                       list_cooc_edges,
                       out_dir/Path(DIC_OUTDIR_DESCRIPTION[item]))
-
 
         del df    
     
@@ -302,9 +300,8 @@ def _process_item(in_dir, out_dir, item, usecols, dic_distrib_item, list_cooc_no
     
     try:
         df = pd.read_csv(in_dir / Path(DIC_OUTDIR_PARSING[item]),
-                             sep='\t',
-                             header=None,
-                             usecols=usecols)
+                         sep='\t',
+                         usecols=usecols)
         _describe_item(df,
                       item,
                       dic_distrib_item,
@@ -358,6 +355,7 @@ def describe_corpus(in_dir, out_dir, database_type, verbose):
     
     # Local imports
     from .BiblioSpecificGlobals import COOC_NETWORKS_FILE
+    from .BiblioSpecificGlobals import COL_NAMES
     from .BiblioSpecificGlobals import DISTRIBS_ITEM_FILE
     
     dic_distrib_item = {}
@@ -368,38 +366,44 @@ def describe_corpus(in_dir, out_dir, database_type, verbose):
         #dic_distrib_item["database"] = file.read().strip("\n")
     dic_distrib_item["database"] = database_type    
     
-    # Deals with years, journals title, doc type and language
-    _process_article(in_dir, out_dir, dic_distrib_item, list_cooc_nodes, list_cooc_edges)
-    corpus_size = dic_distrib_item["N"]
-
     item = 'AU'                   # Deals with authors
-    _process_item(in_dir, out_dir,item,[0,2],dic_distrib_item,list_cooc_nodes,list_cooc_edges)
-   
-    item = 'S'                    # Deals with subjects
-    _process_item(in_dir, out_dir,item,[0,1],dic_distrib_item,list_cooc_nodes,list_cooc_edges)
-
-    item = 'S2'                   # Deals with subject2 
-    _process_item(in_dir, out_dir,item,[0,1],dic_distrib_item,list_cooc_nodes,list_cooc_edges)
-
-    item = 'I'                    # Deals with institutions
-    _process_item(in_dir, out_dir,item,[0,2],dic_distrib_item,list_cooc_nodes,list_cooc_edges)
-
-    item = 'CU'                   # Deals with countries
-    _process_item(in_dir, out_dir,item,[0,2],dic_distrib_item,list_cooc_nodes,list_cooc_edges)
-
-    # Deals with references
-    _process_references(in_dir, out_dir, dic_distrib_item, list_cooc_nodes, list_cooc_edges)
+    usecols = [COL_NAMES['authors'][0],COL_NAMES['authors'][2]] #ex: ['pub_id','co_author']
+    _process_item(in_dir, out_dir,item,usecols,dic_distrib_item,list_cooc_nodes,list_cooc_edges)
     
+    usecols = [COL_NAMES['keywords'][0],COL_NAMES['keywords'][1]] #ex: ['pub_id','keyword']
     item = 'AK'                   # Deals with authors keywords
-    _process_item(in_dir, out_dir,item,[0,1],dic_distrib_item,list_cooc_nodes,list_cooc_edges)
-    
+    _process_item(in_dir, out_dir,item,usecols,dic_distrib_item,list_cooc_nodes,list_cooc_edges)
     item = 'IK'                   # Deals journal keywords
-    _process_item(in_dir, out_dir,item,[0,1],dic_distrib_item,list_cooc_nodes,list_cooc_edges)
-    
+    _process_item(in_dir, out_dir,item,usecols,dic_distrib_item,list_cooc_nodes,list_cooc_edges)
     item = 'TK'                   # Deals with title keywords
-    _process_item(in_dir, out_dir,item,[0,1],dic_distrib_item,list_cooc_nodes,list_cooc_edges)
+    _process_item(in_dir, out_dir,item,usecols,dic_distrib_item,list_cooc_nodes,list_cooc_edges)
+   
+    item = 'CU'                   # Deals with countries
+    usecols = [COL_NAMES['country'][0],COL_NAMES['country'][2]] #ex: ['pub_id','country']
+    _process_item(in_dir, out_dir,item,usecols,dic_distrib_item,list_cooc_nodes,list_cooc_edges)
     
+    item = 'I'                    # Deals with institutions
+    usecols = [COL_NAMES['institution'][0],COL_NAMES['institution'][2]] #ex: ['pub_id','institution']
+    _process_item(in_dir, out_dir,item,usecols,dic_distrib_item,list_cooc_nodes,list_cooc_edges)
 
+    item = 'S'                    # Deals with subjects
+    usecols = [COL_NAMES['subject'][0],COL_NAMES['subject'][1]] #ex: ['pub_id','subject']
+    _process_item(in_dir, out_dir,item,usecols,dic_distrib_item,list_cooc_nodes,list_cooc_edges)
+
+    item = 'S2'                   # Deals with subject2
+    usecols = [COL_NAMES['sub_subject'][0],COL_NAMES['sub_subject'][1]] #ex: ['pub_id','sub_subject']
+    _process_item(in_dir, out_dir,item,usecols,dic_distrib_item,list_cooc_nodes,list_cooc_edges)
+
+    # Deals with years, journals title, doc type and language                                          <-------------!!!!!!!!!!!!!
+    usecols = [0,2,3,7,8]
+    #usecols = [COL_NAMES['references'][i] for i in [0,2,3,7,8]]
+    _process_article(in_dir, out_dir, usecols, dic_distrib_item, list_cooc_nodes, list_cooc_edges)
+    corpus_size = dic_distrib_item["N"]
+    
+    # Deals with references
+    usecols = [COL_NAMES['references'][i] for i in range(0,6)]
+    _process_references(in_dir, out_dir, usecols, dic_distrib_item, list_cooc_nodes, list_cooc_edges)
+    
     #                    creates two json files
     #---------------------------------------------------------------------
     with open(out_dir / Path(DISTRIBS_ITEM_FILE),'w') as file:

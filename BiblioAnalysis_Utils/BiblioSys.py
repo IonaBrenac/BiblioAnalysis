@@ -2,7 +2,10 @@
 for running BiblioAnalysis on different operating systems.
 """
 
-__all__ = ['add_site_packages_path',]
+__all__ = ['add_site_packages_path',
+           'DISPLAYS']
+
+# Globals used from BiblioGeneralGlobals: IN_TO_MM
 
 
 def add_site_packages_path(venv = False ):
@@ -14,6 +17,7 @@ def add_site_packages_path(venv = False ):
         venv (bool): status of virtual environment use.
         
     '''
+    # To Do: convert prints and inputs to gui displays and inputs
     
     # Standard library imports
     import os
@@ -30,3 +34,58 @@ def add_site_packages_path(venv = False ):
             if list_packages != []: mac_packages = list_packages[0]   
         sys.path.append(mac_packages)
         print('Added paths:         ',mac_packages)
+        
+
+def get_displays(in_to_mm=None): 
+    
+    ''' The function `get_displays` allows to identify the set of displays
+        available within the user hardware and to get their parameters.
+        If the width or the height of a display are not available in mm 
+        through the `get_monitors` method (as for Darwin platforms), 
+        the user is asked to specify the displays diagonal size to compute them.
+        
+    Returns:
+        `list`: list of dicts with one dict per detected display,
+                each dict is keyed by 8 display parameters.   
+    '''
+    # To Do: convert prints and inputs to gui displays and inputs
+    
+    # Standard library imports
+    import math
+    
+    # 3rd party imports
+    from screeninfo import get_monitors
+    
+    # Local imports
+    from .BiblioGeneralGlobals import IN_TO_MM
+
+    if in_to_mm==None: in_to_mm = IN_TO_MM
+    
+    displays = [{'x':m.x,'y':m.y,'width':m.width,
+                 'height':m.height,'width_mm':m.width_mm,
+                 'height_mm':m.height_mm,'name':m.name,
+                 'is_primary':m.is_primary} for m in get_monitors()]
+    
+
+    print('Number of detected displays:',len(displays))
+    
+    for disp in range(len(displays)):
+        width_px = displays[disp]['width']
+        height_px = displays[disp]['height']
+        diag_px = math.sqrt(int(width_px)**2 + int(height_px)**2)    
+        width_mm = displays[disp]['width_mm']
+        height_mm = displays[disp]['height_mm']
+        if width_mm is None or height_mm is None:        
+            diag_in = float(input('Enter the diagonal size of the screen n°' + str(disp) + ' (inches)'))
+            width_mm = round(int(width_px) * (diag_in/diag_px) * in_to_mm,1)
+            height_mm = round(int(height_px) * (diag_in/diag_px) * in_to_mm,1)
+            displays[disp]['width_mm'] = str(width_mm)
+            displays[disp]['height_mm'] = str(height_mm)
+        else:
+            diag_in = math.sqrt(float(width_mm) ** 2 + float(height_mm) ** 2) / in_to_mm
+        displays[disp]['ppi'] = round(diag_px/diag_in,2)
+        
+    return displays
+
+
+DISPLAYS = get_displays()

@@ -1,10 +1,13 @@
-__all__ = ['build_title_keywords','country_normalization',
-           'merge_database','name_normalizer',
-          'biblio_parser']
+__all__ = ['biblio_parser',
+           'build_title_keywords',
+           'country_normalization',
+           'merge_database',
+           'name_normalizer',
+           ]
 
-# Globals used from .BiblioGeneralGlobals: ALIAS_UK, COUNTRIES, CHANGE
+# Globals used from .BiblioGeneralGlobals: ALIAS_UK, CHANGE, COUNTRIES,
 # Globals used from .BiblioSpecificGlobals: BLACKLISTED_WORDS, INST_FILTER_DIC, 
-#                                   NLTK_VALID_TAG_LIST, NOUN_MINIMUM_OCCURRENCES
+#                                           NLTK_VALID_TAG_LIST, NOUN_MINIMUM_OCCURRENCES
 
 
 def build_title_keywords(df):
@@ -29,7 +32,7 @@ def build_title_keywords(df):
        4- Suppress words pertening to BLACKLISTED_WORDS to the list  from the bag of words
     
     Args:
-       df (dataframe): pub_id | Title
+       df (dataframe): pub_id | Title 
        
     Returns:
        df (dataframe): pub_id | title_token | kept_tokens where title_token is the list of token of the title
@@ -74,8 +77,7 @@ def build_title_keywords(df):
         stemmer = nltk.stem.WordNetLemmatizer()
         valid_words_lemmatized = [stemmer.lemmatize(valid_word) for valid_word in valid_words]
     
-        return valid_words_lemmatized
-        
+        return valid_words_lemmatized        
 
     df['title_token'] = df['Title'].apply(tokenizer)
 

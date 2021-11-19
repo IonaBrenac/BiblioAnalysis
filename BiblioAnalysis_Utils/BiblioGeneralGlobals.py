@@ -1,5 +1,10 @@
-__all__ = ['COUNTRIES','USA_STATES','COUNTRIES_GPS', 'ALIAS_UK',
- 'DIC_CHANGE_CHAR','CHANGE']
+__all__ = ['ALIAS_UK',
+           'CHANGE',
+           'COUNTRIES',
+           'COUNTRIES_GPS',
+           'DIC_CHANGE_CHAR',
+           'IN_TO_MM',
+           'USA_STATES',]
 
 # Countries normalized names and GPS coordinates
 COUNTRY = '''
@@ -107,3 +112,5 @@ DIC_CHANGE_CHAR = {"Ł":"L",   # polish capital to L
                    ",":""}
 
 CHANGE = str.maketrans(DIC_CHANGE_CHAR)
+
+IN_TO_MM = 25.4
