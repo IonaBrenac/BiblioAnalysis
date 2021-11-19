@@ -573,7 +573,7 @@ def _build_articles_wos(df_corpus):
     # Local imports
     from .BiblioParsingUtils import name_normalizer
     from .BiblioSpecificGlobals import COL_NAMES
-    
+
     def str_int_convertor(x):
         try:
             return(int(float(x)))
@@ -584,17 +584,20 @@ def _build_articles_wos(df_corpus):
         first_author = list_authors.split(';')[0] # we pick the first author
         return  name_normalizer(first_author)
     
-    author_alias = COL_NAMES['articles'][0]
-    year_alias = COL_NAMES['articles'][1]
+    pub_id_alias = COL_NAMES['articles'][0]
+    author_alias = COL_NAMES['articles'][1]
+    year_alias = COL_NAMES['articles'][2]
 
     wos_columns = ['AU','PY', 'SO', 'VL','BP', 'DI','DT','LA','TI','SN']
     df_article = df_corpus.loc[:,wos_columns].astype(str)
-        
-    df_article.rename (columns = dict(zip(wos_columns,COL_NAMES['articles'])),
+
+    df_article.rename (columns = dict(zip(wos_columns,COL_NAMES['articles'][1:])),
                        inplace = True)    
                                                                                                 
     df_article[author_alias] = df_article[author_alias].apply(treat_author)    
     df_article[year_alias] = df_article[year_alias].apply(str_int_convertor)
+    
+    df_article.insert(0, pub_id_alias, list(df_corpus.index))
    
     return df_article
 
@@ -859,7 +862,7 @@ def biblio_parser_wos(in_dir_parsing, out_dir_parsing, inst_filter_dic):
     item = 'A'   # Deals with articles
     df_A = _build_articles_wos(df)
     df_A.to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item]),
-                index=True,
+                index=False,                                           #<---------------------
                 sep='\t',
                 header=HEADER)
     

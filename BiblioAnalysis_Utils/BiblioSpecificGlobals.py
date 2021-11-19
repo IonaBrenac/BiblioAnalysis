@@ -43,7 +43,8 @@ __all__ = ['BLACKLISTED_WORDS',
 
 BLACKLISTED_WORDS = [] #['null','nan'] for title keywords
 
-COL_NAMES = {'articles':    ['Authors',
+COL_NAMES = {'articles':    ['pub_id',
+                             'Authors',
                              'Year',
                              'Source title',
                              'Volume',

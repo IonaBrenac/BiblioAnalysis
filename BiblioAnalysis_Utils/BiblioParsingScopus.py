@@ -641,8 +641,9 @@ def _build_articles_scopus(df_corpus):
     from .BiblioParsingUtils import name_normalizer
     from .BiblioSpecificGlobals import COL_NAMES
 
-    author_alias = COL_NAMES['articles'][0]
-    year_alias = COL_NAMES['articles'][1]
+    pub_id_alias = COL_NAMES['articles'][0]
+    author_alias = COL_NAMES['articles'][1]
+    year_alias = COL_NAMES['articles'][2]
     issn_alias = COL_NAMES['articles'][-1]
 
     re_issn = re.compile(r'^[0-9]{8}|[0-9]{4}|[0-9]{3}X') # Use to normalize the ISSN to the
@@ -679,12 +680,14 @@ def _build_articles_scopus(df_corpus):
     
     df_article = df_corpus[scopus_columns].astype(str)
 
-    df_article.rename (columns = dict(zip(scopus_columns,COL_NAMES['articles'])),
-                       inplace = True)    
+    df_article.rename (columns = dict(zip(scopus_columns,COL_NAMES['articles'][1:])),
+                       inplace = True)                      
    
     df_article[author_alias] = df_article[author_alias].apply(treat_author)
     df_article[year_alias] = df_article[year_alias].apply(str_int_convertor)
     df_article[issn_alias] = df_article[issn_alias].apply(convert_issn)
+    
+    df_article.insert(0, pub_id_alias, list(df_corpus.index))
 
     return df_article
 
