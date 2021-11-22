@@ -1,6 +1,6 @@
 __all__ = ['biblio_parser_scopus']
 
-# Globals used from .BiblioSpecificGlobals: DIC_OUTDIR_PARSING, HEADER
+# Globals used from .BiblioSpecificGlobals: DIC_OUTDIR_PARSING,
 #                                          SCOPUS_CAT_CODES, SCOPUS_JOURNALS_ISSN_CAT,
 #                                          USECOLS_SCOPUS
 
@@ -32,6 +32,7 @@ def _build_authors_scopus(df_corpus):
     # Local imports
     from .BiblioParsingUtils import name_normalizer
     from .BiblioSpecificGlobals import COL_NAMES
+    from .BiblioSpecificGlobals import COLUMN_LABEL_SCOPUS
         
     co_author = namedtuple('co_author',COL_NAMES['authors'])
     
@@ -39,7 +40,7 @@ def _build_authors_scopus(df_corpus):
     
     list_author = []
     for pub_id,x in zip(df_corpus.index,
-                        df_corpus['Authors']):
+                        df_corpus[COLUMN_LABEL_SCOPUS['authors']]):
         idx_author = 0
         for y in x.split(","):
             author = name_normalizer(y.replace('.',''))
@@ -98,6 +99,7 @@ def _build_keywords_scopus(df_corpus,dic_failed):
     # Local imports
     from .BiblioParsingUtils import build_title_keywords
     from .BiblioSpecificGlobals import COL_NAMES
+    from .BiblioSpecificGlobals import COLUMN_LABEL_SCOPUS
 
     key_word = namedtuple('key_word',COL_NAMES['keywords'] )
     
@@ -107,7 +109,7 @@ def _build_keywords_scopus(df_corpus,dic_failed):
     
     list_keyword = []
 
-    df_AK = df_corpus['Author Keywords'].fillna('')
+    df_AK = df_corpus[COLUMN_LABEL_SCOPUS['author_keywords']].fillna('')
     for pub_id,keywords_AK in zip(df_AK.index,df_AK):
         list_keywords_AK = keywords_AK.split(';')      
         for keyword_AK in list_keywords_AK:
@@ -116,7 +118,7 @@ def _build_keywords_scopus(df_corpus,dic_failed):
                                          type='AK',
                                          keyword=keyword_AK if keyword_AK != 'null' else '”null”'))
 
-    df_IK = df_corpus['Index Keywords'].fillna('')
+    df_IK = df_corpus[COLUMN_LABEL_SCOPUS['index_keywords']].fillna('')
     for pub_id,keywords_IK in zip(df_IK.index,df_IK):
         list_keywords_IK = keywords_IK.split(';')
         for keyword_IK in list_keywords_IK:
@@ -126,7 +128,7 @@ def _build_keywords_scopus(df_corpus,dic_failed):
                                          type='IK',
                                          keyword=keyword_IK if keyword_IK != 'null' else '”null”'))
 
-    df_title = pd.DataFrame(df_corpus['Title'].fillna(''))
+    df_title = pd.DataFrame(df_corpus[COLUMN_LABEL_SCOPUS['title']].fillna(''))
     df_TK,list_of_words_occurrences = build_title_keywords(df_title)
     for pub_id in df_TK.index:
         for token in df_TK.loc[pub_id,'kept_tokens']:
@@ -188,6 +190,7 @@ def _build_addresses_countries_institutions_scopus(df_corpus,dic_failed):
     # Local imports
     from .BiblioParsingUtils import country_normalization
     from .BiblioSpecificGlobals import COL_NAMES
+    from .BiblioSpecificGlobals import COLUMN_LABEL_SCOPUS
 
     re_sub = re.compile('[a-z]?Univ[\.a-zé]{0,6}\s|'# Captures alias of University 
                         '[a-z]?Univ[\.a-zé]{0,6}$')
@@ -205,7 +208,7 @@ def _build_addresses_countries_institutions_scopus(df_corpus,dic_failed):
     list_institutions = []
     list_countries =[]
     for pub_id, affiliation in zip(df_corpus.index,
-                                   df_corpus['Affiliations']):
+                                   df_corpus[COLUMN_LABEL_SCOPUS['affiliations']]):
         list_affiliation = affiliation.split(';')
         
         if list_affiliation:
@@ -337,6 +340,7 @@ def _build_authors_countries_institutions_scopus(df_corpus, dic_failed, inst_fil
     # Local imports
     from .BiblioParsingUtils import country_normalization
     from .BiblioSpecificGlobals import COL_NAMES
+    from .BiblioSpecificGlobals import COLUMN_LABEL_SCOPUS
     
     addr_country_inst = namedtuple('address',COL_NAMES['auth_inst'][:-1])
     author_address_tup = namedtuple('author_address','author address')
@@ -366,8 +370,8 @@ def _build_authors_countries_institutions_scopus(df_corpus, dic_failed, inst_fil
     sec_institution_alias = COL_NAMES['auth_inst'][-1]
     
     for pub_id, affiliations, authors_affiliation in zip(df_corpus.index,
-                                                         df_corpus['Affiliations'],
-                                                         df_corpus['Authors with affiliations']):
+                                                         df_corpus[COLUMN_LABEL_SCOPUS['affiliations']],
+                                                         df_corpus[COLUMN_LABEL_SCOPUS['authors_with_affiliations']]):
         list_affiliations = affiliations.split(';')
         idx_author, last_author = -1, '' # Initialization for the author and address counter
         for x in authors_affiliation.split(';'):
@@ -443,6 +447,7 @@ def _build_subjects_scopus(df_corpus,
     
     # Local imports
     from .BiblioSpecificGlobals import COL_NAMES
+    from .BiblioSpecificGlobals import COLUMN_LABEL_SCOPUS
 
     pub_id_alias = COL_NAMES['subject'][0]
     subject_alias = COL_NAMES['subject'][1] 
@@ -475,8 +480,8 @@ def _build_subjects_scopus(df_corpus,
     # ----------------------------------------------------------------
     res = [] 
     for pub_id,journal, issn in zip(df_corpus.index,
-                                    df_corpus['Source title'],
-                                    df_corpus['ISSN'] ):
+                                    df_corpus[COLUMN_LABEL_SCOPUS['journal']],
+                                    df_corpus[COLUMN_LABEL_SCOPUS['issn']] ):
         keywords = df_scopus_journals_issn_cat.query('journal==@journal ')['keyword_id']
 
         if len(keywords):                # Checks if journal found in scopus journal list
@@ -546,6 +551,7 @@ def _build_sub_subjects_scopus(df_corpus,
     
     # Local imports
     from .BiblioSpecificGlobals import COL_NAMES
+    from .BiblioSpecificGlobals import COLUMN_LABEL_SCOPUS
     
     pub_id_alias = COL_NAMES['sub_subject'][0]
     sub_subject_alias = COL_NAMES['sub_subject'][1] 
@@ -576,8 +582,8 @@ def _build_sub_subjects_scopus(df_corpus,
     # ----------------------------------------------------------------
     res = [] 
     for pub_id,journal, issn in zip(df_corpus.index,
-                                    df_corpus['Source title'],
-                                    df_corpus['ISSN'] ):
+                                    df_corpus[COLUMN_LABEL_SCOPUS['journal']],
+                                    df_corpus[COLUMN_LABEL_SCOPUS['issn']] ):
         keywords = df_scopus_journals_issn_cat.query('journal==@journal ')['keyword_id']
 
         if len(keywords):                # Checks if journal found in scopus journal list
@@ -640,6 +646,7 @@ def _build_articles_scopus(df_corpus):
     # Local imports
     from .BiblioParsingUtils import name_normalizer
     from .BiblioSpecificGlobals import COL_NAMES
+    from .BiblioSpecificGlobals import COLUMN_LABEL_SCOPUS
 
     pub_id_alias = COL_NAMES['articles'][0]
     author_alias = COL_NAMES['articles'][1]
@@ -667,16 +674,16 @@ def _build_articles_scopus(df_corpus):
         first_author = name_normalizer(list_authors.split(',')[0]) # we pick the first author
         return first_author
  
-    scopus_columns = ['Authors',
-                      'Year',
-                      'Source title',
-                      'Volume',
-                      'Page start',
-                      'DOI',
-                      'Document Type',
-                      'Language of Original Document',
-                      'Title',
-                      'ISSN']
+    scopus_columns = [COLUMN_LABEL_SCOPUS['authors'],
+                      COLUMN_LABEL_SCOPUS['year'],
+                      COLUMN_LABEL_SCOPUS['journal'],
+                      COLUMN_LABEL_SCOPUS['volume'],
+                      COLUMN_LABEL_SCOPUS['page_start'],
+                      COLUMN_LABEL_SCOPUS['doi'],
+                      COLUMN_LABEL_SCOPUS['document_type'],
+                      COLUMN_LABEL_SCOPUS['language'],
+                      COLUMN_LABEL_SCOPUS['title'],
+                      COLUMN_LABEL_SCOPUS['issn']]
     
     df_article = df_corpus[scopus_columns].astype(str)
 
@@ -720,6 +727,7 @@ def _build_references_scopus(df_corpus):
     # Local imports
     from .BiblioParsingUtils import name_normalizer
     from .BiblioSpecificGlobals import COL_NAMES
+    from .BiblioSpecificGlobals import COLUMN_LABEL_SCOPUS
 
     ref_article = namedtuple('ref_article',
                              COL_NAMES['references'])
@@ -740,7 +748,7 @@ def _build_references_scopus(df_corpus):
 
     dic_ref = {}
     for pub_id, row in zip(list(df_corpus.index),
-                                df_corpus['References']):
+                                df_corpus[COLUMN_LABEL_SCOPUS['references']]):
 
         if isinstance(row, str): # if the reference field is not empty and not an URL
 
@@ -831,13 +839,9 @@ def biblio_parser_scopus(in_dir_parsing, out_dir_parsing, rep_utils, inst_filter
     
     # Local imports
     from .BiblioSpecificGlobals import DIC_OUTDIR_PARSING
-    from .BiblioSpecificGlobals import HEADER
     from .BiblioSpecificGlobals import SCOPUS_CAT_CODES
     from .BiblioSpecificGlobals import SCOPUS_JOURNALS_ISSN_CAT
     from .BiblioSpecificGlobals import USECOLS_SCOPUS
-
-    with open(Path(out_dir_parsing) / Path('database.dat'), "w") as file:
-        file.write("scopus")
 
     list_data_base = []
     for path, _, files in os.walk(in_dir_parsing):
@@ -857,60 +861,51 @@ def biblio_parser_scopus(in_dir_parsing, out_dir_parsing, rep_utils, inst_filter
     df_AU = _build_authors_scopus(df_corpus=df)
     df_AU.to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item]), 
                  index=False,
-                 sep='\t',
-                 header=HEADER)
+                 sep='\t')
 
     item = 'K'  # Deals with keywords
     df_K = _build_keywords_scopus(df_corpus=df,dic_failed=dic_failed)
     df_K.to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item]),
                 index=False,
-                sep='\t',
-                header=HEADER)
+                sep='\t')
     
     item = 'AK'  # Deals with authors keywords
     df_K.query('type==@item')[['pub_id','keyword']].to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item]),
                 index=False,
-                sep='\t',
-                header=HEADER)
+                sep='\t')
     
     item = 'IK'  # Deals with journal keywords
     df_K.query('type==@item')[['pub_id','keyword']].to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item]),
                 index=False,
-                sep='\t',
-                header=HEADER)
+                sep='\t')
     
     item = 'TK'  # Deals with title keywords
     df_K.query('type==@item')[['pub_id','keyword']].to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item]),
                 index=False,
-                sep='\t',
-                header=HEADER)
+                sep='\t')
     
     item = 'AD'   # Deals with addresses
     df_AD, df_CU, df_I  = _build_addresses_countries_institutions_scopus(df_corpus=df,
                                                                          dic_failed=dic_failed)
     df_AD.to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item]),
                  index=False,
-                 sep='\t',
-                 header=HEADER)
+                 sep='\t')
     
     item = 'CU'   # Deals with counties    
     df_CU.to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item]),
                  index=False, 
-                 sep='\t',
-                 header=HEADER)
+                 sep='\t')
     
     item = 'I'   # Deals with institutions
     df_I.to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item]),
                 index=False,
-                sep='\t',
-                header=HEADER)    
+                sep='\t')    
     
     item = 'I2' # Deals with authors and their institutions
     df_I2 = _build_authors_countries_institutions_scopus(df, dic_failed, inst_filter_dic)
     df_I2.to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item] ), 
                  index=False,
-                 sep='\t',
-                 header=HEADER)
+                 sep='\t')
     
     item = 'S'   # Deals with subjects
     df_S = _build_subjects_scopus(df_corpus=df,
@@ -919,8 +914,7 @@ def biblio_parser_scopus(in_dir_parsing, out_dir_parsing, rep_utils, inst_filter
                                   dic_failed=dic_failed)
     df_S.to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item]),
                 index=False,
-                sep='\t',
-                header=HEADER)
+                sep='\t')
     
     item = 'S2'   # Deals with sub-subjects
     df_S2 = _build_sub_subjects_scopus(df_corpus=df,
@@ -929,22 +923,19 @@ def biblio_parser_scopus(in_dir_parsing, out_dir_parsing, rep_utils, inst_filter
                                        dic_failed=dic_failed)
     df_S2.to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item]),
                  index=False, 
-                 sep='\t',
-                 header=HEADER)
+                 sep='\t')
     
     item = 'A'   # Deals with articles
     df_A = _build_articles_scopus(df_corpus=df)
     df_A.to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item]),
-                index=True,
-                sep='\t',
-                header=HEADER)
+                index=False,
+                sep='\t')
            
     item = 'R'   # Deals with references
     df_R = _build_references_scopus(df_corpus=df)
     df_R.to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item]),
                 index=False, 
-                sep='\t',
-                header=HEADER)
+                sep='\t')
     
     with open(Path(out_dir_parsing) / Path('failed.json'), 'w') as write_json:
         json.dump(dic_failed, write_json,indent=4)

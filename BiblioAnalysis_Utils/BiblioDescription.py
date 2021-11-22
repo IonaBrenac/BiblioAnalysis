@@ -55,8 +55,8 @@ def _frequency_analysis(df,corpus_size):
     #df_freq = df.groupby('item').count().reset_index()
     df_freq = df.drop_duplicates().groupby('item').count().reset_index()   #!!!!!!!!!!!!!
     df_freq.sort_values(by=['pub_id'],ascending=False,inplace=True)
-    #df_freq["f"] = df_freq['pub_id']/len(df)*100 # old fashion of freq calculation
-    df_freq["f"] = df_freq['pub_id']/corpus_size*100
+    #df_freq['f'] = df_freq['pub_id']/len(df)*100 # old fashion of freq calculation
+    df_freq['f'] = df_freq['pub_id']/corpus_size*100
     df_freq.columns = ['item','count','f']
     
     df_freq_stat = df.drop_duplicates().\
@@ -112,11 +112,11 @@ def _generate_cooc(df,item):
                                            # in term of rate occurrence
 
     for node,x in enumerate(dg.iterrows()):
-        dict_node[x[1]["item"]] = node
-        liste_node.append({"type":item,
-                           "name":node,
-                           "item":x[1]["item"],
-                           "size":x[1]["pub_id"]})
+        dict_node[x[1]['item']] = node
+        liste_node.append({'type':item,
+                           'name':node,
+                           'item':x[1]['item'],
+                           'size':x[1]['pub_id']})
 
     #                           Builds edges
     #----------------------------------------------------------------------------
@@ -141,10 +141,10 @@ def _generate_cooc(df,item):
 
     liste_edge = []
     for edge,weight in comm.items():
-        liste_edge.append({"type":item,
-                           "source":dict_node[edge[0]],
-                           "target":dict_node[edge[1]],
-                           "Ncooc":weight})
+        liste_edge.append({'type':item,
+                           'source':dict_node[edge[0]],
+                           'target':dict_node[edge[1]],
+                           'Ncooc':weight})
     
     del dict_node, dg, dic_item_to_keep
     return liste_node, liste_edge
@@ -161,13 +161,13 @@ def _describe_item(df,item,dic_distrib_item,list_cooc_nodes,list_cooc_edges ,fre
     # Local imports
     from .BiblioSpecificGlobals import VALID_LABEL_GRAPH
     
-    corpus_size = dic_distrib_item["N"] 
+    corpus_size = dic_distrib_item['N'] 
     df.columns = ['pub_id','item']
     df_freq, q_item, p_item = _frequency_analysis(df,corpus_size)
     df_freq.to_csv(freq_filename,sep=',', index = False)
 
-    dic_distrib_item["q"+item.capitalize()] = q_item
-    dic_distrib_item["p"+item.capitalize()] = p_item
+    dic_distrib_item['q'+item.capitalize()] = q_item
+    dic_distrib_item['p'+item.capitalize()] = p_item
 
     if item in VALID_LABEL_GRAPH:
         liste_node, liste_edge = _generate_cooc(df,item)
@@ -193,44 +193,36 @@ def _process_article(in_dir, out_dir, usecols, dic_distrib_item, list_cooc_nodes
     try:
         df_articles = pd.read_csv(in_dir/Path(DIC_OUTDIR_PARSING['A']),
                                   sep='\t',
-                                  header=None,
-                                  usecols=[0,2,3,7,8])
+                                  usecols=usecols)
 
-        df_articles.rename (columns = {0:'pub_id',
-                                       3:'Source title',
-                                       2:'Year',
-                                       7:'Document Type',
-                                       8:'Language of Original Document',},
-                           inplace = True)
+        dic_distrib_item['N'] = len(df_articles)
 
-        dic_distrib_item["N"] = len(df_articles)
-
-        item = "Y"                       # Deals with years
-        _describe_item(df_articles[['pub_id','Year']],
+        item = 'Y'                       # Deals with years
+        _describe_item(df_articles[[usecols[0],usecols[1]]],
                        item,
                        dic_distrib_item,
                        list_cooc_nodes,
                        list_cooc_edges,
                        out_dir/Path(DIC_OUTDIR_DESCRIPTION[item]))
 
-        item = "J"                     # Deals with journals title (ex: PHYSICAL REVIEW B)
-        _describe_item(df_articles[['pub_id','Source title']],
+        item = 'J'                     # Deals with journals title (ex: PHYSICAL REVIEW B)
+        _describe_item(df_articles[[usecols[0],usecols[2]]],
                       item,
                       dic_distrib_item,
                       list_cooc_nodes,
                       list_cooc_edges,
                       out_dir/Path(DIC_OUTDIR_DESCRIPTION[item]))
 
-        item = "DT"                    # Deal with doc type (ex: article, review)
-        _describe_item(df_articles[['pub_id','Document Type']],
+        item = 'DT'                    # Deal with doc type (ex: article, review)
+        _describe_item(df_articles[[usecols[0],usecols[3]]],
                       item,
                       dic_distrib_item,
                       list_cooc_nodes,
                       list_cooc_edges,
                       out_dir/Path(DIC_OUTDIR_DESCRIPTION[item]))
 
-        item = "LA"                   # Deal with language
-        _describe_item(df_articles[['pub_id','Language of Original Document']],
+        item = 'LA'                   # Deal with language
+        _describe_item(df_articles[[usecols[0],usecols[4]]],
                       item,
                       dic_distrib_item,
                       list_cooc_nodes,
@@ -362,15 +354,20 @@ def describe_corpus(in_dir, out_dir, database_type, verbose):
     list_cooc_nodes = []   # Only one .json file is used to describe all the graph
     list_cooc_edges = []   # these list are extended at each call of _describe_item function
 
-    #with open(in_dir/Path("database.dat" ), "r") as file:  # read the database type wos/scopus  
-        #dic_distrib_item["database"] = file.read().strip("\n")
-    dic_distrib_item["database"] = database_type    
-    
+    #with open(in_dir/Path('database.dat' ), 'r') as file:  # read the database type wos/scopus  
+        #dic_distrib_item['database'] = file.read().strip('\n')
+    dic_distrib_item['database'] = database_type  
+
+    # Deals with years, journals title, doc type and language
+    usecols = [COL_NAMES['articles'][i] for i in [0,2,3,7,8]]
+    _process_article(in_dir, out_dir, usecols, dic_distrib_item, list_cooc_nodes, list_cooc_edges)
+    corpus_size = dic_distrib_item['N']
+        
     item = 'AU'                   # Deals with authors
     usecols = [COL_NAMES['authors'][0],COL_NAMES['authors'][2]] #ex: ['pub_id','co_author']
     _process_item(in_dir, out_dir,item,usecols,dic_distrib_item,list_cooc_nodes,list_cooc_edges)
     
-    usecols = [COL_NAMES['keywords'][0],COL_NAMES['keywords'][1]] #ex: ['pub_id','keyword']
+    usecols = [COL_NAMES['keywords'][0],COL_NAMES['keywords'][2]] #ex: ['pub_id','keyword']
     item = 'AK'                   # Deals with authors keywords
     _process_item(in_dir, out_dir,item,usecols,dic_distrib_item,list_cooc_nodes,list_cooc_edges)
     item = 'IK'                   # Deals journal keywords
@@ -394,12 +391,6 @@ def describe_corpus(in_dir, out_dir, database_type, verbose):
     usecols = [COL_NAMES['sub_subject'][0],COL_NAMES['sub_subject'][1]] #ex: ['pub_id','sub_subject']
     _process_item(in_dir, out_dir,item,usecols,dic_distrib_item,list_cooc_nodes,list_cooc_edges)
 
-    # Deals with years, journals title, doc type and language                                          <-------------!!!!!!!!!!!!!
-    usecols = [0,2,3,7,8]
-    #usecols = [COL_NAMES['references'][i] for i in [0,2,3,7,8]]
-    _process_article(in_dir, out_dir, usecols, dic_distrib_item, list_cooc_nodes, list_cooc_edges)
-    corpus_size = dic_distrib_item["N"]
-    
     # Deals with references
     usecols = [COL_NAMES['references'][i] for i in range(0,6)]
     _process_references(in_dir, out_dir, usecols, dic_distrib_item, list_cooc_nodes, list_cooc_edges)
@@ -462,7 +453,7 @@ def plot_graph(in_dir,item):
     # for type=TYPE
     # -----------------------------------------------------------
     file_coocnetworks = in_dir / Path('coocnetworks.json')
-    with open(file_coocnetworks, "r") as read_file:
+    with open(file_coocnetworks, 'r') as read_file:
                 cooc = json.load(read_file)
 
     df = pd.DataFrame( cooc['links']).query('type==@item')
@@ -545,7 +536,7 @@ def plot_histo(item_label, file_distrib_item):
     from .BiblioSpecificGlobals import NAME_MEANING
 
     #file_distrib_item = in_dir / Path('DISTRIBS_itemuse.json')
-    with open(file_distrib_item, "r") as read_file:
+    with open(file_distrib_item, 'r') as read_file:
                     distrib_item = json.load(read_file)
     
     # Convert item label in acronyme using the global dictionary ACRONYME_MEANING
@@ -554,7 +545,7 @@ def plot_histo(item_label, file_distrib_item):
     #        Plots the q histogram
     #------------------------------------------------------
     q = distrib_item['q' + item.capitalize()]
-    print("q",q)
+    print('q',q)
     xmin=q[0][0]-0.5
     xmax= q[0][len(q[0])-1]+0.5
     fig = plt.figure(figsize=(15,7))
@@ -568,7 +559,7 @@ def plot_histo(item_label, file_distrib_item):
     #        Plots the p histogram
     #------------------------------------------------------
     p = distrib_item['p' + item.capitalize()]
-    print("p",p)
+    print('p',p)
     xmin=p[0][0]-0.5
     xmax= p[0][len(p[0])-1]+0.5
     plt.subplot(1,2,2)
@@ -613,7 +604,7 @@ def treemap_item(item_treemap, file_name_treemap):
         squarify.plot(sizes=sizes, label=alias, alpha=1, color = colors)
         plt.axis('off')
         plt.title('Frequences for the top '+ str(size_limit) + ' ' + item_treemap + ' out of ' + \
-                   str(total_size),fontsize=23,fontweight="bold")
+                   str(total_size),fontsize=23,fontweight='bold')
         plt.show()
     
         print(f'{"alias":<6}{item_treemap:<60}{"counts":<8}{"freq"}')
@@ -622,6 +613,6 @@ def treemap_item(item_treemap, file_name_treemap):
         
         del sizes, all_labels, labels, all_alias, alias
     else:
-        print("The selected item is empty")
+        print('The selected item is empty')
 
     del df, all_sizes, 

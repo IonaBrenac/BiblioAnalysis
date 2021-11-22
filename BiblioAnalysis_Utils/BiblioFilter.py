@@ -5,6 +5,7 @@ __all__ = ['filter_corpus_new',
            'read_config_filters',]
 
 # Functions used from .BiblioGui: Select_multi_items, filter_item_selection
+# Globals used from .BiblioSpecificGlobals: DIC_OUTDIR_PARSING
 
 
 def read_config_filters(file_config):
@@ -54,18 +55,19 @@ def _save_filtered_files(tokeep,in_dir,out_dir):
     
     # 3rd party imports
     import pandas as pd
+    
+    # Local imports
+    from .BiblioSpecificGlobals import DIC_OUTDIR_PARSING
 
     #tokeep =[str(x) for x in tokeep] ! not clear, to be understood (generate empty filtered corpus)
 
-    for file in [file  for file in os.listdir(in_dir)
-                 if file.endswith('.dat')]:
+    for file in DIC_OUTDIR_PARSING.values():
         df = pd.read_csv(in_dir / Path(file),
-                         sep='\t',
-                         header=None)
+                         sep='\t')
+        #TO DO: replace pub_id by the article first column name
         df.rename(columns = {0 : 'pub_id'}, inplace = True)
         df.query('pub_id in @tokeep').to_csv(out_dir / Path(file), 
                                              index=False,
-                                             header=None,
                                              sep="\t")
 
 def _filter_pub_id(combine,exclusion,filter_param,in_dir):
@@ -135,11 +137,10 @@ def _filter_pub_id(combine,exclusion,filter_param,in_dir):
     # where {IK}, {TK}, {AK} are the sets of pub_id of articles with
     # one keyword repectivelly in filter_param["IK"], filter_param["TK"], filter_param["AK"]
     # ---------------------------------------------------------------
-    for idx, item in enumerate(set(filter_on) & set(["IK","TK","AK"])):
-        if idx==0:
-            df = pd.read_csv(in_dir / Path('keywords.dat'),
-                             sep='\t',header=None)
-            df.columns = ['pub_id','label','keyword']
+    for item in set(filter_on) & set(["IK","TK","AK"]):
+        df = pd.read_csv(in_dir / Path(DIC_OUTDIR_PARSING[item]),
+                         sep='\t',header=None)
+        df.columns = ['pub_id','keyword']
 
         keywords =  filter_param[item]
         keepid[item] = set([xx[0]  
@@ -351,5 +352,4 @@ def filters_modification(config_folder,file_config_filters):
     item_values_list_select = item_values_list(item_values_file) 
 
     item_filter_modification(filter_item,item_values_list_select, file_config_filters)
-
 
