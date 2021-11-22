@@ -730,6 +730,7 @@ def read_database_wos(filename):
     from .BiblioSpecificGlobals import FIELD_SIZE_LIMIT
     from .BiblioSpecificGlobals import ENCODING
     from .BiblioSpecificGlobals import USECOLS_WOS
+
     
     csv.field_size_limit(FIELD_SIZE_LIMIT) # To extend the field size limit for reading .txt files
 
@@ -740,14 +741,21 @@ def read_database_wos(filename):
             csv_list.append(row)
 
     df = pd.DataFrame(csv_list)
+    df.columns = df.iloc[0]                  # Sets columns name to raw 0
+    df = df.drop(0)                          # Drops the raw 0 from df 
+    
+    # Check for missing mandatory columns
+    cols_mandatory = set([val for val in bau.COLUMN_LABEL_WOS.values() if val])
+    cols_available = set(df.columns)
+    missing_columns = cols_mandatory.difference(cols_available)
+    if missing_columns:
+        raise Exception(f'The mandarory columns: {",".join(missing_columns)} are missing from {filename}\nplease correct before proceeding')
     
     # Columns selection and dataframe reformatting
-    dc = dict(zip(df.iloc[0,:],df.columns))  # Builds {n° column: column name,...}
-    df.drop(list(set(df.columns).difference(set([dc[key] for key in USECOLS_WOS]))),
+    cols_to_drop = list(cols_available.difference(cols_mandatory))
+    df.drop(cols_to_drop,
             axis=1,
             inplace=True)                    # Drops unused columns
-    df.columns = df.iloc[0]                  # Sets columns name to raw 0
-    df = df.drop(0)                          # Drops the raw 0 from df
     df.index = range(len(df))                # Sets the pub_id in df index
     
     return df

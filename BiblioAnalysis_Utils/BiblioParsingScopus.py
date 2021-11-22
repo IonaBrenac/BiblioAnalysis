@@ -47,8 +47,8 @@ def _build_authors_scopus(df_corpus):
             
             if author not in ['Dr','Pr','Dr ','Pr ']:
                 list_author.append(co_author(pub_id,
-                                                idx_author,
-                                                author))
+                                             idx_author,
+                                             author))
                 idx_author += 1
                 
     df_co_authors = pd.DataFrame.from_dict({label:[s[idx] for s in list_author] 
@@ -114,9 +114,9 @@ def _build_keywords_scopus(df_corpus,dic_failed):
         list_keywords_AK = keywords_AK.split(';')      
         for keyword_AK in list_keywords_AK:
             keyword_AK = keyword_AK.strip()
-            list_keyword.append(key_word(pub_id=pub_id,
-                                         type='AK',
-                                         keyword=keyword_AK if keyword_AK != 'null' else '”null”'))
+            list_keyword.append(key_word(pub_id,
+                                         'AK',
+                                         keyword_AK if keyword_AK != 'null' else '”null”'))
 
     df_IK = df_corpus[COLUMN_LABEL_SCOPUS['index_keywords']].fillna('')
     for pub_id,keywords_IK in zip(df_IK.index,df_IK):
@@ -124,18 +124,18 @@ def _build_keywords_scopus(df_corpus,dic_failed):
         for keyword_IK in list_keywords_IK:
             keyword_IK = keyword_IK.strip()
             if keyword_IK == 'null': keyword_IK = 'unknown' # replace Null by the keyword 'unknown'
-            list_keyword.append(key_word(pub_id=pub_id,
-                                         type='IK',
-                                         keyword=keyword_IK if keyword_IK != 'null' else '”null”'))
+            list_keyword.append(key_word(pub_id,
+                                         'IK',
+                                         keyword_IK if keyword_IK != 'null' else '”null”'))
 
     df_title = pd.DataFrame(df_corpus[COLUMN_LABEL_SCOPUS['title']].fillna(''))
     df_TK,list_of_words_occurrences = build_title_keywords(df_title)
     for pub_id in df_TK.index:
         for token in df_TK.loc[pub_id,'kept_tokens']:
             token = token.strip()
-            list_keyword.append(key_word(pub_id=pub_id,
-                                             type='TK',
-                                             keyword=token if token != 'null' else '”null”'))
+            list_keyword.append(key_word(pub_id,
+                                         'TK',
+                                         token if token != 'null' else '”null”'))
 
     list_keyword = sorted(list_keyword, key=attrgetter(pub_id_alias))
     
@@ -214,31 +214,31 @@ def _build_addresses_countries_institutions_scopus(df_corpus,dic_failed):
         if list_affiliation:
             for idx_address, address_pub in enumerate(list_affiliation):
 
-                list_addresses.append(address(pub_id=pub_id,
-                                              idx_address=idx_address,
-                                              address=address_pub))
+                list_addresses.append(address(pub_id,
+                                              idx_address,
+                                              address_pub))
 
                 institution = address_pub.split(',')[0]
                 institution = re.sub(re_sub,'University'+' ', institution)
-                list_institutions.append(ref_institution(pub_id=pub_id,
-                                                         idx_address=idx_address,
-                                                         institution=institution))
+                list_institutions.append(ref_institution(pub_id,
+                                                         idx_address,
+                                                         institution))
                 country = address_pub.split(',')[-1].replace(';','').strip()  
                 country = country_normalization(country)
 
-                list_countries.append(ref_country(pub_id=pub_id,
-                                                  idx_address=idx_address,
-                                                  country=country))
+                list_countries.append(ref_country(pub_id,
+                                                  idx_address,
+                                                  country))
         else:
-            list_addresses.append(address(pub_id=pub_id,
-                                          idx_address=0,
-                                          address=''))
-            list_institutions.append(ref_institution(pub_id=pub_id,
-                                                     idx_author=0,
-                                                     institution=''))
-            list_countries.append(country(pub_id=pub_id,
-                                          idx_author=0,
-                                          country=''))
+            list_addresses.append(address(pub_id,
+                                          0,
+                                          ''))
+            list_institutions.append(ref_institution(pub_id,
+                                                     0,
+                                                     ''))
+            list_countries.append(country(pub_id,
+                                          0,
+                                          ''))
             
 
     df_address = pd.DataFrame.from_dict({label:[s[idx] for s in list_addresses] 
@@ -364,10 +364,11 @@ def _build_authors_countries_institutions_scopus(df_corpus, dic_failed, inst_fil
 
         secondary_institutions = ';'.join(secondary_inst_list)
         return secondary_institutions
-
+        
+    address_alias = COL_NAMES['auth_inst'][2]
     pub_id_alias = COL_NAMES['auth_inst'][0]
-    institution_alias = COL_NAMES['auth_inst'][2]
-    sec_institution_alias = COL_NAMES['auth_inst'][-1]
+    institution_alias = COL_NAMES['auth_inst'][4]
+    sec_institution_alias = COL_NAMES['auth_inst'][5]
     
     for pub_id, affiliations, authors_affiliation in zip(df_corpus.index,
                                                          df_corpus[COLUMN_LABEL_SCOPUS['affiliations']],
@@ -397,7 +398,7 @@ def _build_authors_countries_institutions_scopus(df_corpus, dic_failed, inst_fil
 
     if inst_filter_dic is not None:
         df_addr_country_inst[sec_institution_alias] = df_addr_country_inst.apply(lambda row:
-                                                                                 address_inst_list(inst_filter_dic,row.address),
+                                                                                 address_inst_list(inst_filter_dic,row[address_alias]),
                                                                                  axis = 1)
     
     list_id = df_addr_country_inst[df_addr_country_inst[institution_alias] == ''][pub_id_alias].values
@@ -442,6 +443,10 @@ def _build_subjects_scopus(df_corpus,
     Returns:
         The dataframe df_gross_subject
     '''
+    
+    # Standard library imports
+    from pathlib import Path
+    
     # 3rd party imports
     import pandas as pd
     
@@ -451,6 +456,10 @@ def _build_subjects_scopus(df_corpus,
 
     pub_id_alias = COL_NAMES['subject'][0]
     subject_alias = COL_NAMES['subject'][1] 
+    
+    #path_scopus_cat_codes = Path(__file__).parent.parent / Path('BiblioAnalysis_RefFiles/scopus_cat_codes.txt')
+    #path_scopus_journals_issn_cat = Path(__file__).parent.parent / Path('BiblioAnalysis_RefFiles/scopus_journals_issn_cat.txt')
+    
 
     # Builds the dict "code_cat" {ASJC classification codes:description} out 
     # of the file "scopus_cat_codes.txt"
@@ -842,6 +851,10 @@ def biblio_parser_scopus(in_dir_parsing, out_dir_parsing, rep_utils, inst_filter
     from .BiblioSpecificGlobals import SCOPUS_CAT_CODES
     from .BiblioSpecificGlobals import SCOPUS_JOURNALS_ISSN_CAT
     from .BiblioSpecificGlobals import USECOLS_SCOPUS
+    from .BiblioSpecificGlobals import COLUMN_LABEL_SCOPUS
+    from .BiblioSpecificGlobals import COL_NAMES
+    pub_id_alias = COL_NAMES['keywords'][0]
+    keyword_alias = COL_NAMES['keywords'][2]
 
     list_data_base = []
     for path, _, files in os.walk(in_dir_parsing):
@@ -852,7 +865,22 @@ def biblio_parser_scopus(in_dir_parsing, out_dir_parsing, rep_utils, inst_filter
     filename1 = rep_utils / Path(SCOPUS_CAT_CODES)
     filename2 = rep_utils / Path(SCOPUS_JOURNALS_ISSN_CAT)
 
-    df = pd.read_csv(filename,usecols=USECOLS_SCOPUS) # reads the database
+    
+    df = pd.read_csv(in_dir_parsing / Path('scopus_BT.csv')) 
+    
+    # Check for missing mandatory columns
+    cols_mandatory = set([val for val in COLUMN_LABEL_SCOPUS.values() if val])
+    cols_available = set(df.columns)
+    missing_columns = cols_mandatory.difference(cols_available)
+    if missing_columns:
+        raise Exception(f'The mandarory columns: {",".join(missing_columns)} are missing from {filename}\nplease correct before proceeding')
+    
+    # Columns selection and dataframe reformatting
+    cols_to_drop = list(cols_available.difference(cols_mandatory))
+    df.drop(cols_to_drop,
+            axis=1,
+            inplace=True)                    # Drops unused columns
+    df.index = range(len(df))                # Sets the pub_id in df index
     
     dic_failed = {}
     dic_failed['number of article'] = len(df)
@@ -868,19 +896,19 @@ def biblio_parser_scopus(in_dir_parsing, out_dir_parsing, rep_utils, inst_filter
     df_K.to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item]),
                 index=False,
                 sep='\t')
-    
+    # TO DO: replace Type with a variable
     item = 'AK'  # Deals with authors keywords
-    df_K.query('type==@item')[['pub_id','keyword']].to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item]),
+    df_K.query('Type==@item')[[pub_id_alias,keyword_alias]].to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item]),
                 index=False,
                 sep='\t')
     
     item = 'IK'  # Deals with journal keywords
-    df_K.query('type==@item')[['pub_id','keyword']].to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item]),
+    df_K.query('Type==@item')[[pub_id_alias,keyword_alias]].to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item]),
                 index=False,
                 sep='\t')
     
     item = 'TK'  # Deals with title keywords
-    df_K.query('type==@item')[['pub_id','keyword']].to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item]),
+    df_K.query('Type==@item')[[pub_id_alias,keyword_alias]].to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item]),
                 index=False,
                 sep='\t')
     
