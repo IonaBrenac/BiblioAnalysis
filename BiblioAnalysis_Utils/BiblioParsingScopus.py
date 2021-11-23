@@ -457,8 +457,8 @@ def _build_subjects_scopus(df_corpus,
     pub_id_alias = COL_NAMES['subject'][0]
     subject_alias = COL_NAMES['subject'][1] 
     
-    #path_scopus_cat_codes = Path(__file__).parent.parent / Path('BiblioAnalysis_RefFiles/scopus_cat_codes.txt')
-    #path_scopus_journals_issn_cat = Path(__file__).parent.parent / Path('BiblioAnalysis_RefFiles/scopus_journals_issn_cat.txt')
+    path_scopus_cat_codes = Path(__file__).parent.parent / Path('BiblioAnalysis_RefFiles/scopus_cat_codes.txt')
+    path_scopus_journals_issn_cat = Path(__file__).parent.parent / Path('BiblioAnalysis_RefFiles/scopus_journals_issn_cat.txt')
     
 
     # Builds the dict "code_cat" {ASJC classification codes:description} out 
@@ -555,15 +555,24 @@ def _build_sub_subjects_scopus(df_corpus,
         The dataframe sub_subjects
     '''
     
+    # Standard library imports
+    from pathlib import Path
+    
     # 3rd party imports
     import pandas as pd
     
     # Local imports
     from .BiblioSpecificGlobals import COL_NAMES
     from .BiblioSpecificGlobals import COLUMN_LABEL_SCOPUS
+    from .BiblioSpecificGlobals import SCOPUS_JOURNALS_ISSN_CAT
+    from .BiblioSpecificGlobals import SCOPUS_JOURNALS_ISSN_CAT
+    from .BiblioSpecificGlobals import SCOPUS_CAT_CODES
     
     pub_id_alias = COL_NAMES['sub_subject'][0]
     sub_subject_alias = COL_NAMES['sub_subject'][1] 
+    
+    path_scopus_cat_codes = Path(__file__).parent.parent / Path('BiblioAnalysis_RefFiles') / Path(SCOPUS_CAT_CODES)
+    path_scopus_journals_issn_cat = Path(__file__).parent.parent / Path('BiblioAnalysis_RefFiles') / Path(SCOPUS_JOURNALS_ISSN_CAT)
 
     # Builds the dict "code_cat" {ASJC classification codes:description} out of the file "scopus_cat_codes.txt"
     # ex: {1000: 'Multidisciplinary', 1100: 'General Agricultural and Biological Sciences',...}

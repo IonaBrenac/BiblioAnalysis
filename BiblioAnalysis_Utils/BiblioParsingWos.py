@@ -730,6 +730,7 @@ def read_database_wos(filename):
     from .BiblioSpecificGlobals import FIELD_SIZE_LIMIT
     from .BiblioSpecificGlobals import ENCODING
     from .BiblioSpecificGlobals import USECOLS_WOS
+    from .BiblioSpecificGlobals import COLUMN_LABEL_WOS
 
     
     csv.field_size_limit(FIELD_SIZE_LIMIT) # To extend the field size limit for reading .txt files
@@ -745,7 +746,7 @@ def read_database_wos(filename):
     df = df.drop(0)                          # Drops the raw 0 from df 
     
     # Check for missing mandatory columns
-    cols_mandatory = set([val for val in bau.COLUMN_LABEL_WOS.values() if val])
+    cols_mandatory = set([val for val in COLUMN_LABEL_WOS.values() if val])
     cols_available = set(df.columns)
     missing_columns = cols_mandatory.difference(cols_available)
     if missing_columns:

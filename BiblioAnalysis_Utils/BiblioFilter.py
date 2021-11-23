@@ -7,6 +7,20 @@ __all__ = ['filter_corpus_new',
 # Functions used from .BiblioGui: Select_multi_items, filter_item_selection
 # Globals used from .BiblioSpecificGlobals: DIC_OUTDIR_PARSING
 
+def filter_corpus_new(in_dir, out_dir, verbose, file_config_filters):
+    
+    '''Filters the 
+    '''
+
+    # Reads the fitering parameters
+    combine,exclusion,filter_param = read_config_filters(file_config_filters)
+    
+    # Builds the set of articles id to keep
+    tokeep = _filter_pub_id(combine,exclusion,filter_param,in_dir)
+    
+    # Stores the filtered files 
+    _save_filtered_files(tokeep,in_dir,out_dir)
+
 
 def read_config_filters(file_config):
     """
@@ -38,38 +52,6 @@ def read_config_filters(file_config):
 
     return combine,exclusion,filter_param
 
-def _save_filtered_files(tokeep,in_dir,out_dir):
-    
-    '''Filters all the files with ".dat" extension located in the folder in_dir #<---------------------
-    and saves the filtered files in the folder out_dir_.   #<---------------------
-    The set "tokeep" contains the id (pu_id) of the articles to be kept in the filtered corpus. #<--------------
-    
-    Args:
-        tokeep (set): set of id
-        in_dir (Path): path of the folder containing the files to filter
-        out_dir (Path): path of the folder where the filtered files are stored
-    '''
-    # Standard library imports
-    import os
-    from pathlib import Path
-    
-    # 3rd party imports
-    import pandas as pd
-    
-    # Local imports
-    from .BiblioSpecificGlobals import DIC_OUTDIR_PARSING
-
-    #tokeep =[str(x) for x in tokeep] ! not clear, to be understood (generate empty filtered corpus)
-
-    for file in DIC_OUTDIR_PARSING.values():
-        df = pd.read_csv(in_dir / Path(file),
-                         sep='\t')
-        #TO DO: replace pub_id by the article first column name
-        df.rename(columns = {0 : 'pub_id'}, inplace = True)
-        df.query('pub_id in @tokeep').to_csv(out_dir / Path(file), 
-                                             index=False,
-                                             sep="\t")
-
 def _filter_pub_id(combine,exclusion,filter_param,in_dir):
 
     '''<--------------------- modifié AC
@@ -94,11 +76,17 @@ def _filter_pub_id(combine,exclusion,filter_param,in_dir):
     import os
     import re
     from pathlib import Path
+    from string import Template
 
     # 3rd party imports
     import pandas as pd
+    
+    # Local imports
+    from .BiblioSpecificGlobals import DIC_OUTDIR_PARSING
 
-    filter_on = list(filter_param.keys())
+    filter_on = list(filter_param.keys()) # List of items to be filtered
+    
+    t = Template('$colname in @$item') # Template for the query
 
     keepid = {}
 
@@ -107,97 +95,110 @@ def _filter_pub_id(combine,exclusion,filter_param,in_dir):
     # Ymin>=Year>=Ymax, with Journal in filter_param["J"],
     # with doctypes in filter_param["J"] and with Language (LA) in  filter_param["LA"]
     #----------------------------------------------------------------------------
+   
     for idx, item in enumerate(set(filter_on) & set(["Y","J","DT","LA"])):
-        if idx == 0:
-            df = pd.read_csv(in_dir / Path('articles.dat'),
-                             sep='\t',header=None,usecols=[0,2,3,8,9])
-            df.columns = ['pub_id',    # article id
-                          'Y',         # publication year
-                          'J',         # journal
-                          'DT',        # document type ex: article
-                          'LA',        # language
-                          ]
+        if idx == 0: # The first round we read the data
+            df = pd.read_csv(in_dir / Path(DIC_OUTDIR_PARSING['A']),sep='\t')
+            
         if item == 'Y': #years selection
             year = filter_param['Y']
-            keepid[item] = set(df.query('Y in @year').index)
+            query = t.substitute({'colname':df.columns[2],
+                                  'item':'year'})
+            keepid[item] =  set(df.query(query)[df.columns[0]]) 
+            
+        elif item == 'J': #journal selection
+            journals = filter_param['J']
+            query = t.substitute({'colname':df.columns[3],
+                                  'item':'journals'})              
+            keepid[item] =  set(df.query(query)[df.columns[0]]) 
+            
+        elif item == 'DT': #document type selection
+            doctypes = filter_param['DT']
+            query = t.substitute({'colname':df.columns[7],
+                                  'item':'doctypes'})            
+            keepid[item] =  set(df.query(query)[df.columns[0]]) 
 
         elif item == 'LA': #language selection
             languages = filter_param['LA']
-            keepid[item] = set(df.query('LA in @languages').index)
-
-        elif item == 'DT': #document type selection
-            doctypes = filter_param['DT']
-            keepid[item] = set(df.query('DT in @doctypes').index)
-
-        elif item == 'J': #journal selection
-            pubsources = filter_param['J']
-            keepid[item] = set(df.query('DT in @pubsources').index)
-
+            query = t.substitute({'colname':df_articles.columns[8],
+                                  'item':'languages'})           
+            keepid[item] =  set(df.query(query)[df.columns[0]]) 
+            
     # Builds keepid[IK]={IK} keepid[TK]={TK} keepid[AK]={AK} 
     # where {IK}, {TK}, {AK} are the sets of pub_id of articles with
     # one keyword repectivelly in filter_param["IK"], filter_param["TK"], filter_param["AK"]
     # ---------------------------------------------------------------
-    for item in set(filter_on) & set(["IK","TK","AK"]):
-        df = pd.read_csv(in_dir / Path(DIC_OUTDIR_PARSING[item]),
-                         sep='\t',header=None)
-        df.columns = ['pub_id','keyword']
 
-        keywords =  filter_param[item]
-        keepid[item] = set([xx[0]  
-                           for xx in df.query('label==@item').   # SELECT the row with the proper label
-                           groupby('pub_id')['keyword']          # group by article id
-                           if len(set(xx[1]) & set(keywords))!=0])
+    if "IK" in filter_on:
+        df = pd.read_csv(in_dir / Path(DIC_OUTDIR_PARSING["IK"]), sep='\t')
+        keywords =  filter_param["IK"]
+        query = t.substitute({'colname':df.columns[1],
+                              'item':'keywords'})
+        keepid['IK'] = set(df.query(query)[df.columns[0]])
+        
+    if "AK" in filter_on:
+        df = pd.read_csv(in_dir / Path(DIC_OUTDIR_PARSING["AK"]), sep='\t')
+        keywords =  filter_param["AK"]
+        query = t.substitute({'colname':df.columns[1],
+                              'item':'keywords'})
+        keepid['AK'] = set(df.query(query)[df.columns[0]])  
 
-
+    if "TK" in filter_on:
+        df = pd.read_csv(in_dir / Path(DIC_OUTDIR_PARSING["TK"]), sep='\t')
+        keywords =  filter_param["TK"]
+        query = t.substitute({'colname':df.columns[1],
+                              'item':'keywords'})
+        keepid['TK'] =  set(df.query(query)[df.columns[0]]) 
+        
     # Builds keepid[AU]={AU} where {AU} is the set of pub_id 
     # of articles with at least one coauthors in the list filter_param["AU"]
     # ------------------------------------------------------------
     if "AU" in filter_on:
-        df = pd.read_csv(in_dir / Path('authors.dat'),
-                         sep='\t',header=None,usecols=[0,2])
-        df.columns = ["pub_id","author"]
+        df = pd.read_csv(in_dir / Path(DIC_OUTDIR_PARSING["AU"]), sep='\t')
         authors =  filter_param["AU"]
-        keepid['AU'] = set(df.query('author in @authors')['pub_id'])
+        query = t.substitute({'colname':df.columns[2],
+                              'item':'authors'})
+        keepid['AU'] =  set(df.query(query)[df.columns[0]]) 
 
     # Builds keepid[CU]={CU} where {CU} is the of pub_id 
     # of articles with at least one coauthor country in the list filter_param["CU"]
     # ------------------------------------------------------------
     if "CU" in filter_on:
-        df = pd.read_csv(in_dir / Path('countries.dat'),
-                         sep='\t',header=None,usecols=[0,2])
-        df.columns = ["pub_id","country"]
-        countries =  filter_param["CU"]
-        keepid["CU"] = set(df.query('country in @countries')['pub_id'])
+        df = pd.read_csv(in_dir / Path(DIC_OUTDIR_PARSING["CU"]), sep='\t')
+        countries = filter_param["CU"]
+        query = t.substitute({'colname':df.columns[2],
+                              'item':'countries'})
+        keepid["CU"] =  set(df.query(query)[df.columns[0]]) 
 
     # Builds keepid[I]={I} where {I} is the of pub_id 
     # of articles with at least one coauthor institution in the list filter_param["CU"]
     # ------------------------------------------------------------
     if "I" in filter_on:
-        df = pd.read_csv(in_dir / Path('institutions.dat'),
-                         sep='\t',header=None,usecols=[0,2])
-        df.columns = ["pub_id","institution"]
+        df = pd.read_csv(in_dir / Path(DIC_OUTDIR_PARSING["I"]), sep='\t')
         institutions =  filter_param["I"]
-        keepid["I"] = set(df.query('institution in @institutions')['pub_id'])
+        query = t.substitute({'colname':df.columns[2],
+                              'item':'institutions'})
+        keepid["I"] =  set(df.query(query)[df.columns[0]]) 
 
     # Builds keepid[S]={S} where {S} is the of pub_id 
     # of articles with subjects in the list filter_param["S"]
     # ------------------------------------------------------------
     if "S" in filter_on:
-        df = pd.read_csv(in_dir / Path('subjects.dat'),
-                         sep='\t',header=None)
-        df.columns = ["pub_id","subject"]
+        df = pd.read_csv(in_dir / Path(DIC_OUTDIR_PARSING["S"]), sep='\t')
         subjects =  filter_param["S"]
-        keepid["S"] = set(df.query('subject in @subjects')['pub_id'])
+        query = t.substitute({'colname':df.columns[1],
+                              'item':'subjects'})
+        keepid["S"] =  set(df.query(query)[df.columns[0]]) 
 
     # Builds keepid[S2]={S2} where {S2} is the of pub_id 
     # of articles with subsubjects in the list filter_param["S2"]
     # ------------------------------------------------------------
     if "S2" in filter_on:
-        df = pd.read_csv(in_dir / Path('subjects2.dat'),
-                         sep='\t',header=None)
-        df.columns = ["pub_id","subject"]
+        df = pd.read_csv(in_dir / Path(DIC_OUTDIR_PARSING["S2"]), sep='\t')
         subsubjects =  filter_param["S2"]
-        keepid["S2"] = set(df.query('subject in @subsubjects')['pub_id'])
+        query = t.substitute({'colname':df.columns[1],
+                              'item':'subsubjects'})       
+        keepid["S2"] = set(df.query(query)[df.columns[0]]) 
         
     # Builds keepid[R]={R}, keepid[RJ]={RJ}
     # where {R} is the set acticles id with references 
@@ -207,21 +208,21 @@ def _filter_pub_id(combine,exclusion,filter_param,in_dir):
     # of articles with references 
     # ------------------------------------------------------------
     if ("R" in filter_on) or ("RJ" in filter_on):
-        df = pd.read_csv(in_dirg / Path('references.dat'),
-                         sep='\t',header=None,
-                         usecols=[0,1,2,3,4,5] ).astype(str)
-        df.columns = ['pub_id','author','year','journal','vol','page']
+        df = pd.read_csv(in_dirg / Path(DIC_OUTDIR_PARSING["R"]), sep='\t').astype(str)
         
         if "R" in filter_on:
             find_0 = re.compile(r',\s?0')
             df['ref'] = df.apply(lambda row:re.sub(find_0,'', ', '.join(row[1:-1]))
                                  ,axis=1)
             references =  filter_param["R"]
-            keepid["R"] = set(df.query('ref in @references')['pub_id']) 
+            keepid["R"] =  set(df.query(query)[df.columns[0]])  
             
         if "RJ" in filter_on:
             refsources = filter_param["RJ"]
-            keepid["RJ"] = set(df.query('subject in @refsources')['pub_id'])
+            query = t.substitute({'colname':df.columns[3],
+                                  'item':'refsources'})
+            
+            keepid["RJ"] = set(df.query(query)[df.columns[0]]) 
             
     # Combines the filtering conditions union / intersection /exclusion
     # -------------------------------------------------------------------
@@ -232,27 +233,46 @@ def _filter_pub_id(combine,exclusion,filter_param,in_dir):
     if combine == "union":
         tokeep = set.union(*tokeep)
 
-    if exclusion:
-        df = pd.read_csv(in_dir / Path('articles.dat'),
-                             sep='\t',header=None,usecols=[0])
-        set_pub_id = set(df[0])              # set of all pub_id
+    if exclusion: 
+        df = pd.read_csv(in_dir / Path(DIC_OUTDIR_PARSING['A']),sep='\t')
+        set_pub_id = set(df[df.columns[0]])
+        # set of all pub_id
         tokeep = set_pub_id.difference(tokeep)
         
     return tokeep
-
-def filter_corpus_new(in_dir, out_dir, verbose, file_config_filters):
     
-    '''Filters the 
+def _save_filtered_files(tokeep,in_dir,out_dir):
+    
+    '''Filters all the files with ".dat" extension located in the folder in_dir #<---------------------
+    and saves the filtered files in the folder out_dir_.   #<---------------------
+    The set "tokeep" contains the id (pu_id) of the articles to be kept in the filtered corpus. #<--------------
+    
+    Args:
+        tokeep (set): set of id
+        in_dir (Path): path of the folder containing the files to filter
+        out_dir (Path): path of the folder where the filtered files are stored
     '''
+    # Standard library imports
+    import os
+    from pathlib import Path
+    from string import Template
+    
+    # 3rd party imports
+    import pandas as pd
+    
+    # Local imports
+    from .BiblioSpecificGlobals import DIC_OUTDIR_PARSING
+    
+    t = Template('$colname in @tokeep') # Template for the query
 
-    # Reads the fitering parameters
-    combine,exclusion,filter_param = read_config_filters(file_config_filters)
-    
-    # Builds the set of articles id to keep
-    tokeep = _filter_pub_id(combine,exclusion,filter_param,in_dir)
-    
-    # Stores the filtered files 
-    _save_filtered_files(tokeep,in_dir,out_dir)
+    for file in DIC_OUTDIR_PARSING.values():
+        df = pd.read_csv(in_dir / Path(file), sep='\t')
+        query = t.substitute({'colname':df.columns[0]}) 
+        df.query(query).to_csv(out_dir / Path(file), 
+                                             index=False,
+                                             sep="\t")
+
+
     
 def item_filter_modification(item,item_values, filters_filename) :
     '''
