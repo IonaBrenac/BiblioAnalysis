@@ -532,7 +532,9 @@ def filters_selection(filters_filename, save_filename, parsing_dir) :
     
     Arguments: 
         filters_filename (path): path of the json file of the filtering configuration
-        parsing_dir (path) : path of the corpus folder where the ....
+        save_filename (path): full path name of the new .json file
+        parsing_dir (path) : path of the corpus folder containing the files used to build 
+                            the selection menu of items 
         
     
     Returns:

@@ -607,6 +607,7 @@ def _build_articles_wos(df_corpus):
                    COLUMN_LABEL_WOS['language'],
                    COLUMN_LABEL_WOS['title'],
                    COLUMN_LABEL_WOS['issn']]
+                   
     df_article = df_corpus.loc[:,wos_columns].astype(str)
 
     df_article.rename (columns = dict(zip(wos_columns,COL_NAMES['articles'][1:])),

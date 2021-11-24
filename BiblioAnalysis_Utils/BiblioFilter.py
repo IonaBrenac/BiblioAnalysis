@@ -120,7 +120,7 @@ def _filter_pub_id(combine,exclusion,filter_param,in_dir):
 
         elif item == 'LA': #language selection
             languages = filter_param['LA']
-            query = t.substitute({'colname':df_articles.columns[8],
+            query = t.substitute({'colname':df.columns[8],
                                   'item':'languages'})           
             keepid[item] =  set(df.query(query)[df.columns[0]]) 
             

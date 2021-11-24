@@ -875,7 +875,7 @@ def biblio_parser_scopus(in_dir_parsing, out_dir_parsing, rep_utils, inst_filter
     filename2 = rep_utils / Path(SCOPUS_JOURNALS_ISSN_CAT)
 
     
-    df = pd.read_csv(in_dir_parsing / Path('scopus_BT.csv')) 
+    df = pd.read_csv(in_dir_parsing / Path(filename)) 
     
     # Check for missing mandatory columns
     cols_mandatory = set([val for val in COLUMN_LABEL_SCOPUS.values() if val])
