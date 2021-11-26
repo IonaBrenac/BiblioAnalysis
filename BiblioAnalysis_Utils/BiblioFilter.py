@@ -83,6 +83,8 @@ def _filter_pub_id(combine,exclusion,filter_param,in_dir):
     
     # Local imports
     from .BiblioSpecificGlobals import DIC_OUTDIR_PARSING
+    from .BiblioSpecificGlobals import COL_NAMES
+    
 
     filter_on = list(filter_param.keys()) # List of items to be filtered
     
@@ -98,10 +100,12 @@ def _filter_pub_id(combine,exclusion,filter_param,in_dir):
    
     for idx, item in enumerate(set(filter_on) & set(["Y","J","DT","LA"])):
         if idx == 0: # The first round we read the data
-            df = pd.read_csv(in_dir / Path(DIC_OUTDIR_PARSING['A']),sep='\t')
+            df = pd.read_csv(in_dir / Path(DIC_OUTDIR_PARSING['A']),
+                             sep='\t',
+                             dtype={x : 'str' for x in COL_NAMES['articles'][1:]})
             
         if item == 'Y': #years selection
-            year = filter_param['Y']
+            year = [str(x) for x in filter_param['Y']]
             query = t.substitute({'colname':df.columns[2],
                                   'item':'year'})
             keepid[item] =  set(df.query(query)[df.columns[0]]) 

@@ -584,10 +584,10 @@ def _build_articles_wos(df_corpus):
     from .BiblioSpecificGlobals import COLUMN_LABEL_WOS    
 
     def str_int_convertor(x):
-        try:
-            return(int(float(x)))
-        except:
-            return 0
+        if x:
+            return(str(x))
+        else:
+            return '0'
     
     def treat_author(list_authors):
         first_author = list_authors.split(';')[0] # we pick the first author
@@ -730,9 +730,7 @@ def read_database_wos(filename):
     # Local imports
     from .BiblioSpecificGlobals import FIELD_SIZE_LIMIT
     from .BiblioSpecificGlobals import ENCODING
-    from .BiblioSpecificGlobals import USECOLS_WOS
-    from .BiblioSpecificGlobals import COLUMN_LABEL_WOS
-
+    from .BiblioParsingUtils import check_and_drop_columns
     
     csv.field_size_limit(FIELD_SIZE_LIMIT) # To extend the field size limit for reading .txt files
 
@@ -746,19 +744,7 @@ def read_database_wos(filename):
     df.columns = df.iloc[0]                  # Sets columns name to raw 0
     df = df.drop(0)                          # Drops the raw 0 from df 
     
-    # Check for missing mandatory columns
-    cols_mandatory = set([val for val in COLUMN_LABEL_WOS.values() if val])
-    cols_available = set(df.columns)
-    missing_columns = cols_mandatory.difference(cols_available)
-    if missing_columns:
-        raise Exception(f'The mandarory columns: {",".join(missing_columns)} are missing from {filename}\nplease correct before proceeding')
-    
-    # Columns selection and dataframe reformatting
-    cols_to_drop = list(cols_available.difference(cols_mandatory))
-    df.drop(cols_to_drop,
-            axis=1,
-            inplace=True)                    # Drops unused columns
-    df.index = range(len(df))                # Sets the pub_id in df index
+    df = check_and_drop_columns("wos",df,filename)
     
     return df
 

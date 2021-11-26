@@ -1,5 +1,6 @@
 __all__ = ['biblio_parser',
            'build_title_keywords',
+           'check_and_drop_columns',
            'country_normalization',
            'merge_database',
            'name_normalizer',
@@ -242,3 +243,30 @@ def biblio_parser(in_dir_parsing, out_dir_parsing, database, expert, rep_utils, 
         biblio_parser_scopus(in_dir_parsing, out_dir_parsing, rep_utils, inst_filter_dic)
     else:
         raise Exception("Sorry, unrecognized database {database} : should be wos or scopus ")
+
+def check_and_drop_columns(database,df,filename):
+
+    from .BiblioSpecificGlobals import COLUMN_LABEL_WOS 
+    from .BiblioSpecificGlobals import COLUMN_LABEL_SCOPUS     
+
+    # Check for missing mandatory columns
+    if database == 'wos':
+        cols_mandatory = set([val for val in COLUMN_LABEL_WOS.values() if val])
+    elif database == 'scopus':
+        cols_mandatory = set([val for val in COLUMN_LABEL_SCOPUS.values() if val])    
+    else:
+        raise Exception(f'Unknown database {database}')
+        
+    cols_available = set(df.columns)
+    missing_columns = cols_mandatory.difference(cols_available)
+    if missing_columns:
+        raise Exception(f'The mandarory columns: {",".join(missing_columns)} are missing from {filename}\nplease correct before proceeding')
+    
+    # Columns selection and dataframe reformatting
+    cols_to_drop = list(cols_available.difference(cols_mandatory))
+    df.drop(cols_to_drop,
+            axis=1,
+            inplace=True)                    # Drops unused columns
+    df.index = range(len(df))                # Sets the pub_id in df index
+    
+    return df

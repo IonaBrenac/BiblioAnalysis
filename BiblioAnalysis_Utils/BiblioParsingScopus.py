@@ -860,8 +860,9 @@ def biblio_parser_scopus(in_dir_parsing, out_dir_parsing, rep_utils, inst_filter
     from .BiblioSpecificGlobals import SCOPUS_CAT_CODES
     from .BiblioSpecificGlobals import SCOPUS_JOURNALS_ISSN_CAT
     from .BiblioSpecificGlobals import USECOLS_SCOPUS
-    from .BiblioSpecificGlobals import COLUMN_LABEL_SCOPUS
     from .BiblioSpecificGlobals import COL_NAMES
+    from .BiblioParsingUtils import check_and_drop_columns
+    
     pub_id_alias = COL_NAMES['keywords'][0]
     keyword_alias = COL_NAMES['keywords'][2]
 
@@ -877,19 +878,7 @@ def biblio_parser_scopus(in_dir_parsing, out_dir_parsing, rep_utils, inst_filter
     
     df = pd.read_csv(in_dir_parsing / Path(filename)) 
     
-    # Check for missing mandatory columns
-    cols_mandatory = set([val for val in COLUMN_LABEL_SCOPUS.values() if val])
-    cols_available = set(df.columns)
-    missing_columns = cols_mandatory.difference(cols_available)
-    if missing_columns:
-        raise Exception(f'The mandarory columns: {",".join(missing_columns)} are missing from {filename}\nplease correct before proceeding')
-    
-    # Columns selection and dataframe reformatting
-    cols_to_drop = list(cols_available.difference(cols_mandatory))
-    df.drop(cols_to_drop,
-            axis=1,
-            inplace=True)                    # Drops unused columns
-    df.index = range(len(df))                # Sets the pub_id in df index
+    df = check_and_drop_columns('scopus',df,filename)
     
     dic_failed = {}
     dic_failed['number of article'] = len(df)
