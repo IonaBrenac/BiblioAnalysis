@@ -101,51 +101,64 @@ def _build_keywords_wos(df_corpus,dic_failed):
     
     pub_id_alias = COL_NAMES['keywords'][0]
     type_alias = COL_NAMES['keywords'][1]
-    keyword_alias = COL_NAMES['keywords'][2]
+    keyword_alias = COL_NAMES['keywords'][1]
     
-    list_keyword = []  # List of namedtuple key_word
+    list_keyword_AK = [] 
+    df_AK = df_corpus[COLUMN_LABEL_WOS['author_keywords']].fillna('')
+    for pub_id,keywords_AK in zip(df_AK.index,df_AK):
+        list_keywords_AK = keywords_AK.split(';')      
+        for keyword_AK in list_keywords_AK:
+            keyword_AK = keyword_AK.lower().strip()
+            list_keyword_AK.append(key_word(pub_id,
+                                   keyword_AK if keyword_AK != 'null' else '”null”'))
 
-    df_AK = df_corpus[COLUMN_LABEL_WOS['author_keywords']] # Pick the author keywords column
-    for pub_id,ak_keywords in zip(df_AK.index,df_AK):
-        for ak_keyword in ak_keywords.split(';'): # Skip empty field
-            ak_keyword = ak_keyword.lower().strip()
-            list_keyword.append(key_word(pub_id,
-                                         'AK',
-                                         ak_keyword if ak_keyword != 'null' else '"null"'))
-
-    df_IK = df_corpus[COLUMN_LABEL_WOS['index_keywords']] # Pick the journal keywords column
-    for pub_id,ik_keywords in zip(df_IK.index,df_IK):
-        for ik_keyword in ik_keywords.split(';'): # Skip empty field
-            ik_keyword = ik_keyword.lower().strip()
-            list_keyword.append(key_word(pub_id,
-                                         'IK',
-                                         ik_keyword if ik_keyword != 'null' else '"null"'))
-
-    df_title = pd.DataFrame(df_corpus[COLUMN_LABEL_WOS['title']]) # Pick the title column
-    df_title.columns = ['Title']
+    list_keyword_IK = []
+    df_IK = df_corpus[COLUMN_LABEL_WOS['index_keywords']].fillna('')
+    for pub_id,keywords_IK in zip(df_IK.index,df_IK):
+        list_keywords_IK = keywords_IK.split(';')
+        for keyword_IK in list_keywords_IK:
+            keyword_IK = keyword_IK.lower().strip()
+            if keyword_IK == 'null': keyword_IK = 'unknown' # replace Null by the keyword 'unknown'
+            list_keyword_IK.append(key_word(pub_id,
+                                            keyword_IK if keyword_IK != 'null' else '”null”'))
+            
+    list_keyword_TK = []
+    df_title = pd.DataFrame(df_corpus[COLUMN_LABEL_WOS['title']].fillna('')) # Tranform a data list into dataframe
+    df_title.columns = ['Title']  # To be coherent with the convention of function build_title_keywords
     df_TK,list_of_words_occurrences = build_title_keywords(df_title)
     for pub_id in df_TK.index:
         for token in df_TK.loc[pub_id,'kept_tokens']:
             token = token.lower().strip()
-            list_keyword.append(key_word(pub_id,
-                                         'TK',
-                                         token if token != 'null' else '"null"')) 
-
-    # Sort the list of nametuples key_word by ascending value od pub_id
-    list_keyword = sorted(list_keyword, key=attrgetter(pub_id_alias))
-    df_keyword = pd.DataFrame.from_dict({label:[s[idx] for s in list_keyword] 
+            list_keyword_TK.append(key_word(pub_id,
+                                         token if token != 'null' else '”null”'))                                    
+    
+    df_keyword_AK = pd.DataFrame.from_dict({label:[s[idx] for s in list_keyword_AK] 
+                                         for idx,label in enumerate(COL_NAMES['keywords'])})
+    df_keyword_IK = pd.DataFrame.from_dict({label:[s[idx] for s in list_keyword_IK] 
+                                         for idx,label in enumerate(COL_NAMES['keywords'])})
+    df_keyword_TK = pd.DataFrame.from_dict({label:[s[idx] for s in list_keyword_TK] 
                                          for idx,label in enumerate(COL_NAMES['keywords'])})
     
-    df_failed = df_keyword[df_keyword[keyword_alias] == '']
-    for type_ in ['AK','IK','TK']:
-        list_id = df_failed[df_failed[type_alias]==type_][pub_id_alias].values
-        list_id = list(set(list_id))
-        dic_failed[type_] = {'success (%)':100*(1-len(list_id)/len(df_corpus)),
-                             pub_id_alias:[int(x) for x in list(list_id)]}
+    df_failed_AK = df_keyword_AK[df_keyword_AK[keyword_alias] == '']
+    list_id = df_failed_AK[pub_id_alias].values
+    dic_failed['AK'] = {'success (%)':100*(1-len(list_id)/len(df_corpus)),
+                            pub_id_alias:[int(x) for x in list(list_id)]}
     
-    df_keyword = df_keyword[df_keyword[keyword_alias] != '']
+    df_failed_IK = df_keyword_IK[df_keyword_IK[keyword_alias] == '']
+    list_id = df_failed_IK[pub_id_alias].values
+    dic_failed['IK'] = {'success (%)':100*(1-len(list_id)/len(df_corpus)),
+                            pub_id_alias:[int(x) for x in list(list_id)]}
     
-    return df_keyword
+    df_failed_TK = df_keyword_TK[df_keyword_TK[keyword_alias] == '']
+    list_id = df_failed_TK[pub_id_alias].values
+    dic_failed['TK'] = {'success (%)':100*(1-len(list_id)/len(df_corpus)),
+                            pub_id_alias:[int(x) for x in list(list_id)]}
+    
+    df_keyword_AK = df_keyword_AK[df_keyword_AK[keyword_alias] != '']
+    df_keyword_IK = df_keyword_IK[df_keyword_IK[keyword_alias] != '']
+    df_keyword_TK = df_keyword_TK[df_keyword_TK[keyword_alias] != '']    
+    
+    return df_keyword_AK,df_keyword_IK, df_keyword_TK
 
 
 def _build_addresses_countries_institutions_wos(df_corpus,dic_failed):
@@ -788,7 +801,7 @@ def biblio_parser_wos(in_dir_parsing, out_dir_parsing, inst_filter_dic):
     from .BiblioSpecificGlobals import DIC_OUTDIR_PARSING
     from .BiblioSpecificGlobals import COL_NAMES
     pub_id_alias = COL_NAMES['keywords'][0]
-    keyword_alias = COL_NAMES['keywords'][2]
+    keyword_alias = COL_NAMES['keywords'][1]
 
     list_data_base = []
     for path, _, files in os.walk(in_dir_parsing):
@@ -807,24 +820,21 @@ def biblio_parser_wos(in_dir_parsing, out_dir_parsing, inst_filter_dic):
                  index=False,
                  sep='\t')
     
-    item = 'K'  # Deals with keywords
-    df_K = _build_keywords_wos(df,dic_failed)
-    df_K.to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item]),
-                index=False,
-                sep='\t')
-    # TO DO: modify Type to be a variable
+                # Deals with keywords
+    df_keyword_AK,df_keyword_IK, df_keyword_TK = _build_keywords_wos(df,dic_failed)
+   
     item = 'AK'  # Deals with authors keywords
-    df_K.query('Type==@item')[[pub_id_alias,keyword_alias]].to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item]),
+    df_keyword_AK.to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item]),
                 index=False,
                 sep='\t')
     
     item = 'IK'  # Deals with journal keywords
-    df_K.query('Type==@item')[[pub_id_alias,keyword_alias]].to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item]),
+    df_keyword_IK.to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item]),
                 index=False,
                 sep='\t')
     
     item = 'TK'  # Deals with title keywords
-    df_K.query('Type==@item')[[pub_id_alias,keyword_alias]].to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item]),
+    df_keyword_TK.to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item]),
                 index=False,
                 sep='\t')    
                     

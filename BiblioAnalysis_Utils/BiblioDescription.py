@@ -161,14 +161,17 @@ def _describe_item(df,item,dic_distrib_item,list_cooc_nodes,list_cooc_edges ,fre
     # Local imports
     from .BiblioSpecificGlobals import VALID_LABEL_GRAPH
     
-    corpus_size = dic_distrib_item['N'] 
+    # Deal with .csv files
+    corpus_size = dic_distrib_item['N']  #Retrieve the corpus size from the json dict
     df.columns = ['pub_id','item']
     df_freq, q_item, p_item = _frequency_analysis(df,corpus_size)
     df_freq.to_csv(freq_filename,sep=',', index = False)
-
+     
+    # Upgrades the json dict used to build DISTRIBS_itemuse.json file
     dic_distrib_item['q'+item.capitalize()] = q_item
     dic_distrib_item['p'+item.capitalize()] = p_item
 
+    # Upgrades the list of nodes and edges of the coocurrence graph
     if item in VALID_LABEL_GRAPH:
         liste_node, liste_edge = _generate_cooc(df,item)
 
@@ -367,7 +370,7 @@ def describe_corpus(in_dir, out_dir, database_type, verbose):
     usecols = [COL_NAMES['authors'][0],COL_NAMES['authors'][2]] #ex: ['pub_id','co_author']
     _process_item(in_dir, out_dir,item,usecols,dic_distrib_item,list_cooc_nodes,list_cooc_edges)
     
-    usecols = [COL_NAMES['keywords'][0],COL_NAMES['keywords'][2]] #ex: ['pub_id','keyword']
+    usecols = [COL_NAMES['keywords'][0],COL_NAMES['keywords'][1]] #ex: ['pub_id','keyword']
     item = 'AK'                   # Deals with authors keywords
     _process_item(in_dir, out_dir,item,usecols,dic_distrib_item,list_cooc_nodes,list_cooc_edges)
     item = 'IK'                   # Deals journal keywords
