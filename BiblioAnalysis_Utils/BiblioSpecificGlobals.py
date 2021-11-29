@@ -200,7 +200,6 @@ DIC_OUTDIR_PARSING = {'A':'articles.dat',
                       'S':'subjects.dat',
                       'S2':'subjects2.dat',
                       'R':'references.dat',
-                      'K':'keywords.dat',
                      }
 
 DISTRIBS_ITEM_FILE = 'DISTRIBS_itemuse.json'
