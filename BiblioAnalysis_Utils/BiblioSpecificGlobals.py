@@ -23,6 +23,10 @@ __all__ = ['BLACKLISTED_WORDS',
            'ENCODING',
            'FIELD_SIZE_LIMIT',
            'FOLDER_NAMES',
+           'FOLDER_SELECTION_HELP_TEXT',
+           'GUI_BUTTON_RATIO',
+           'GUI_TEXT_MAX_LINES_NB',
+           'GUI_WIDGET_RATIO',
            'HEADER',
            'INST_FILTER_DIC',
            'LABEL_MEANING',
@@ -215,6 +219,16 @@ FOLDER_NAMES = {'rawdata':     'rawdata',
                 'coupling':    'coupling',
                 'cooccurrence':'cooc',
                }
+
+FOLDER_SELECTION_HELP_TEXT ='''The selected folder is edited.
+                               For changing the selection, just make a new selection.
+                               If the selection is valid, please close the window'''
+
+GUI_BUTTON_RATIO = 2.5
+
+GUI_TEXT_MAX_LINES_NB = 3
+
+GUI_WIDGET_RATIO = 1.2 
 
 HEADER = True
 

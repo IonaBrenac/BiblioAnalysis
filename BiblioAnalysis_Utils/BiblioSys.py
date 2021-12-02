@@ -3,7 +3,8 @@ for running BiblioAnalysis on different operating systems.
 """
 
 __all__ = ['add_site_packages_path',
-           'DISPLAYS']
+           'DISPLAYS',
+           'GUI_DISP',]
 
 # Globals used from BiblioGeneralGlobals: IN_TO_MM
 
@@ -36,7 +37,7 @@ def add_site_packages_path(venv = False ):
         print('Added paths:         ',mac_packages)
         
 
-def get_displays(in_to_mm=None): 
+def _get_displays(in_to_mm=None): 
     
     ''' The function `get_displays` allows to identify the set of displays
         available within the user hardware and to get their parameters.
@@ -87,5 +88,16 @@ def get_displays(in_to_mm=None):
         
     return displays
 
+######################## Definition of globals ###########################
 
-DISPLAYS = get_displays()
+DISPLAYS = _get_displays()
+
+   # Get the prime display choice
+   # TO DO: replace input by a GUI to select the gui display for the whole run of BiblioAnalysis
+displays_nb = len(DISPLAYS)
+GUI_DISP = [i for i in range(displays_nb) if DISPLAYS[i]['is_primary']][0]
+if displays_nb>1:
+    disp_select = input('\nSelect Id of gui prime-display '+
+                       '(value: 0 to '+ str(displays_nb-1)+
+                      '; default:'+ str(GUI_DISP)+')')
+    if disp_select: GUI_DISP = int(disp_select)  

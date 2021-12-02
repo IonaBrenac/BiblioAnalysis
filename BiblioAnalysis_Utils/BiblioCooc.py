@@ -74,7 +74,7 @@ def build_item_cooc(item, in_dir, out_dir, size_min=None):
 
     filename_in = DIC_OUTDIR_PARSING[item]
     num_col = 2 if (item in ["AU", "CU"]) else 1
-    df = pd.read_csv(in_dir / Path(filename_in), sep="\t", header=None,)
+    df = pd.read_csv(in_dir / Path(filename_in), sep="\t")
     df = df[[0, num_col]]
     df.columns = ["pub_id", "item"]
 

@@ -85,7 +85,7 @@ FILTERS_ITEMS_DICT = {'Authors':'AU',
 
 FILTERS_SELECTION_HELP_TEXT = '''To be done'''
 
-GEOMETRY_FILTERS_SELECTION = '500x580+50+50'
+GEOMETRY_FILTERS_SELECTION = '500x580+50+50' 
 
 SAVE_CONFIG_FILTERS = 'save_config_filters.json'
 
@@ -532,9 +532,7 @@ def filters_selection(filters_filename, save_filename, parsing_dir) :
     
     Arguments: 
         filters_filename (path): path of the json file of the filtering configuration
-        save_filename (path): full path name of the new .json file
-        parsing_dir (path) : path of the corpus folder containing the files used to build 
-                            the selection menu of items 
+        parsing_dir (path) : path of the corpus folder where the ....
         
     
     Returns:
@@ -830,9 +828,18 @@ def Select_multi_items(list_item,mode = 'multiple'):
     import tkinter as tk
     
     global val
+    
+    # Local imports
+    from .BiblioSys import DISPLAYS,GUI_DISP
+    
+    # To Do : rationalize the definition of the window geometry in the functions
+    win_widthpx = 500
+    win_heightpx = 500
+    win_xpx = str(int(DISPLAYS[GUI_DISP]['x']) + 50)
+    win_ypx = str(int(DISPLAYS[GUI_DISP]['y']) + 50)
 
     window = tk.Tk()
-    window.geometry(GEOMETRY_FILTERS_SELECTION)
+    window.geometry(f'{win_widthpx}x{win_heightpx}+{win_xpx}+{win_ypx}')
     window.attributes("-topmost", True)
     if mode == 'single': 
         title = 'Single item selection'
@@ -996,19 +1003,146 @@ def select_folder_gui(in_dir,title):
     return out_dir
 
 
-def select_folder_gui_new(in_dir, titles, buttons_labels, prime_disp=0, widget_ratio=1.2):
+
+
+############## New GUIs #######################################################################
+
+
+def _str_size_mm(text, font, ppi):
+    '''The function `_str_size_mm` computes the sizes in mm of a string.
+
+    Args:
+        text (str): the text of which we compute the size in mm.
+        font (tk.font): the font of the text.
+        ppi (int): pixels per inch of the display.
+
+    Returns:
+        `(tuple)`: width in mm `(string)`, height in mm `(string)`.
+
+    Note:
+        The use of this function requires a tkinter window availability 
+        since it is based on a tkinter font definition.
+
+    '''
+
+    # Local imports
+    from .BiblioGeneralGlobals import IN_TO_MM
+       
+    (w_px,h_px) = (font.measure(text),font.metrics("linespace"))
+    w_mm = w_px * IN_TO_MM / ppi
+    h_mm = h_px * IN_TO_MM / ppi
+
+    return (w_mm,h_mm )
+
+
+def _str_max_len_mm(list_strs,font,ppi): 
+    '''The `_str_max_len_mm`function gets the maximum length in mm of a list of strings 
+       given the font and the ppi of the used display and using the `_str_size_mm` function .
+       
+    Args:
+        list_strs (list): list of strings to be sized to get their maximum length.
+        font (tk.font): the font used for the strings size evaluation in mm.
+        ppi (int): pixels per inch of the display.
+        
+    Returns:
+        `(float)`: maximum length in mm of the strings in `list_strs`.
+    '''                   
+    
+    max_length_mm = max([_str_size_mm(value, font, ppi)[0] 
+                         for value in list_strs])
+    return max_length_mm
+
+
+def _mm_to_px(size_mm,ppi, fact=1):
+    '''The `_mm_to_px' function converts a value in mm to a value in pixels
+    using the ppi of the used display and a factor fact.
+    
+    Args:
+        size_mm (float): value in mm to be converted.
+        ppi ( float): pixels per inch of the display.
+        fact (float): factor (default= 1).
+        
+    Returns:
+        `(int)`: upper integer value of the conversion to pixels
+        
+    '''
+    
+    # Standard library imports 
+    import math
+    
+    # Local imports
+    from .BiblioGeneralGlobals import IN_TO_MM
+
+    size_px = math.ceil((size_mm * fact / IN_TO_MM) * ppi)
+    
+    return size_px
+
+
+def _split_path2str(in_str,sep,max_px,font,ppi):
+    '''The `_split_path2str` function splits the `in_str` string 
+    in substrings of pixels sizes lower than `max_px` using the separator `sep` .
+
+    Args:
+        in_str (str): the full path of a folder.
+        sep (str): the character to be find in `in_str`.
+        max_px (int): the maximum size in pixels for the substrings 
+                      that should result from the split of `in-dir`.
+        font (tk.font): the font used for the substrings size evaluation in mm.
+        ppi (float): pixels per inch of the display.
+
+    Returns:
+        `(tuple)`: tuple of the substrings resulting from the split of `in-dir`.
+
+    Note:
+        The use of this function requires a tkinter window availability 
+        since it is based on a tkinter font definition.
+
+    '''        
+
+    # Standard library imports 
+    import numpy as np
+    import re
+
+    len_in_str,_ = _str_size_mm(in_str, font, ppi)
+    if _mm_to_px(len_in_str,ppi)>int(max_px):
+        pos_list = np.array([m.start() for m in re.finditer(r'[\\' + sep + ']', in_str)])
+        list_len = [_mm_to_px(_str_size_mm(in_str[0:pos_slash], font, ppi)[0],ppi)
+                    for pos_slash in pos_list ]
+        try:
+            pos_mid = pos_list[np.min(np.where(np.array(list_len) >= int(max_px))) - 1]
+        except:
+            pos_mid = pos_list[-1]
+        out_str1 = str(in_str)[0:pos_mid]
+        out_str2 = str(in_str)[pos_mid:]
+
+    else:
+        out_str1 = str(in_str)
+        out_str2 = ''
+
+    return (out_str1,out_str2)
+
+
+def select_folder_gui_new(in_dir, titles, buttons_labels, 
+                          prime_disp=0, widget_ratio=None, button_ratio=None, max_lines_nb=None):
     
     '''The function `select_folder_gui_grid` allows the interactive selection of a folder.
     
     Args: 
         in_dir (str): name of the initial folder.
-        titles (dict): title of the tk window. 
+        titles (dict): title of the tk window.
+        buttons_labels(list): list of button labels as strings.
+        prime_disp (int): number identifying the used display (default: 0).
+        widget_ratio (float): base ratio for defining the different widget ratii (default: 1.2).
+        button_ratio (float): buttons-height to the label-height ratio 
+                              to vertically center the label in the button (default: 2.5).
+        max_lines_nb (int): maximum lines number for editing the selected folder name (default: 3).
     
     Returns:
         `(str)`: name of the selected folder.
         
     Note:
-        Uses the globals: `IN_TO_MM`;`DISPLAYS`.
+        Uses the globals: `IN_TO_MM`, `DISPLAYS`, `GUI_BUTTON_RATIO`,
+                          `GUI_TEXT_MAX_LINES_NB` and `GUI_WIDGET_RATIO`.
         Based on two frames in the main window and two buttons in the top frame.
 
     '''
@@ -1021,84 +1155,14 @@ def select_folder_gui_new(in_dir, titles, buttons_labels, prime_disp=0, widget_r
     import tkinter.font as TkFont
     
     # Local imports
-    from .BiblioGeneralGlobals import IN_TO_MM
     from .BiblioSys import DISPLAYS
+    from .BiblioGeneralGlobals import IN_TO_MM
+    from .BiblioSpecificGlobals import FOLDER_SELECTION_HELP_TEXT,GUI_BUTTON_RATIO,\
+                                       GUI_TEXT_MAX_LINES_NB,GUI_WIDGET_RATIO
     
     global out_dir
  
-    ############# Definition of local functions #############
-    
-      ## Define the mm to pixels conversion lambda function
-    mm_to_px = lambda size_mm,fact : math. ceil((size_mm * fact / IN_TO_MM) * ppi)
-    
-      ## Define lambda function that get the maximum length of the titles in mm
-    str_max_len_mm = lambda list_strs,font,ppi :max([str_size_mm(value, font, ppi)[0] 
-                                           for value in list_strs])
-    
-    def str_size_mm(text, font, ppi):
-        '''The function `str_size_mm` computes the sizes in mm of a string.
-        
-        Args:
-            text (str): the text of which we compute the size in mm.
-            font (tk.font): the font of the text.
-            ppi (int): pixels per inch of the display.
-        
-        Returns:
-            `(tuple)`: width in mm `(string)`, height in mm `(string)`.
-            
-        Note:
-            The use of this function requires a tkinter window availability 
-            since it is based on a tkinter font definition.
-            
-        '''
-
-        (w_px,h_px) = (font.measure(text),font.metrics("linespace"))
-        w_mm = w_px * IN_TO_MM / ppi
-        h_mm = h_px * IN_TO_MM / ppi
-
-        return (w_mm,h_mm )
-    
-    def split_path2str(in_dir,max_px,font,ppi):
-        '''The function `split_path2str` splits the `in_dir` string 
-        in substrings of pixels sizes lower than `max_px`.
-        
-        Args:
-            in_dir (str): the full path of a folder.
-            max_px (int): the maximum size in pixels for the substrings 
-                          that should result from the split of `in-dir`.
-            font (tk.font): the font used for the substrings size evaluation in mm.
-            ppi (int): pixels per inch of the display.
-        
-        Returns:
-            `(tuple)`: tuple of the substrings resulting from the split of `in-dir`.
-            
-        Note:
-            The use of this function requires a tkinter window availability 
-            since it is based on a tkinter font definition.
-            
-        '''        
-          
-        # Standard library imports 
-        import numpy as np
-        import re
-
-        len_in_dir,_ = str_size_mm(in_dir, font, ppi)
-        if mm_to_px(len_in_dir,1)>int(max_px):
-            pos_list = np.array([m.start() for m in re.finditer(r"[\\/]", in_dir)])
-            list_len = [mm_to_px(str_size_mm(in_dir[0:pos_slash], font, ppi)[0],1)
-                        for pos_slash in pos_list ]
-            try:
-                pos_mid = pos_list[np.min(np.where(np.array(list_len) >= int(max_px))) - 1]
-            except:
-                pos_mid = pos_list[-1]
-            out_dir1 = str(in_dir)[0:pos_mid]
-            out_dir2 = str(in_dir)[pos_mid:]
-
-        else:
-            out_dir1 = str(in_dir)
-            out_dir2 = ''
-
-        return (out_dir1,out_dir2)
+    ############# Definition of local functions #############    
 
     def outdir_folder_choice():
         '''The function `outdir_folder_choice' allows the interactive choice of a folder, 
@@ -1114,11 +1178,12 @@ def select_folder_gui_new(in_dir, titles, buttons_labels, prime_disp=0, widget_r
         
         out_dir_split = [out_dir]
         while out_dir_split[len(out_dir_split)-1]!='':
-            out_dir1,out_dir2 = split_path2str(out_dir_split[len(out_dir_split)-1],frame_widthpx,text_font,ppi)
+            out_dir1,out_dir2 = _split_path2str(out_dir_split[len(out_dir_split)-1], 
+                                               '/', frame_widthpx, text_font, ppi)
             out_dir_split[len(out_dir_split)-1] = out_dir1
             out_dir_split.append(out_dir2)
 
-         # Create the folder-result frame and set its geometry 
+         # Creating the folder-result frame and set its geometry. 
         folder_result = tk.LabelFrame(master=win,              
                         text=titles['result'],
                         font=frame_font)
@@ -1127,127 +1192,127 @@ def select_folder_gui_new(in_dir, titles, buttons_labels, prime_disp=0, widget_r
                             width=frame_widthpx,
                             height=frame_heightpx)
 
-         # Edit the selected folder        
-        text_max_widthmm = str_max_len_mm(out_dir_split, text_font, ppi)
+         # Editing the selected folder.       
+        text_max_widthmm = _str_max_len_mm(out_dir_split, text_font, ppi)
         text_xmm = (frame_widthmm - text_max_widthmm) / 2
-        text_xpx = mm_to_px(text_xmm - mm_size_corr,1)
-        text_ypx = mm_to_px(frame_unit_heightmm,1)       
+        text_xpx = _mm_to_px(text_xmm - mm_size_corr,ppi)
+        text_ypx = _mm_to_px(frame_unit_heightmm,ppi)       
         text = '\n'.join(out_dir_split)
         folder_label = tk.Label(folder_result, text=text, font=text_font)
         folder_label.place(x=text_xpx,
                            y=text_ypx)
     
     def help():
-        messagebox.showinfo('Folder selection info', '')
+        messagebox.showinfo('Folder selection info', FOLDER_SELECTION_HELP_TEXT)
     
-    ############# Local parameters setting #############  
-    
-     # Get the ppi of the selected prime display
+    ############# Local parameters setting ############# 
+
+    # Getting the ppi of the selected prime display.
     ppi = DISPLAYS[prime_disp]['ppi']
     
-     # Check the number of frames and buttons
+     # Checking the number of frames and buttons.
     frames_nb = len(titles) -1 
     buttons_nb = len(buttons_labels)
     if frames_nb!=1 or buttons_nb!=2:
         print('Number of titles:', len(titles) )
         print('Number of buttons:', len(button_labels) )
-        print('The number of titles should be 2 and the number of buttons should be 2')
+        print('The number of titles should be 2 \
+               and the number of buttons should be 2.\
+               Please define ad hoc number of widgets.')
+        
+     # Setting geometry parameters of gui widgets
+    if widget_ratio==None: widget_ratio = GUI_WIDGET_RATIO
+    if button_ratio==None: button_ratio = GUI_BUTTON_RATIO
+    if max_lines_nb==None: max_lines_nb = GUI_TEXT_MAX_LINES_NB                
     
-     # Set the ratio of frames-width to the titles-max-width
+     # Setting the ratio of frames-width to the titles-max-width.
     frame_ratio = widget_ratio
     
-     # Set the ration of window-width to the frame-width
+     # Setting the ratio of window-width to the frame-width.
     win_ratio = widget_ratio 
     
-     ####### TO DO: define the following values as globals
-     # Set the buttons-height to the label-height ratio to vertically center the label in the button
-    button_ratio = 2.5
-    
-     # Set a potential ratio for correcting the conversion of mm to px for the buttons sizes
+     # Setting a potential ratio for correcting the conversion from mm to px for the buttons sizes.
      # Todo: adapt these ratios to correct the discrepancy between the set mm sizes 
      # and the effective mm sizes on the screen for MacOs 
-     # (correction still to be understood)
+     # (correction still to be understood).
     buttonsize_mmtopx_ratios = (1,1,1)
     
-     # Set the value in mm for the correction of the sizes in milimeters 
+     # Setting the value in mm for the correction of the sizes in milimeters 
      # before use for computing the widgets horizontal positions in pixels 
-     # (correction still to be understood)
+     # (correction still to be understood).
     mm_size_corr = 1
-    
-     # Set the maximum lines number for editing the selected folder name
-    max_lines_nb = 3 
     
     ############# Tkinter window management #############
     
-     # Create the tk window
+     # Creating the tk window.
     win = tk.Tk()
     win.attributes("-topmost", True)
     win.title(titles['main']) 
     
-     # Set the fonts to be used
+     # Setting the fonts to be used.
     frame_font = TkFont.Font(family='arial', size=16, weight='bold')
     text_font = TkFont.Font(family='arial', size=12, weight='normal')
     button_font = TkFont.Font(family='arial', size=12, weight='normal')
     
-     # Computes the maximum size in mm of the list of titles
-    titles_mm_max = str_max_len_mm(titles.values(), frame_font, ppi)
+     # Computing the maximum size in mm of the list of titles.
+    titles_mm_max = _str_max_len_mm(titles.values(), frame_font, ppi)
     
-     # Computes button sizes in mm and pixels using button label sizes and button_ratio
-     # Buttons width is the button heigth added to the labels width to horizontally center the label in the button 
-    labels_widthmm = [str_size_mm(buttons_labels[i],button_font, ppi)[0] for i in range(buttons_nb)]
-    label_heightmm = str_size_mm(buttons_labels[0],button_font, ppi)[1]
+     # Computing button sizes in mm and pixels using button label sizes and button_ratio.
+     # Buttons width is the button heigth added to the labels width 
+     # to horizontally center the label in the button. 
+    labels_widthmm = [_str_size_mm(buttons_labels[i],button_font, ppi)[0] for i in range(buttons_nb)]
+    label_heightmm = _str_size_mm(buttons_labels[0],button_font, ppi)[1]
     button_heightmm =  label_heightmm * button_ratio
     buttons_widthmm = (labels_widthmm[0] + button_heightmm, labels_widthmm[1] + button_heightmm)
-    buttons_widthpx = (mm_to_px(buttons_widthmm[0],buttonsize_mmtopx_ratios[0]), 
-                       mm_to_px(buttons_widthmm[1],buttonsize_mmtopx_ratios[1]))
-    button_heigthpx = mm_to_px(button_heightmm,buttonsize_mmtopx_ratios[2])
+    buttons_widthpx = (_mm_to_px(buttons_widthmm[0],ppi,buttonsize_mmtopx_ratios[0]), 
+                       _mm_to_px(buttons_widthmm[1],ppi,buttonsize_mmtopx_ratios[1]))
+    button_heigthpx = _mm_to_px(button_heightmm,ppi,buttonsize_mmtopx_ratios[2])
 
-     # Computes the frame width in pixels from titles maximum size in mm using frame_ratio
+     # Computing the frame width in pixels from titles maximum size in mm using frame_ratio.
     frame_widthmm = titles_mm_max * frame_ratio    
-    frame_widthpx = str(mm_to_px(frame_widthmm,1))
+    frame_widthpx = str(_mm_to_px(frame_widthmm,ppi))
 
-     # Computes the window width in pixels from the frame width and buttons width using win_ratio
+     # Computing the window width in pixels from the frame width and buttons width using win_ratio.
     win_widthmm = max(frame_widthmm,sum(buttons_widthmm)) * win_ratio 
-    win_widthpx = str(mm_to_px(win_widthmm,1))
+    win_widthpx = str(_mm_to_px(win_widthmm,ppi))
 
-     # Computes the buttons horizontal positions in pixels 
-     # assuming 2 buttons and with correction of size in mm by mm_size_corr value
+     # Computing the buttons horizontal positions in pixels 
+     # assuming 2 buttons and with correction of size in mm by mm_size_corr value.
     padx_ratio = buttons_nb * 2  
     pad_xmm = (win_widthmm - min(frame_widthmm,sum(buttons_widthmm))) / padx_ratio
     buttons_xmm = (pad_xmm, buttons_widthmm[0] + 3 * pad_xmm)
-    buttons_xpx = (mm_to_px(buttons_xmm[0] - mm_size_corr,1), mm_to_px(buttons_xmm[1] - mm_size_corr,1))
+    buttons_xpx = (_mm_to_px(buttons_xmm[0] - mm_size_corr,ppi), _mm_to_px(buttons_xmm[1] - mm_size_corr,ppi))
 
-     # Computes the frames heigth unit
-    _, text_heigthmm = str_size_mm('Users/',text_font, ppi)
+     # Computing the frames heigth unit.
+    _, text_heigthmm = _str_size_mm('Users/',text_font, ppi)
     frame_unit_heightmm = min(button_heightmm,text_heigthmm) 
-    print('frame_unit_heightmm:',frame_unit_heightmm)
 
-     # Computes the buttons vertical position in pixels
+     # Computing the buttons vertical position in pixels.
     button_ymm = frame_unit_heightmm 
-    button_ypx = mm_to_px(button_ymm,1)
+    button_ypx = _mm_to_px(button_ymm,ppi)
 
-     # Computes the frame heigth in mm and in pixels 
-    pads_nb = 4  # 2 frame units above and 2 frame units under the edited text 
+     # Computing the frame heigth in mm and in pixels.
+    pads_nb = 4  # 2 frame units above and 2 frame units under the edited text. 
     max_frame_unit_nb = pads_nb + max_lines_nb  
     frame_heightmm = frame_unit_heightmm * max_frame_unit_nb
-    frame_heightpx = str(mm_to_px(frame_heightmm,1))
+    frame_heightpx = str(_mm_to_px(frame_heightmm,ppi))
 
-     # Computes the frame positions in pixels
+     # Computing the frame positions in pixels.
     frame_xmm = (win_widthmm - frame_widthmm) / 2
     frame_ymm = button_ymm + button_heightmm + 2 * frame_unit_heightmm
-    frame_xpx, frame_ypx = mm_to_px(frame_xmm,1), mm_to_px(frame_ymm,1)
+    frame_xpx, frame_ypx = _mm_to_px(frame_xmm,ppi), _mm_to_px(frame_ymm,ppi)
 
-    # Computes the window heigth in mm and in pixels 
-    # with frame_unit_heightmm separating vertically the widgets
+    # Computing the window heigth in mm and in pixels .
+    # with frame_unit_heightmm separating vertically the widgets.
     win_heightmm = button_ymm + button_heightmm + frame_heightmm + 3 * frame_unit_heightmm
-    win_heightpx = str(mm_to_px(win_heightmm,1))
+    win_heightpx = str(_mm_to_px(win_heightmm,ppi))
 
-     # Set the window geometry
+     # Setting the window geometry.
     win_xpx = str(int(DISPLAYS[prime_disp]['x']) + 50)
     win_ypx = str(int(DISPLAYS[prime_disp]['y']) + 50)
     win.geometry(f'{win_widthpx}x{win_heightpx}+{win_xpx}+{win_ypx}')
 
-     # Create the folder result frame and set its geometry 
+     # Creates the folder result frame and set its geometry. 
     folder_result = tk.LabelFrame(master=win,              
                 text=titles['result'],
                 font=frame_font)
@@ -1256,7 +1321,7 @@ def select_folder_gui_new(in_dir, titles, buttons_labels, prime_disp=0, widget_r
                     width=frame_widthpx,
                     height=frame_heightpx)
 
-     # Create the button for folder selection
+     # Creating the button for folder selection.
     select_button = tk.Button(win,
                           text=buttons_labels[0],
                           font=button_font,
@@ -1266,7 +1331,7 @@ def select_folder_gui_new(in_dir, titles, buttons_labels, prime_disp=0, widget_r
                     width=buttons_widthpx[0], 
                     height=button_heigthpx)
 
-     # Create the help button
+     # Creating the help button.
     help_button = tk.Button(win,
                         text=buttons_labels[1],
                         font=button_font,
@@ -1279,3 +1344,4 @@ def select_folder_gui_new(in_dir, titles, buttons_labels, prime_disp=0, widget_r
     win.mainloop()
     
     return out_dir
+
