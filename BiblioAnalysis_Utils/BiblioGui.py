@@ -133,7 +133,7 @@ DEFAULT_SAVE_CONFIG_FILTER = {'description': 'items to be combined in union or i
   'mode': False,
   'list': []}}
 
-def item_selection() :
+def item_selection(fact=3, win_widthmm=80, win_heightmm=130, font_size=16) :
     
     '''
     Selection of items for treemaps
@@ -141,38 +141,61 @@ def item_selection() :
     Arguments: none
     
     Returns:
-        ITEM_CHOICE (string): choosen item
+        selected_item (string): choosen item
 
     '''
     
     # Standard library imports
     import os
     import tkinter as tk
+    import tkinter.font as TkFont    
     from tkinter import ttk
     from tkinter import messagebox
     
-    global ITEM_CHOICE
+    # Local imports
+    from .BiblioSys import DISPLAYS,GUI_DISP
     
-    def help():
+    global selected_item
+    
+    def _choice(text, v):
+        global selected_item
+        selected_item = text
+    
+    def _help():
         messagebox.showinfo("Item selection info", TREE_MAP_ITEM_HELP_TEXT)
+
+    # Getting the ppi of the selected prime display.
+    ppi = DISPLAYS[GUI_DISP]['ppi']
     
+    # Setting the window title    
+    title = 'Treemap GUI'
+    
+    # Creating the gui window
     tk_root = tk.Tk()
+    
+    # Setting the window geometry parameters
+    font_title = TkFont.Font(family='arial', size=font_size, weight='bold')
+    title_widthmm,_ = _str_size_mm(title, font_title, ppi)
+    win_widthmm = max(title_widthmm*fact,win_widthmm)
+    win_widthpx = str(_mm_to_px(win_widthmm,ppi)) 
+    win_heightpx = str(_mm_to_px(win_heightmm,ppi))
+
+    #win_widthpx = 350
+    #win_heightpx = 520
+    win_xpx = str(int(DISPLAYS[GUI_DISP]['x']) + 50)
+    win_ypx = str(int(DISPLAYS[GUI_DISP]['y']) + 50)
+
     tk_root.attributes("-topmost", True)
-    tk_root.geometry(GEOMETRY_ITEM_SELECTION)
-    tk_root.title("Treemap GUI") 
+    tk_root.geometry(f'{win_widthpx}x{win_heightpx}+{win_xpx}+{win_ypx}')
+    tk_root.title(title) 
     item_choice = ttk.LabelFrame(tk_root, text=' Label selection ')
     item_choice.grid(column=0, row=0, padx=8, pady=4)
     
     menu = ttk.LabelFrame(tk_root, text=' Menu ')
     menu.grid(column=1, row=0, padx=8, pady=4)
-    
-    
-    ITEM_CHOICE = "subjects"
-    def choice(text, v):
-        global ITEM_CHOICE
-        ITEM_CHOICE = text
         
-    #
+    selected_item = "subjects"
+       
     # choice of the item for treemap
     #
     varitem = tk.IntVar()
@@ -183,19 +206,19 @@ def item_selection() :
     idx_row = 2
     for txt, val in TREE_MAP_ITEM:
         tk.Radiobutton(item_choice, text = txt, variable = varitem, value=val,
-            command=lambda t = txt, v = varitem: choice(t, v)).grid(column=0, row=idx_row+2, padx=8, pady=4,sticky=tk.W)
+            command=lambda t = txt, v = varitem: _choice(t, v)).grid(column=0, row=idx_row+2, padx=8, pady=4,sticky=tk.W)
         idx_row += 1
 
-    help_button = ttk.Button(menu, text="HELP", command=help)
+    help_button = ttk.Button(menu, text="HELP", command=_help)
     help_button.grid(column=0, row=0)
     
     if os.name == 'nt':
         tk.Button(menu, text="EXIT", command=tk_root.destroy).grid(column=0, row=1, padx=8, pady=4)
     tk_root.mainloop()
     
-    return ITEM_CHOICE
+    return selected_item
 
-def cooc_selection() :
+def cooc_selection(fact=3, win_widthmm=80, win_heightmm=100, font_size=16) :
     
     '''
     Selection of items for cooccurrences graph treatment
@@ -203,7 +226,7 @@ def cooc_selection() :
     Arguments: none
     
     Returns:
-        ITEM_CHOICE (string): item acronyme
+        selected_item(string): item acronyme
         minimum_size_node (int): minimum size of the nodes
 
 
@@ -211,15 +234,50 @@ def cooc_selection() :
     # Standard library imports
     import os
     import tkinter as tk
+    import tkinter.font as TkFont     
     from tkinter import ttk
     from tkinter import messagebox
     
-    global ITEM_CHOICE, minimum_size_node
-     
+    # Local imports
+    from .BiblioSys import DISPLAYS,GUI_DISP
+      
+    global selected_item, minimum_size_node
+    
+    def _choice(text, v):
+        global selected_item
+        selected_item, = COOC_AUTHORIZED_ITEMS_DICT[text]
+    
+
+    def _submit(): 
+        global minimum_size_node
+        minimum_size_node = size_entered.get()
+    
+    def _help():
+        messagebox.showinfo("cooc selection info", COOC_SELECTION_HELP_TEXT)
+    
+    # Getting the ppi of the selected prime display.
+    ppi = DISPLAYS[GUI_DISP]['ppi']
+    
+    # Setting the window title    
+    title = 'Cooccurrence graph GUI'
+    
+    # Creating the gui window
     tk_root = tk.Tk()
+    
+    # Setting the window geometry parameters
+    font_title = TkFont.Font(family='arial', size=font_size, weight='bold')
+    title_widthmm,_ = _str_size_mm(title, font_title, ppi)
+    win_widthmm = max(title_widthmm*fact,win_widthmm)
+    win_widthpx = str(_mm_to_px(win_widthmm,ppi)) 
+    win_heightpx = str(_mm_to_px(win_heightmm,ppi))
+    #win_widthpx = 410
+    #win_heightpx = 350
+    win_xpx = str(int(DISPLAYS[GUI_DISP]['x']) + 50)
+    win_ypx = str(int(DISPLAYS[GUI_DISP]['y']) + 50) 
+
     tk_root.attributes("-topmost", True)
-    tk_root.geometry(GEOMETRY_COOC_SELECTION)
-    tk_root.title("Graph cooccurrence GUI") 
+    tk_root.geometry(f'{win_widthpx}x{win_heightpx}+{win_xpx}+{win_ypx}')
+    tk_root.title(title) 
     
     item_choice = ttk.LabelFrame(tk_root, text=' Label selection ')
     item_choice.grid(column=0, row=0, padx=8, pady=4)
@@ -227,19 +285,8 @@ def cooc_selection() :
     size_choice = ttk.LabelFrame(tk_root, text=' Size choice ')
     size_choice.grid(column=1, row=0, padx=8, pady=4)
     
-    ITEM_CHOICE = 'AU'  # Default value
-    def choice(text, v):
-        global ITEM_CHOICE
-        ITEM_CHOICE = COOC_AUTHORIZED_ITEMS_DICT[text]
-    
-    minimum_size_node = 1 # Default value
-    def submit(): 
-        global minimum_size_node
-        minimum_size_node = size_entered.get()
-    
-    def help():
-        messagebox.showinfo("cooc selection info", COOC_SELECTION_HELP_TEXT)
-        
+    selected_item, = 'AU'  # Default value
+    minimum_size_node = 1 # Default value        
         
     #                               Choice of the item for the cooccurrence graph
     # -------------------------------------------------------------------------------------------
@@ -253,7 +300,7 @@ def cooc_selection() :
     idx_row = 2
     for txt, val in item:
         tk.Radiobutton(item_choice, text=txt, variable=varitem, value=val,
-            command=lambda t = txt, v=varitem: choice(t, v)).grid(column=0, \
+            command=lambda t = txt, v=varitem: _choice(t, v)).grid(column=0, \
                                     row=idx_row+2, padx=8, pady=4,sticky=tk.W)
         idx_row += 1
      
@@ -266,9 +313,9 @@ def cooc_selection() :
     size_entered.grid(column=0, row=1, padx=8, pady=4) #sticky=tk.W) 
     
 
-    submit_button = ttk.Button(size_choice, text="Submit", command=submit)   
+    submit_button = ttk.Button(size_choice, text="Submit", command=_submit)   
     submit_button.grid(column=0, row=2, padx=8, pady=4) 
-    help_button = ttk.Button(size_choice, text="HELP", command=help)
+    help_button = ttk.Button(size_choice, text="HELP", command=_help)
     help_button.grid(column=0, row=3, padx=8, pady=4)
     
     if os.name == 'nt':
@@ -280,11 +327,10 @@ def cooc_selection() :
         minimum_size_node = int(minimum_size_node)
     except: # Takes a default value
         minimum_size_node = 1
+     
+    return selected_item,minimum_size_node
     
- 
-    return ITEM_CHOICE, minimum_size_node
-    
-def merge_database_gui() :
+def merge_database_gui(fact=3, win_widthmm=80, win_heightmm=100, font_size=16):
     
     '''
     Selection of database files to be merged
@@ -301,18 +347,63 @@ def merge_database_gui() :
     # Standard library imports
     import os
     import tkinter as tk
+    import tkinter.font as TkFont 
     from tkinter import ttk
     from tkinter import messagebox
     from tkinter import filedialog
     from pathlib import Path
-
     
-    global DATABASE_TYPE, DATABASE_FILENAME, IN_DIR, OUT_DIR
-     
+    # Local imports
+    from .BiblioSys import DISPLAYS,GUI_DISP
+    
+    global database_type, database_filename, in_dir, out_dir
+    
+    def _choice(text, v):
+        global database_type
+        database_type = text
+        
+    def _submit(): 
+        global database_filename
+        database_filename = size_entered.get()
+        if database_type == "wos":
+            database_filename = database_filename + '.txt'
+        else:
+            database_filename = database_filename + '.csv'
+    
+    def _indir_folder_choice():
+        global in_dir
+        in_dir = filedialog.askdirectory(initialdir=str(Path.home()), title="Select in_dir folder")                             
+    
+    def _outdir_folder_choice():
+        global out_dir
+        out_dir = filedialog.askdirectory(initialdir=str(Path.home()), title="Select out_dir folder")   
+    
+    def _help():
+        messagebox.showinfo("Merge database info", MERGE_DATABASE_HELP_TEXT)
+                    
+    # Getting the ppi of the selected prime display.
+    ppi = DISPLAYS[GUI_DISP]['ppi']
+    
+    # Setting the window title
+    title = 'Database merge GUI'
+    
+    # Creating the gui window
     tk_root = tk.Tk()
+    
+    # Setting the window geometry parameters
+    font_title = TkFont.Font(family='arial', size=font_size, weight='bold')
+    title_widthmm,_ = _str_size_mm(title, font_title, ppi)
+    win_widthmm = max(title_widthmm*fact,win_widthmm)
+    win_widthpx = str(_mm_to_px(win_widthmm,ppi)) 
+    win_heightpx = str(_mm_to_px(win_heightmm,ppi))
+    #win_widthpx = 500
+    #win_heightpx = 550
+    win_xpx = str(int(DISPLAYS[GUI_DISP]['x']) + 50)
+    win_ypx = str(int(DISPLAYS[GUI_DISP]['y']) + 50) 
+
     tk_root.attributes("-topmost", True)
-    tk_root.geometry(GEOMETRY_MERGE_GUI)
-    tk_root.title("Graph cooccurrence GUI") 
+    tk_root.geometry(f'{win_widthpx}x{win_heightpx}+{win_xpx}+{win_ypx}')
+    tk_root.title(title) 
     
     item_choice = ttk.LabelFrame(tk_root, text=' Database selection ')
     item_choice.grid(column=0, row=0, padx=8, pady=4)
@@ -320,32 +411,9 @@ def merge_database_gui() :
     folder_choice = ttk.LabelFrame(tk_root, text=' Folders selection ')
     folder_choice.grid(column=1, row=0, padx=8, pady=4)
     
-    DATABASE_TYPE = 'wos'  # Default value
-    def choice(text, v):
-        global DATABASE_TYPE
-        DATABASE_TYPE = text
-    
-    DATABASE_FILENAME = "test" # Default value
-    def submit(): 
-        global DATABASE_FILENAME
-        DATABASE_FILENAME = size_entered.get()
-        if DATABASE_TYPE == "wos":
-            DATABASE_FILENAME = DATABASE_FILENAME + '.txt'
-        else:
-            DATABASE_FILENAME = DATABASE_FILENAME + '.csv'
-    
-    def indir_folder_choice():
-        global IN_DIR
-        IN_DIR = filedialog.askdirectory(initialdir=str(Path.home()), title="Select in_dir folder")                             
-    
-    def outdir_folder_choice():
-        global OUT_DIR
-        OUT_DIR = filedialog.askdirectory(initialdir=str(Path.home()), title="Select out_dir folder")   
-    
-    def help():
-        messagebox.showinfo("Merge database info", MERGE_DATABASE_HELP_TEXT)
-        
-        
+    database_type = 'wos'  # Default value    
+    database_filename = "test" # Default value
+
     #                               Choice of a database
     # -------------------------------------------------------------------------------------------
     item = ["wos", 'scopus']
@@ -358,7 +426,7 @@ def merge_database_gui() :
     idx_row = 2
     for  val, txt,  in enumerate(item):
         tk.Radiobutton(item_choice, text = txt, variable = varitem, value=val,
-            command=lambda t = txt, v = varitem: choice(t, v)).grid(column=0, row=idx_row+2, padx=8, pady=4,sticky=tk.W)
+            command=lambda t = txt, v = varitem: _choice(t, v)).grid(column=0, row=idx_row+2, padx=8, pady=4,sticky=tk.W)
         idx_row += 1
      
     #                   File name, in_dir,  out_dir selection
@@ -370,16 +438,16 @@ def merge_database_gui() :
     size_entered.grid(column=0, row=1, sticky=tk.W) 
     
 
-    submit_button = ttk.Button(folder_choice, text="Submit", command=submit)   
+    submit_button = ttk.Button(folder_choice, text="Submit", command=_submit)   
     submit_button.grid(column=1, row=1, padx=8, pady=4)
     
-    indir_button = ttk.Button(folder_choice, text="In-dir folder", command=indir_folder_choice)
+    indir_button = ttk.Button(folder_choice, text="In-dir folder", command=_indir_folder_choice)
     indir_button.grid(column=0, row=2, padx=8, pady=4)
     
-    outdir_button = ttk.Button(folder_choice, text="Out-dir folder", command=outdir_folder_choice)
+    outdir_button = ttk.Button(folder_choice, text="Out-dir folder", command=_outdir_folder_choice)
     outdir_button.grid(column=0, row=3, padx=8, pady=4)
     
-    help_button = ttk.Button(folder_choice, text="HELP", command=help)
+    help_button = ttk.Button(folder_choice, text="HELP", command=_help)
     help_button.grid(column=0, row=5, padx=8, pady=4)
     
     
@@ -388,9 +456,9 @@ def merge_database_gui() :
     
     tk_root.mainloop()
     
-    return DATABASE_TYPE, DATABASE_FILENAME, IN_DIR, OUT_DIR
+    return database_type, database_filename, in_dir, out_dir
     
-def read_item_state(item,parsing_dir):
+def _read_item_state(item,parsing_dir):
     '''
     item: 
     parsing_dir:
@@ -448,7 +516,8 @@ def read_item_state(item,parsing_dir):
 
     return dg
 
-def select_item_attributes(dg,item_tag,config_filter):
+def _select_item_attributes(dg, item_tag, config_filter, 
+                            win_widthmm=80, win_heightmm=100):
 
     """interactive selection of items among the list list-item
     
@@ -459,32 +528,55 @@ def select_item_attributes(dg,item_tag,config_filter):
         list (list): list of selected items without duplicate
         
     """
+    # Standard library imports
     import collections
     import os
     import re
-    import tkinter as tk
+    import tkinter as tk 
+   
+    # Local imports
+    from .BiblioSys import DISPLAYS,GUI_DISP
     
     global val
-    val = list_default = config_filter[item_tag]['list']
+ 
+    def selected_item():
+        global val
+        val = [re.split(re_split, listbox.get(i))[0] for i in listbox.curselection()]
+        config_filter[item_tag]['list'] = val
+        if os.name == 'nt':
+            top.destroy()
     
     re_split = re.compile('\s\(\d{1,5}\)')
     
+    val = list_default = config_filter[item_tag]['list']
     dg = sorted([ (token,nbr_occurrence_token) for token,nbr_occurrence_token in collections.Counter(dg).items()],
                    key=lambda tup: tup[1], reverse=True)
 
     list_item = [token+ f' ({int(nbr_occurrence_token)})' for token,nbr_occurrence_token 
                   in dg
                   if nbr_occurrence_token>2]
-
+    
+    # Getting the ppi of the selected prime display.
+    ppi = DISPLAYS[GUI_DISP]['ppi']
+    
+    # Creating the gui window
     top = tk.Toplevel()
-    top.geometry(GEOMETRY_FILTERS_SELECTION)
-    top.attributes("-topmost", True)
+    
+    # Setting the window geometry parameters
+    win_widthpx = str(_mm_to_px(win_widthmm,ppi))
+    win_heightpx = str(_mm_to_px(win_heightmm,ppi))
+    #win_widthpx = 500
+    #win_heightpx = 580
+    win_xpx = str(int(DISPLAYS[GUI_DISP]['x']) + 100)
+    win_ypx = str(int(DISPLAYS[GUI_DISP]['y']) + 100) 
 
+    top.geometry(f'{win_widthpx}x{win_heightpx}+{win_xpx}+{win_ypx}')
+    top.attributes("-topmost", True)
     yscrollbar = tk.Scrollbar(top)
-    yscrollbar.pack(side = tk.RIGHT, fill = tk.Y)
+    yscrollbar.pack(side = tk.RIGHT, fill=tk.Y)
 
     listbox = tk.Listbox(top, width=40, height=10, selectmode=tk.MULTIPLE,
-                     yscrollcommand = yscrollbar.set)
+                         yscrollcommand=yscrollbar.set)
 
     x = list_item
 
@@ -498,13 +590,6 @@ def select_item_attributes(dg,item_tag,config_filter):
         if idx != []:
             listbox.selection_set(idx)
 
-    def selected_item():
-        global val
-        val = [re.split(re_split, listbox.get(i))[0] for i in listbox.curselection()]
-        config_filter[item_tag]['list'] = val
-        if os.name == 'nt':
-            top.destroy()
-
     btn = tk.Button(top, text='OK', command=selected_item)
 
     btn.pack(side='bottom')
@@ -512,32 +597,41 @@ def select_item_attributes(dg,item_tag,config_filter):
     listbox.pack(padx = 10, pady = 10,
               expand = tk.YES, fill = "both")
     yscrollbar.config(command = listbox.yview)
+    
     top.mainloop()
+    
     return val
     
-def function_help():
+def _function_help():
+    # Standard library imports
     import tkinter as tk
+    
     top = tk.Toplevel()
     top.geometry(GEOMETRY_FILTERS_SELECTION)
     top.attributes("-topmost", True)
+    
     T = tk.Text(top)
     T.pack(expand = True, fill = tk.BOTH)
     T.insert("end",FILTERS_SELECTION_HELP_TEXT)
+    
     top.mainloop()
 
-def filters_selection(filters_filename, save_filename, parsing_dir) :
+def filters_selection(filters_filename, save_filename, parsing_dir, 
+                      fact=3, win_widthmm=80, win_heightmm=140, font_size=16) :
     
-    '''
-    Selection of items for corpus filtering 
+    ''' The 'filters_selection' function allows an interactive setting the configuration
+    for the corpus filtering. 
     
     Arguments: 
-        filters_filename (path): path of the json file of the filtering configuration
-        parsing_dir (path) : path of the corpus folder where the ....
+        filters_filename (path): path of the json file of the filtering configuration.
+        save_filename (path): path for saving the json file of the filtering configuration.
+        parsing_dir (path) : path of the parsing folder ofthe corpus.
+        fact (float):
+        win_widthmm (float):
+        win_heightmm (float):
+        font_size (int): font size of the window title (default=16).
         
-    
     Returns:
-        ITEM_CHOICE (string): item acronyme
-        minimum_size_node (int): minimum size of the nodes
 
 
     '''
@@ -546,19 +640,16 @@ def filters_selection(filters_filename, save_filename, parsing_dir) :
     import json
     import os
     import tkinter as tk
+    import tkinter.font as TkFont
     from tkinter import ttk
     from tkinter import messagebox
     from pathlib import Path
     
-    global ITEM_CHOICE, minimum_size_node,val, number_of_call
-    number_of_call = 0
+    # Local imports
+    from .BiblioSys import DISPLAYS,GUI_DISP
     
-    try:
-        with open(filters_filename, "r") as read_file:
-            config_filter = json.load(read_file)
-    except:
-        config_filter = DEFAULT_SAVE_CONFIG_FILTER
-            
+    global number_of_call    
+                
     def spy_state(*args):
         global number_of_call
         number_of_call += 1
@@ -569,7 +660,7 @@ def filters_selection(filters_filename, save_filename, parsing_dir) :
             button_union.deselect()
             button_inter.deselect()
             
-            #messagebox.showwarning('you must select at leasst two items to use \n union/intersection set operation')
+            #messagebox.showwarning('you must select at least two items to use \n union/intersection set operation')
             
         else:
             button_union["state"] = "normal"
@@ -577,8 +668,7 @@ def filters_selection(filters_filename, save_filename, parsing_dir) :
             if config_filter['COMBINE'] == 'union':
                 button_union.select()
             else:
-                button_inter.select()
-            
+                button_inter.select()            
         
     def action_varitem():
         for idx in range(len(LABEL_MEANING)):
@@ -594,8 +684,8 @@ def filters_selection(filters_filename, save_filename, parsing_dir) :
                 config_filter[item_acronyme]['mode'] = False
             
     def func(item_acronyme):
-        dg = read_item_state(item_acronyme,parsing_dir)
-        select_item_attributes(dg,item_acronyme,config_filter)
+        dg = _read_item_state(item_acronyme,parsing_dir)
+        _select_item_attributes(dg,item_acronyme,config_filter)
         
     def ModeSelected():
         choice  = var_union_inter.get()
@@ -613,12 +703,39 @@ def filters_selection(filters_filename, save_filename, parsing_dir) :
             config_filter['EXCLUSION'] = False
     
     def func_help():
-        function_help()    
-     
+        _function_help()
+    
+    # Read the filters configuration file
+    try:
+        with open(filters_filename, "r") as read_file:
+            config_filter = json.load(read_file)
+    except:
+        config_filter = DEFAULT_SAVE_CONFIG_FILTER
+    
+    # To Do : explain this line
+    number_of_call = 0
+    
+    # Getting the ppi of the selected prime display.
+    ppi = DISPLAYS[GUI_DISP]['ppi']
+    
+    # Setting the window title
+    title = 'Filters configuration GUI'
+    
+    # Creating the gui window
     tk_root = tk.Tk()
+    
+    # Setting the window geometry parameters
+    font_title = TkFont.Font(family='arial', size=font_size, weight='bold')
+    title_widthmm,_ = _str_size_mm(title, font_title, ppi)
+    win_widthmm = max(title_widthmm*fact,win_widthmm)
+    win_widthpx = str(_mm_to_px(win_widthmm,ppi)) 
+    win_heightpx = str(_mm_to_px(win_heightmm,ppi))
+    win_xpx = str(int(DISPLAYS[GUI_DISP]['x']) + 50)
+    win_ypx = str(int(DISPLAYS[GUI_DISP]['y']) + 50)
+    
     tk_root.attributes("-topmost", True)
-    tk_root.title("Filters GUI")
-    tk_root.geometry(GEOMETRY_FILTERS_SELECTION)
+    tk_root.geometry(f'{win_widthpx}x{win_heightpx}+{win_xpx}+{win_ypx}')
+    tk_root.title(title)
     tk_root.columnconfigure(0,weight=1)
     tk_root.columnconfigure(1,weight=1)
     item_choice = ttk.LabelFrame(tk_root, text=' ')
@@ -684,8 +801,8 @@ def filters_selection(filters_filename, save_filename, parsing_dir) :
     list_button = []
     varitem = []
     for  txt, val in items:
-        check_state = tk.BooleanVar()    #<------------------------
-        check_state.trace('w',spy_state) #<------------------------
+        check_state = tk.BooleanVar()    
+        check_state.trace('w',spy_state) 
         varitem.append(check_state)
         if config_filter[ACRONYME_MEANING[txt]]['mode']:
             state = 'normal'
@@ -704,12 +821,6 @@ def filters_selection(filters_filename, save_filename, parsing_dir) :
                        text = txt, 
                        variable = varitem[idx_row-2],command=action_varitem
                        ).grid(column=0, row=idx_row+2, padx=8, pady=4,sticky=tk.W)
-        #button = tk.Button(item_choice, 
-        #                       text='SELECT', 
-        #                       command=functools.partial(func,ACRONYME_MEANING[txt]),
-        #                       state = 'normal')
-        #button.grid(column=1, row=idx_row+2, padx=8, pady=4,sticky=tk.W+tk.E)
-        #list_button.append(button)
         idx_row += 1 
     
     tk_root.mainloop()
@@ -720,7 +831,7 @@ def filters_selection(filters_filename, save_filename, parsing_dir) :
         
     return
     
-def coupling_attr_selection():
+def coupling_attr_selection(fact=2, win_widthmm=80, win_heightmm=60, font_size=16):
     
     '''
     Selection of items for coupling graph treatment
@@ -728,9 +839,8 @@ def coupling_attr_selection():
     Arguments: none
     
     Returns:
-        ITEM_CHOICE (string): item acronyme
+        selected_item (string): item acronyme
         m_max_attrs (int): maximum added attributes
-
 
     '''
     # Standard library imports
@@ -738,26 +848,16 @@ def coupling_attr_selection():
     import tkinter as tk
     from tkinter import ttk
     from tkinter import messagebox
+    import tkinter.font as TkFont
     
-    global ITEM_CHOICE, m_max_attrs
-     
-    tk_root = tk.Tk()
-    tk_root.attributes("-topmost", True)
-    tk_root.geometry(GEOMETRY_COUPLING_SELECTION)
-    tk_root.title("Graph coupling GUI") 
+    # Local imports
+    from .BiblioSys import DISPLAYS,GUI_DISP    
     
-    item_choice = ttk.LabelFrame(tk_root, text=' Item selection ')
-    item_choice.grid(column=0, row=0, padx=8, pady=4)
+    global selected_item, m_max_attrs
     
-    size_choice = ttk.LabelFrame(tk_root, text=' Number of item values ')
-    size_choice.grid(column=1, row=0, padx=8, pady=4)
-
-
-    
-    ITEM_CHOICE = 'S'  # Default value
     def choice(text, v):
-        global ITEM_CHOICE
-        ITEM_CHOICE = COOC_AUTHORIZED_ITEMS_DICT[text]
+        global selected_item
+        selected_item = COOC_AUTHORIZED_ITEMS_DICT[text]
     
     m_max_attrs = 2 # Default value
     def submit(): 
@@ -765,14 +865,45 @@ def coupling_attr_selection():
         m_max_attrs = size_entered.get()
     
     def help():
-        messagebox.showinfo("coupling selection info", COOC_SELECTION_HELP_TEXT)
-        
-        
+        messagebox.showinfo("coupling selection info", COOC_SELECTION_HELP_TEXT)    
+    
+    # Getting the ppi of the selected prime display.
+    ppi = DISPLAYS[GUI_DISP]['ppi']
+    
+    # Setting the window title
+    title = 'Coupling graph GUI'
+    
+    # Setting the selected_item default value
+    selected_item = 'S'
+    
+    # Creating the gui window
+    tk_root = tk.Tk()
+    
+    # Setting the window geometry parameters
+    font_title = TkFont.Font(family='arial', size=font_size, weight='bold')
+    title_widthmm,_ = _str_size_mm(title, font_title, ppi)
+    win_widthmm = max(title_widthmm*fact,win_widthmm)
+    win_widthpx = str(_mm_to_px(win_widthmm,ppi)) 
+    win_heightpx = str(_mm_to_px(win_heightmm,ppi))      
+    #win_widthpx = '470'
+    #win_heightpx = '350'
+    win_xpx = str(int(DISPLAYS[GUI_DISP]['x']) + 50)
+    win_ypx = str(int(DISPLAYS[GUI_DISP]['y']) + 50)
+         
+    tk_root.attributes("-topmost", True)
+    tk_root.geometry(f'{win_widthpx}x{win_heightpx}+{win_xpx}+{win_ypx}')
+    tk_root.title(title) 
+    
+    item_choice = ttk.LabelFrame(tk_root, text=' Item selection ')
+    item_choice.grid(column=0, row=0, padx=8, pady=4)
+    
+    size_choice = ttk.LabelFrame(tk_root, text=' Number of item values ')
+    size_choice.grid(column=1, row=0, padx=8, pady=4)
+            
     #           Choice of the item for the coupling graph completion
     # -------------------------------------------------------------------------------------------
     item = [(x,i) for i,x in enumerate(COOC_AUTHORIZED_ITEMS_DICT.keys())]
     varitem = tk.IntVar()
-    #varitem.set(item[0][1])
 
     ttk.Label(item_choice , 
              text='Choose an item\nfor the coupling graph node attribute:').grid(column=0, row=1, padx=8, pady=4)
@@ -783,7 +914,7 @@ def coupling_attr_selection():
             command=lambda t = txt, v=varitem: choice(t, v)).grid(column=0, row=idx_row+2, padx=8, pady=4,sticky=tk.W)
         idx_row += 1
      
-    #                       Selection of the maximum number of item values
+    #                 Selection of the maximum number of item values
     # -------------------------------------------------------------------------------------------
     name = tk.StringVar()
     ttk.Label(size_choice , 
@@ -810,10 +941,9 @@ def coupling_attr_selection():
     except: # Takes a default value
         m_max_attrs = 2
     
- 
-    return ITEM_CHOICE, m_max_attrs
+    return selected_item, m_max_attrs
 
-def Select_multi_items(list_item,mode = 'multiple'): 
+def Select_multi_items(list_item,mode='multiple', fact=2, win_widthmm=80, win_heightmm=100, font_size=16): 
 
     """interactive selection of items among the list list_item
     
@@ -824,27 +954,45 @@ def Select_multi_items(list_item,mode = 'multiple'):
         val (list): list of selected items without duplicate
         
     """
+    # Standard library imports
     import os
     import tkinter as tk
-    
-    global val
+    import tkinter.font as TkFont
     
     # Local imports
     from .BiblioSys import DISPLAYS,GUI_DISP
     
-    # To Do : rationalize the definition of the window geometry in the functions
-    win_widthpx = 500
-    win_heightpx = 500
-    win_xpx = str(int(DISPLAYS[GUI_DISP]['x']) + 50)
-    win_ypx = str(int(DISPLAYS[GUI_DISP]['y']) + 50)
-
-    window = tk.Tk()
-    window.geometry(f'{win_widthpx}x{win_heightpx}+{win_xpx}+{win_ypx}')
-    window.attributes("-topmost", True)
+    global val
+    
+    def selected_item():
+        global val
+        val = [listbox.get(i) for i in listbox.curselection()]
+        if os.name == 'nt': window.destroy()
+    
+    # Getting the ppi of the selected prime display.
+    ppi = DISPLAYS[GUI_DISP]['ppi']
+    
+    # Setting the window title
     if mode == 'single': 
         title = 'Single item selection'
     else:
         title = 'Multiple items selection'
+    
+    # Creating the gui window 
+    window = tk.Tk()
+    
+    # Setting the window geometry parameters
+    font_title = TkFont.Font(family='arial', size=font_size, weight='bold')
+    title_widthmm,_ = _str_size_mm(title, font_title, ppi)
+    win_widthmm = max(title_widthmm*fact,win_widthmm)
+    win_widthpx = str(_mm_to_px(win_widthmm,ppi)) 
+    win_heightpx = str(_mm_to_px(win_heightmm,ppi))     
+    #win_heightpx = '500'
+    win_xpx = str(int(DISPLAYS[GUI_DISP]['x']) + 50)
+    win_ypx = str(int(DISPLAYS[GUI_DISP]['y']) + 50)
+    
+    window.geometry(f'{win_widthpx}x{win_heightpx}+{win_xpx}+{win_ypx}')
+    window.attributes("-topmost", True)
     window.title(title)
 
     yscrollbar = tk.Scrollbar(window)
@@ -859,22 +1007,18 @@ def Select_multi_items(list_item,mode = 'multiple'):
         listbox.insert(idx, item)
         listbox.itemconfig(idx,
                            bg = "white" if idx % 2 == 0 else "white")
-    
-    def selected_item():
-        global val
-        val = [listbox.get(i) for i in listbox.curselection()]
-        if os.name == 'nt':
-            window.destroy()
 
     btn = tk.Button(window, text='OK', command=selected_item)
     btn.pack(side='bottom')
 
     listbox.pack(padx = 10, pady = 10,expand = tk.YES, fill = "both")
     yscrollbar.config(command = listbox.yview)
+    
     window.mainloop()
+    
     return val
 
-def filter_item_selection():
+def filter_item_selection(fact=2, win_widthmm=80, win_heightmm=100, font_size=16):
     
     '''
     Selection of item to be modifyed in the filter configuration
@@ -882,7 +1026,7 @@ def filter_item_selection():
     Arguments: none
     
     Returns:
-        ITEM_CHOICE (string): item acronyme
+        selected_item (string): acronyme of the selected item.
 
 
     '''
@@ -890,24 +1034,46 @@ def filter_item_selection():
     import tkinter as tk
     from tkinter import ttk
     from tkinter import messagebox
+    import tkinter.font as TkFont
     
-    global ITEM_CHOICE
-     
+    # Local imports
+    from .BiblioSys import DISPLAYS,GUI_DISP
+    
+    global selected_item
+
+    # Getting the ppi of the selected prime display.
+    ppi = DISPLAYS[GUI_DISP]['ppi']
+    
+    # Setting the window title    
+    title = 'Filter-item selection GUI'
+    
+    # Creating the gui window 
     tk_root = tk.Tk()
+    
+    # Setting the window geometry parameters
+    font_title = TkFont.Font(family='arial', size=font_size, weight='bold')
+    title_widthmm,_ = _str_size_mm(title, font_title, ppi)
+    win_widthmm = max(title_widthmm*fact,win_widthmm)
+    win_widthpx = str(_mm_to_px(win_widthmm,ppi)) 
+    win_heightpx = str(_mm_to_px(win_heightmm,ppi))     
+    #win_heightpx = '500'
+    #win_heightpx = '520'
+    win_xpx = str(int(DISPLAYS[GUI_DISP]['x']) + 50)
+    win_ypx = str(int(DISPLAYS[GUI_DISP]['y']) + 50)
+
+    tk_root.geometry(f'{win_widthpx}x{win_heightpx}+{win_xpx}+{win_ypx}')
+    tk_root.title(title) 
     tk_root.attributes("-topmost", True)
-    tk_root.geometry(GEOMETRY_ITEM_SELECTION)
-    tk_root.title("Filter item selection GUI") 
     
     item_choice = ttk.LabelFrame(tk_root, text=' Item selection ')
     item_choice.grid(column=0, row=0, padx=8, pady=4)
+       
+    selected_item = 'AK'  # Default value
+    def _choice(text, v):
+        global selected_item
+        selected_item = FILTERS_ITEMS_DICT[text]
     
-    
-    ITEM_CHOICE = 'AK'  # Default value
-    def choice(text, v):
-        global ITEM_CHOICE
-        ITEM_CHOICE = FILTERS_ITEMS_DICT[text]
-    
-    def help():
+    def _help():
         messagebox.showinfo("coupling selection info", COOC_SELECTION_HELP_TEXT)
         
         
@@ -916,8 +1082,8 @@ def filter_item_selection():
     item = [(x,i) for i,x in enumerate(FILTERS_ITEMS_DICT.keys())]
     varitem = tk.IntVar()
 
-    ttk.Label(item_choice , 
-             text='Choose an item to be modifyed in the filter configuration:').grid(column=0, row=1, padx=8, pady=4)
+    ttk.Label(item_choice, 
+              text='Choose an item to be modifyed in the filter configuration:').grid(column=0, row=1, padx=8, pady=4)
     
     idx_row = 2
     for txt, val in item:
@@ -927,7 +1093,7 @@ def filter_item_selection():
      
     tk_root.mainloop()
 
-    return ITEM_CHOICE
+    return selected_item
 
 def select_folder_gui(in_dir,title):
     
@@ -1003,8 +1169,6 @@ def select_folder_gui(in_dir,title):
     return out_dir
 
 
-
-
 ############## New GUIs #######################################################################
 
 
@@ -1017,7 +1181,7 @@ def _str_size_mm(text, font, ppi):
         ppi (int): pixels per inch of the display.
 
     Returns:
-        `(tuple)`: width in mm `(string)`, height in mm `(string)`.
+        `(tuple)`: width in mm `(float)`, height in mm `(float)`.
 
     Note:
         The use of this function requires a tkinter window availability 
@@ -1053,7 +1217,7 @@ def _str_max_len_mm(list_strs,font,ppi):
     return max_length_mm
 
 
-def _mm_to_px(size_mm,ppi, fact=1):
+def _mm_to_px(size_mm,ppi,fact=1.0):
     '''The `_mm_to_px' function converts a value in mm to a value in pixels
     using the ppi of the used display and a factor fact.
     
@@ -1122,16 +1286,156 @@ def _split_path2str(in_str,sep,max_px,font,ppi):
     return (out_str1,out_str2)
 
 
+def _gui_params(titles, buttons_labels, fonts, mm_size_corr, gui_disp=0, widget_ratio = None, button_ratio = None, max_lines_nb = None):
+    
+    '''The function `_gui_params` define the geometry parameters in pixels for a gui window.
+    
+    Args: 
+        titles (dict): titles of the window.
+        buttons_labels(list): list of button labels as strings.
+        gui_disp (int): number identifying the used display (default: 0).
+        mm_size_corr (int): value in mm for the correction of the sizes in milimeters
+                            before use for computing the widgets horizontal positions in pixels
+                            (correction still to be understood).
+    
+    Returns:
+        `(named tupple)`: display ppi and sizes and positions of the window widgets in pixels.
+        
+    Note:
+        Uses the globals: `IN_TO_MM`, `DISPLAYS`, `GUI_BUTTON_RATIO`,
+                          `GUI_TEXT_MAX_LINES_NB` and `GUI_WIDGET_RATIO`.
+        Based on two frames in the main window and two buttons in the top frame.
+    
+    '''
+
+    # standard library imports
+    from collections import namedtuple
+    
+    # Local imports
+    from .BiblioSys import DISPLAYS
+    from .BiblioGeneralGlobals import IN_TO_MM
+    from .BiblioSpecificGlobals import GUI_BUTTON_RATIO, GUI_TEXT_MAX_LINES_NB, GUI_WIDGET_RATIO
+    
+    ############# Local parameters setting ############# 
+
+    # Getting the ppi of the selected prime display.
+    ppi = DISPLAYS[gui_disp]['ppi']
+    
+    # Checking the number of frames and buttons.
+    frames_nb = len(titles) - 1 
+    buttons_nb = len(buttons_labels)
+    if frames_nb!=1 or buttons_nb!=2:
+        print('Number of titles:', len(titles) )
+        print('Number of buttons:', len(button_labels) )
+        print('The number of titles should be 2 \
+               and the number of buttons should be 2.\
+               Please define ad hoc number of widgets.')
+        
+    # Setting geometry parameters of gui widgets
+    if widget_ratio==None: widget_ratio = GUI_WIDGET_RATIO
+    if button_ratio==None: button_ratio = GUI_BUTTON_RATIO
+    if max_lines_nb==None: max_lines_nb = GUI_TEXT_MAX_LINES_NB                
+    
+    # Setting the ratio of frames-width to the titles-max-width.
+    frame_ratio = widget_ratio
+    
+    # Setting the ratio of window-width to the frame-width.
+    win_ratio = widget_ratio 
+    
+    # Setting a potential ratio for correcting the conversion from mm to px for the buttons sizes.
+    # Todo: adapt these ratios to correct the discrepancy between the set mm sizes 
+    # and the effective mm sizes on the screen for MacOs 
+    # (correction still to be understood).
+    buttonsize_mmtopx_ratios = (1,1,1)
+    
+    # Setting the value in mm for the correction of the sizes in milimeters 
+    # before use for computing the widgets horizontal positions in pixels 
+    # (correction still to be understood).
+    mm_size_corr = 1
+
+    # Computing the maximum size in mm of the list of titles.
+    titles_mm_max = _str_max_len_mm(titles.values(), fonts['frame'], ppi)
+    
+    # Computing button sizes in mm and pixels using button label sizes and button_ratio.
+    # Buttons width is the button heigth added to the labels width 
+    # to horizontally center the label in the button. 
+    labels_widthmm = [_str_size_mm(buttons_labels[i],fonts['button'], ppi)[0] for i in range(buttons_nb)]
+    label_heightmm = _str_size_mm(buttons_labels[0],fonts['button'], ppi)[1]
+    button_heightmm =  label_heightmm * button_ratio
+    buttons_widthmm = (labels_widthmm[0] + button_heightmm, labels_widthmm[1] + button_heightmm)
+    buttons_widthpx = (_mm_to_px(buttons_widthmm[0],ppi,buttonsize_mmtopx_ratios[0]), 
+                       _mm_to_px(buttons_widthmm[1],ppi,buttonsize_mmtopx_ratios[1]))
+    button_heigthpx = _mm_to_px(button_heightmm,ppi,buttonsize_mmtopx_ratios[2])
+
+    # Computing the frame width in pixels from titles maximum size in mm using frame_ratio.
+    frame_widthmm = titles_mm_max * frame_ratio    
+    frame_widthpx = str(_mm_to_px(frame_widthmm,ppi))
+
+    # Computing the window width in pixels from the frame width and buttons width using win_ratio.
+    win_widthmm = max(frame_widthmm,sum(buttons_widthmm)) * win_ratio 
+    win_widthpx = str(_mm_to_px(win_widthmm,ppi))
+
+     # Computing the buttons horizontal positions in pixels 
+     # assuming 2 buttons and with correction of size in mm by mm_size_corr value.
+    padx_ratio = buttons_nb * 2  
+    pad_xmm = (win_widthmm - min(frame_widthmm,sum(buttons_widthmm))) / padx_ratio
+    buttons_xmm = (pad_xmm, buttons_widthmm[0] + 3 * pad_xmm)
+    buttons_xpx = (_mm_to_px(buttons_xmm[0] - mm_size_corr,ppi), _mm_to_px(buttons_xmm[1] - mm_size_corr,ppi))
+
+    # Computing the frames heigth unit.
+    _, text_heigthmm = _str_size_mm('Users/',fonts['text'], ppi)
+    frame_unit_heightmm = min(button_heightmm,text_heigthmm) 
+    frame_unit_heightpx = _mm_to_px(frame_unit_heightmm,ppi)
+
+    # Computing the buttons vertical position in pixels.
+    button_ymm = frame_unit_heightmm 
+    button_ypx = _mm_to_px(button_ymm,ppi)
+
+    # Computing the frame heigth in mm and in pixels.
+    pads_nb = 4  # 2 frame units above and 2 frame units under the edited text. 
+    max_frame_unit_nb = pads_nb + max_lines_nb  
+    frame_heightmm = frame_unit_heightmm * max_frame_unit_nb
+    frame_heightpx = str(_mm_to_px(frame_heightmm,ppi))
+
+    # Computing the frame positions in pixels.
+    frame_xmm = (win_widthmm - frame_widthmm) / 2
+    frame_ymm = button_ymm + button_heightmm + 2 * frame_unit_heightmm
+    frame_xpx, frame_ypx = _mm_to_px(frame_xmm,ppi), _mm_to_px(frame_ymm,ppi)
+
+    # Computing the window heigth in mm and in pixels .
+    # with frame_unit_heightmm separating vertically the widgets.
+    win_heightmm = button_ymm + button_heightmm + frame_heightmm + 3 * frame_unit_heightmm
+    win_heightpx = str(_mm_to_px(win_heightmm,ppi))
+
+    # Setting the window geometry.
+    win_xpx = str(int(DISPLAYS[gui_disp]['x']) + 50)
+    win_ypx = str(int(DISPLAYS[gui_disp]['y']) + 50)
+    
+    # Defining the named tuple template for the results returned
+    named_tup_button = namedtuple('button', ['buttons_widthpx', 'button_heigthpx', 'buttons_xpx', 'button_ypx'])
+    named_tup_frame = namedtuple('frame', ['frame_widthmm', 'frame_unit_heightpx', 'frame_widthpx', 'frame_heightpx', 'frame_xpx', 'frame_ypx'])
+    named_tup_win = namedtuple('win', ['win_widthpx', 'win_heightpx', 'win_xpx', 'win_ypx'])   
+    named_tup_results = namedtuple('results', ['ppi','button_params', 'frame_params', 'win_params',])
+    
+    # Setting the named tuple for the results returned
+    button_params = named_tup_button(buttons_widthpx, button_heigthpx, buttons_xpx, button_ypx,)
+    frame_params = named_tup_frame(frame_widthmm, frame_unit_heightpx, frame_widthpx, frame_heightpx, frame_xpx, frame_ypx,)
+    win_params = named_tup_win(win_widthpx, win_heightpx, win_xpx, win_ypx,)
+    gui_params = named_tup_results(ppi,button_params, frame_params, win_params,)
+    
+    return  gui_params
+
+
 def select_folder_gui_new(in_dir, titles, buttons_labels, 
-                          prime_disp=0, widget_ratio=None, button_ratio=None, max_lines_nb=None):
+                          gui_disp=0, widget_ratio=None, button_ratio=None, max_lines_nb=None):
+
     
-    '''The function `select_folder_gui_grid` allows the interactive selection of a folder.
-    
+    ''' The function `select_folder_gui_new` allows the interactive selection of a folder.
     Args: 
         in_dir (str): name of the initial folder.
         titles (dict): title of the tk window.
         buttons_labels(list): list of button labels as strings.
-        prime_disp (int): number identifying the used display (default: 0).
+        gui_disp (int): number identifying the used display (default: 0).
         widget_ratio (float): base ratio for defining the different widget ratii (default: 1.2).
         button_ratio (float): buttons-height to the label-height ratio 
                               to vertically center the label in the button (default: 2.5).
@@ -1141,11 +1445,11 @@ def select_folder_gui_new(in_dir, titles, buttons_labels,
         `(str)`: name of the selected folder.
         
     Note:
-        Uses the globals: `IN_TO_MM`, `DISPLAYS`, `GUI_BUTTON_RATIO`,
-                          `GUI_TEXT_MAX_LINES_NB` and `GUI_WIDGET_RATIO`.
+        Uses the globals: `IN_TO_MM`, `DISPLAYS`, `FOLDER_SELECTION_HELP_TEXT`.
         Based on two frames in the main window and two buttons in the top frame.
-
+    
     '''
+
     # Standard library imports 
     import math
     import re
@@ -1157,8 +1461,7 @@ def select_folder_gui_new(in_dir, titles, buttons_labels,
     # Local imports
     from .BiblioSys import DISPLAYS
     from .BiblioGeneralGlobals import IN_TO_MM
-    from .BiblioSpecificGlobals import FOLDER_SELECTION_HELP_TEXT,GUI_BUTTON_RATIO,\
-                                       GUI_TEXT_MAX_LINES_NB,GUI_WIDGET_RATIO
+    from .BiblioSpecificGlobals import FOLDER_SELECTION_HELP_TEXT
     
     global out_dir
  
@@ -1173,75 +1476,48 @@ def select_folder_gui_new(in_dir, titles, buttons_labels,
         import numpy as np
 
         global out_dir
+        
+        # Setting the value in mm for the correction of the sizes in milimeters 
+        # before use for computing the widgets horizontal positions in pixels 
+        # (correction still to be understood).
+        mm_size_corr = 1
 
         out_dir = filedialog.askdirectory(initialdir=in_dir,title=titles['main'])
         
         out_dir_split = [out_dir]
         while out_dir_split[len(out_dir_split)-1]!='':
             out_dir1,out_dir2 = _split_path2str(out_dir_split[len(out_dir_split)-1], 
-                                               '/', frame_widthpx, text_font, ppi)
+                                               '/', frame_widthpx, fonts['text'], ppi)
             out_dir_split[len(out_dir_split)-1] = out_dir1
             out_dir_split.append(out_dir2)
 
          # Creating the folder-result frame and set its geometry. 
         folder_result = tk.LabelFrame(master=win,              
                         text=titles['result'],
-                        font=frame_font)
+                        font= fonts['frame'])
         folder_result.place(x=frame_xpx,
                             y=frame_ypx,
                             width=frame_widthpx,
                             height=frame_heightpx)
 
          # Editing the selected folder.       
-        text_max_widthmm = _str_max_len_mm(out_dir_split, text_font, ppi)
+        text_max_widthmm = _str_max_len_mm(out_dir_split, fonts['text'], ppi)
         text_xmm = (frame_widthmm - text_max_widthmm) / 2
         text_xpx = _mm_to_px(text_xmm - mm_size_corr,ppi)
-        text_ypx = _mm_to_px(frame_unit_heightmm,ppi)       
+        text_ypx = frame_unit_heightpx       
         text = '\n'.join(out_dir_split)
-        folder_label = tk.Label(folder_result, text=text, font=text_font)
+        folder_label = tk.Label(folder_result, text=text, font=fonts['text'])
         folder_label.place(x=text_xpx,
                            y=text_ypx)
     
     def help():
         messagebox.showinfo('Folder selection info', FOLDER_SELECTION_HELP_TEXT)
-    
-    ############# Local parameters setting ############# 
-
-    # Getting the ppi of the selected prime display.
-    ppi = DISPLAYS[prime_disp]['ppi']
-    
-     # Checking the number of frames and buttons.
-    frames_nb = len(titles) -1 
-    buttons_nb = len(buttons_labels)
-    if frames_nb!=1 or buttons_nb!=2:
-        print('Number of titles:', len(titles) )
-        print('Number of buttons:', len(button_labels) )
-        print('The number of titles should be 2 \
-               and the number of buttons should be 2.\
-               Please define ad hoc number of widgets.')
         
-     # Setting geometry parameters of gui widgets
-    if widget_ratio==None: widget_ratio = GUI_WIDGET_RATIO
-    if button_ratio==None: button_ratio = GUI_BUTTON_RATIO
-    if max_lines_nb==None: max_lines_nb = GUI_TEXT_MAX_LINES_NB                
-    
-     # Setting the ratio of frames-width to the titles-max-width.
-    frame_ratio = widget_ratio
-    
-     # Setting the ratio of window-width to the frame-width.
-    win_ratio = widget_ratio 
-    
-     # Setting a potential ratio for correcting the conversion from mm to px for the buttons sizes.
-     # Todo: adapt these ratios to correct the discrepancy between the set mm sizes 
-     # and the effective mm sizes on the screen for MacOs 
-     # (correction still to be understood).
-    buttonsize_mmtopx_ratios = (1,1,1)
-    
-     # Setting the value in mm for the correction of the sizes in milimeters 
-     # before use for computing the widgets horizontal positions in pixels 
-     # (correction still to be understood).
+    # Setting the value in mm for the correction of the sizes in milimeters 
+    # before use for computing the widgets horizontal positions in pixels 
+    # (correction still to be understood).
     mm_size_corr = 1
-    
+   
     ############# Tkinter window management #############
     
      # Creating the tk window.
@@ -1250,72 +1526,40 @@ def select_folder_gui_new(in_dir, titles, buttons_labels,
     win.title(titles['main']) 
     
      # Setting the fonts to be used.
-    frame_font = TkFont.Font(family='arial', size=16, weight='bold')
-    text_font = TkFont.Font(family='arial', size=12, weight='normal')
-    button_font = TkFont.Font(family='arial', size=12, weight='normal')
+    fonts = {}
+    fonts = {'frame': TkFont.Font(family='arial', size=16, weight='bold'),
+             'text':  TkFont.Font(family='arial', size=12, weight='normal'),
+             'button':TkFont.Font(family='arial', size=12, weight='normal'),}
     
-     # Computing the maximum size in mm of the list of titles.
-    titles_mm_max = _str_max_len_mm(titles.values(), frame_font, ppi)
+     # Get the gui geometry parameters
+    gui_params = _gui_params(titles, buttons_labels, fonts, mm_size_corr, gui_disp)
     
-     # Computing button sizes in mm and pixels using button label sizes and button_ratio.
-     # Buttons width is the button heigth added to the labels width 
-     # to horizontally center the label in the button. 
-    labels_widthmm = [_str_size_mm(buttons_labels[i],button_font, ppi)[0] for i in range(buttons_nb)]
-    label_heightmm = _str_size_mm(buttons_labels[0],button_font, ppi)[1]
-    button_heightmm =  label_heightmm * button_ratio
-    buttons_widthmm = (labels_widthmm[0] + button_heightmm, labels_widthmm[1] + button_heightmm)
-    buttons_widthpx = (_mm_to_px(buttons_widthmm[0],ppi,buttonsize_mmtopx_ratios[0]), 
-                       _mm_to_px(buttons_widthmm[1],ppi,buttonsize_mmtopx_ratios[1]))
-    button_heigthpx = _mm_to_px(button_heightmm,ppi,buttonsize_mmtopx_ratios[2])
-
-     # Computing the frame width in pixels from titles maximum size in mm using frame_ratio.
-    frame_widthmm = titles_mm_max * frame_ratio    
-    frame_widthpx = str(_mm_to_px(frame_widthmm,ppi))
-
-     # Computing the window width in pixels from the frame width and buttons width using win_ratio.
-    win_widthmm = max(frame_widthmm,sum(buttons_widthmm)) * win_ratio 
-    win_widthpx = str(_mm_to_px(win_widthmm,ppi))
-
-     # Computing the buttons horizontal positions in pixels 
-     # assuming 2 buttons and with correction of size in mm by mm_size_corr value.
-    padx_ratio = buttons_nb * 2  
-    pad_xmm = (win_widthmm - min(frame_widthmm,sum(buttons_widthmm))) / padx_ratio
-    buttons_xmm = (pad_xmm, buttons_widthmm[0] + 3 * pad_xmm)
-    buttons_xpx = (_mm_to_px(buttons_xmm[0] - mm_size_corr,ppi), _mm_to_px(buttons_xmm[1] - mm_size_corr,ppi))
-
-     # Computing the frames heigth unit.
-    _, text_heigthmm = _str_size_mm('Users/',text_font, ppi)
-    frame_unit_heightmm = min(button_heightmm,text_heigthmm) 
-
-     # Computing the buttons vertical position in pixels.
-    button_ymm = frame_unit_heightmm 
-    button_ypx = _mm_to_px(button_ymm,ppi)
-
-     # Computing the frame heigth in mm and in pixels.
-    pads_nb = 4  # 2 frame units above and 2 frame units under the edited text. 
-    max_frame_unit_nb = pads_nb + max_lines_nb  
-    frame_heightmm = frame_unit_heightmm * max_frame_unit_nb
-    frame_heightpx = str(_mm_to_px(frame_heightmm,ppi))
-
-     # Computing the frame positions in pixels.
-    frame_xmm = (win_widthmm - frame_widthmm) / 2
-    frame_ymm = button_ymm + button_heightmm + 2 * frame_unit_heightmm
-    frame_xpx, frame_ypx = _mm_to_px(frame_xmm,ppi), _mm_to_px(frame_ymm,ppi)
-
-    # Computing the window heigth in mm and in pixels .
-    # with frame_unit_heightmm separating vertically the widgets.
-    win_heightmm = button_ymm + button_heightmm + frame_heightmm + 3 * frame_unit_heightmm
-    win_heightpx = str(_mm_to_px(win_heightmm,ppi))
+    ppi = gui_params.ppi
+    
+    buttons_widthpx = gui_params.button_params.buttons_widthpx
+    button_heigthpx = gui_params.button_params.button_heigthpx
+    buttons_xpx = gui_params.button_params.buttons_xpx
+    button_ypx = gui_params.button_params.button_ypx
+    
+    frame_widthmm = gui_params.frame_params.frame_widthmm
+    frame_unit_heightpx = gui_params.frame_params.frame_unit_heightpx
+    frame_widthpx = gui_params.frame_params.frame_widthpx
+    frame_heightpx = gui_params.frame_params.frame_heightpx
+    frame_xpx = gui_params.frame_params.frame_xpx
+    frame_ypx = gui_params.frame_params.frame_ypx
+    
+    win_widthpx = gui_params.win_params.win_widthpx
+    win_heightpx = gui_params.win_params.win_heightpx
+    win_xpx = gui_params.win_params.win_xpx
+    win_ypx = gui_params.win_params.win_ypx    
 
      # Setting the window geometry.
-    win_xpx = str(int(DISPLAYS[prime_disp]['x']) + 50)
-    win_ypx = str(int(DISPLAYS[prime_disp]['y']) + 50)
     win.geometry(f'{win_widthpx}x{win_heightpx}+{win_xpx}+{win_ypx}')
 
      # Creates the folder result frame and set its geometry. 
     folder_result = tk.LabelFrame(master=win,              
                 text=titles['result'],
-                font=frame_font)
+                font=fonts['frame'])
     folder_result.place(x=frame_xpx,
                     y=frame_ypx,
                     width=frame_widthpx,
@@ -1324,7 +1568,7 @@ def select_folder_gui_new(in_dir, titles, buttons_labels,
      # Creating the button for folder selection.
     select_button = tk.Button(win,
                           text=buttons_labels[0],
-                          font=button_font,
+                          font=fonts['button'],
                           command=outdir_folder_choice)
     select_button.place(x=buttons_xpx[0], 
                     y=button_ypx, 
@@ -1334,7 +1578,7 @@ def select_folder_gui_new(in_dir, titles, buttons_labels,
      # Creating the help button.
     help_button = tk.Button(win,
                         text=buttons_labels[1],
-                        font=button_font,
+                        font=fonts['button'],
                         command=help)
     help_button.place(x=buttons_xpx[1], 
                   y=button_ypx, 
