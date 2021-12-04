@@ -270,3 +270,48 @@ def check_and_drop_columns(database,df,filename):
     df.index = range(len(df))                # Sets the pub_id in df index
     
     return df
+
+
+def upgrade_col_names(corpus_folder):
+    
+    '''Add names to the colummn of the parsing and filter_<i> files to take into account the
+    upgrage of BiblioAnalysis_Utils.
+    
+    Args:
+        corpus_folder (str): folder of the corpus to be adapted
+    '''
+    # Standard library imports
+    import os
+    
+    # 3rd party imports
+    import pandas as pd
+    
+    # Local imports
+    from .BiblioSpecificGlobals import COL_NAMES
+    
+    # Beware: the new file authorsinst.dat is not present in the Iona's parsing folders
+    dict_filename_conversion  = {'addresses.dat':'address',
+                                'articles.dat': 'articles',
+                                'authors.dat':'authors',
+                                'authorsinst.dat':'auth_inst',
+                                'authorskeywords.dat':'keywords',
+                                'countries.dat':'country',
+                                'institutions.dat':'institution',
+                                'journalkeywords.dat':'keywords',
+                                'references.dat':'references',
+                                'subjects.dat': 'subject',
+                                'subjects2.dat':'sub_subject',
+                                'titlekeywords.dat':'keywords'}
+
+    for dirpath, dirs, files in os.walk(corpus_folder):  
+        if ('parsing' in   dirpath) |  ('filter_' in  dirpath):
+            for file in  [file for file in files if (file.split('.')[1]=='dat') and (file!='database.dat') and (file!='keywords.dat')]:
+                try:
+                    # To Do : check if file has columns name or not
+                    print(file, COL_NAMES[dict_filename_conversion[file]],os.path.join(dirpath,file))
+                    df = pd.read_csv(os.path.join(dirpath,file),sep='\t',header=None)
+                    df.columns = COL_NAMES[dict_filename_conversion[file]]
+                    pd.to_csv(os.path.join(dirpath,file),sep='\t')
+
+                except:
+                    print('ERROR ',file)

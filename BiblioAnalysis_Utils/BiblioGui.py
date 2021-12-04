@@ -245,7 +245,7 @@ def cooc_selection(fact=3, win_widthmm=80, win_heightmm=100, font_size=16) :
     
     def _choice(text, v):
         global selected_item
-        selected_item, = COOC_AUTHORIZED_ITEMS_DICT[text]
+        selected_item = COOC_AUTHORIZED_ITEMS_DICT[text]
     
 
     def _submit(): 
@@ -285,7 +285,7 @@ def cooc_selection(fact=3, win_widthmm=80, win_heightmm=100, font_size=16) :
     size_choice = ttk.LabelFrame(tk_root, text=' Size choice ')
     size_choice.grid(column=1, row=0, padx=8, pady=4)
     
-    selected_item, = 'AU'  # Default value
+    selected_item = 'AU'  # Default value
     minimum_size_node = 1 # Default value        
         
     #                               Choice of the item for the cooccurrence graph

@@ -59,31 +59,37 @@ def build_coupling_graph(in_dir):
     import pandas as pd
     
     # Local imports
-    from .BiblioSpecificGlobals import DIC_OUTDIR_PARSING
+    from .BiblioSpecificGlobals import COL_NAMES
     from .BiblioSpecificGlobals import COUPL_GLOBAL_VALUES
-    
+    from .BiblioSpecificGlobals import DIC_OUTDIR_PARSING
+        
     BCTHR = COUPL_GLOBAL_VALUES['BCTHR']
     RTUTHR = COUPL_GLOBAL_VALUES['RTUTHR']
     WTHR = COUPL_GLOBAL_VALUES['WTHR']
     NRTHR = COUPL_GLOBAL_VALUES['NRTHR']
     
+    pub_id_alias = COL_NAMES['articles'][0]
+    author_alias = COL_NAMES['articles'][1]
+    year_alias = COL_NAMES['articles'][2]
+    journal_alias = COL_NAMES['articles'][3]
+    author_ref_alias = COL_NAMES['references'][1]
+    
     # The references and their ids are extracted from the file articles.dat (tsv format)
     # ---------------------------------------------------------------------------------------
 
-    # TO DO: set columns by names 
+    # TO DO: set columns by names
+    usecols = [COL_NAMES['articles'][i] for i in [0,1,2,3,4,5]]
     df_article = pd.read_csv(in_dir / Path(DIC_OUTDIR_PARSING['A']),
                  sep='\t',
-                 header=None,
-                 usecols=[0,1,2,3,4,5]).fillna(0).astype(str)
-    df_article.columns = ['pub_id','first_author','year','journal','volume','page']
+                 usecols=usecols).fillna(0).astype(str)
 
-    table_art = df_article.apply(lambda row : ", ".join(row[1:]),axis=1) # Builds ref: "author, year, journal, volume, page"
-                                                                     # ex:"Name S., 2004, SCIENCE, 306, 496"
+    table_art = df_article.apply(lambda row : ', '.join(row[1:]),axis=1) # Builds article: "pub_id, author, year, journal, volume, page"
+                                                                         # ex:"6354, Name S., 2004, SCIENCE, 306, 496"
     table_art = [x.replace(', 0','') for x in table_art] # takes care of the unknown volume and/or page number
-                                                 # ex: "Name S., 2010, THESIS"
+                                                         # ex: "6354, Name S., 2010, THESIS"
     df_article['label_article'] = table_art
 
-    df_article['pub_id'] = pd.to_numeric(df_article['pub_id'])
+    df_article[pub_id_alias] = pd.to_numeric(df_article[pub_id_alias])
 
 
 
@@ -92,24 +98,24 @@ def build_coupling_graph(in_dir):
     # 2- creates the dict named nR = {pub_id: number of references of pub_id}
     # ---------------------------------------------------------------------------------------
 
+    usecols = [COL_NAMES['references'][i] for i in [0,1,2,3,4,5]]
     df_reference = pd.read_csv(in_dir / Path(DIC_OUTDIR_PARSING['R']),
                                sep='\t',
-                               header = None,
-                               usecols=[0,1,2,3,4,5],
+                               usecols=usecols,
                                na_filter=False).astype(str)
-    df_reference.columns = ['pub_id','first_author','year','journal','volume','page']
+    #df_reference.columns = ['pub_id','first_author','year','journal','volume','page']
 
-    table = df_reference.apply(lambda row : ", ".join(row[1:]), axis=1) # Builds ref: "author, year, journal, volume, page"
-                                                                        # ex:"Name S., 2004, SCIENCE, 306, 496"
+    table = df_reference.apply(lambda row : ", ".join(row[1:]), axis=1) # Builds ref: "pub_id, author, year, journal, volume, page"
+                                                                         # ex:"6354, Name S., 2004, SCIENCE, 306, 496"
     table = [x.replace(', 0','') for x in table] # takes care of the unknown volume and/or page number
-                                                 # ex: "Name S., 2010, THESIS"
+                                                 # ex: "6354, Name S., 2010, THESIS"
     df_reference['label_ref'] = table
 
-    df_reference['pub_id'] = pd.to_numeric(df_reference['pub_id'])
+    df_reference[pub_id_alias] = pd.to_numeric(df_reference[pub_id_alias])
 
-    nR = df_reference.groupby('pub_id').count().to_dict()['first_author']
+    nR = df_reference.groupby(pub_id_alias).count().to_dict()[author_ref_alias]
 
-    ref_table = {x[0]:x[1].tolist() for x in df_reference.groupby('label_ref')['pub_id']}
+    ref_table = {x[0]:x[1].tolist() for x in df_reference.groupby('label_ref')[pub_id_alias]}
 
 
     # Builds the dict of dicts BC_table such as:
@@ -149,16 +155,16 @@ def build_coupling_graph(in_dir):
     
     nx.set_node_attributes(G,nR,'nbr_references')
     
-    node_label = {x:df_article.loc[df_article['pub_id'] == x,'label_article'].tolist()[0] for x in G.nodes}
+    node_label = {x:df_article.loc[df_article[pub_id_alias] == x,'label_article'].tolist()[0] for x in G.nodes}
     nx.set_node_attributes(G,node_label,'label')
     
-    node_first_author = {x:df_article.loc[df_article['pub_id'] == x,'first_author'].tolist()[0] for x in G.nodes}
+    node_first_author = {x:df_article.loc[df_article[pub_id_alias] == x,author_alias].tolist()[0] for x in G.nodes}
     nx.set_node_attributes(G,node_first_author,'first_author')
     
-    node_year = {x:df_article.loc[df_article['pub_id'] == x,'year'].tolist()[0] for x in G.nodes}
+    node_year = {x:df_article.loc[df_article[pub_id_alias] == x,year_alias].tolist()[0] for x in G.nodes}
     nx.set_node_attributes(G,node_year,'year')
     
-    node_journal = {x:df_article.loc[df_article['pub_id'] == x,'journal'].tolist()[0] for x in G.nodes}
+    node_journal = {x:df_article.loc[df_article[pub_id_alias] == x,journal_alias].tolist()[0] for x in G.nodes}
     nx.set_node_attributes(G,node_journal,'journal')
 
     return G
@@ -256,9 +262,10 @@ def add_item_attribute(G, item, m_max_attrs,
     import pandas as pd
 
     # Local imports
-    from .BiblioSpecificGlobals import DIC_OUTDIR_DESCRIPTION
     from .BiblioSpecificGlobals import COUPL_AUTHORIZED_ITEMS
-
+    from .BiblioSpecificGlobals import DIC_OUTDIR_DESCRIPTION
+    from .BiblioSpecificGlobals import DIC_OUTDIR_PARSING
+    
     # Check valid input arguments
     add_item_attribute.__annotations__ = {'G': nx.Graph, 'item': str, 'm_max_attrs': int,
                        'in_dir_freq': Path, 'in_dir_parsing': Path, 'return':nx.Graph}
@@ -273,22 +280,20 @@ def add_item_attribute(G, item, m_max_attrs,
     freq_file: Path = in_dir_freq / Path(DIC_OUTDIR_DESCRIPTION[item])
     df: pd.DataFame = pd.read_csv(freq_file,
                                   sep=',',
-                                  usecols=[0, 2]) # choose article id,item frequency
+                                  usecols=['item', 'f']) # choose article id,item frequency
     dic_freq = dict(zip(df['item'],
                         df['f']))  # Builds dic_freq {itemvalue:frequency,...}
 
     # Reads the list of articles id and their respective itemvalues in the folder parsing
-    parsing_file: Path = in_dir_parsing / Path(
-        DIC_OUTDIR_DESCRIPTION[item][5:])  #<-- !!
-    usecols = [0, 1]  # to be suppressed in the future by naming columns
+    parsing_file: Path = in_dir_parsing / Path(DIC_OUTDIR_PARSING[item])     
+    usecols = [0, 1]
     if item == 'CU' or item == 'AU' or item == 'I':
         usecols = [0, 2]  # Takes care of countries.dat,
                           # authors.dat and institutions.dat with 3 columns
     df: pd.DataFame = pd.read_csv(parsing_file,
                                   sep='\t',
-                                  header=None,
                                   usecols=usecols)
-    df.columns = ['article_id', 'item_value']
+    df.columns = ['article_id', 'item_value'] # Normalization of the columns names for all items
 
     dic_freq_node: dict = {}
     for x in df.groupby('article_id'):  # Loop for article_id in corpus
@@ -401,15 +406,16 @@ def save_communities_xls(partition,in_dir,out_dir):
     import pandas as pd
     
     # Local imports
-    from .BiblioSpecificGlobals import DIC_OUTDIR_PARSING
+    from .BiblioSpecificGlobals import COL_NAMES
     from .BiblioSpecificGlobals import COUPL_FILENAME_XLSX
+    from .BiblioSpecificGlobals import DIC_OUTDIR_PARSING
+  
+    pub_id_alias = COL_NAMES['articles'][0]
     
-    df_articles = pd.read_csv(in_dir / Path(DIC_OUTDIR_PARSING['A']),sep="\t",header=None)
+    df_articles = pd.read_csv(in_dir / Path(DIC_OUTDIR_PARSING['A']),sep="\t")
 
-    df_articles['communnity'] = df_articles[0].map(partition) # Adds column community
-    df_articles.sort_values(by=['communnity',0],inplace=True)
-    df_articles.columns = ['pub_id','first_author','year','journal',
-                           'volume','page','doi','pub_type','language','title','ISSN','community_id']
+    df_articles['communnity_id'] = df_articles[pub_id_alias].map(partition) # Adds column community_id
+    df_articles.sort_values(by=['communnity_id',pub_id_alias],inplace=True)
     df_articles.to_excel(out_dir / Path(COUPL_FILENAME_XLSX))
 
     

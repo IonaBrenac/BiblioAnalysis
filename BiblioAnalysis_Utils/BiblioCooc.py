@@ -21,7 +21,7 @@ The `build_item_cooc` function calls the following local functions of the module
 
 """
 
-__all__ = ["build_item_cooc", "plot_cooc_graph"]
+__all__ = ['build_item_cooc', 'plot_cooc_graph']
 
 # Globals used from .BiblioGeneralGlobals: COUNTRIES_GPS
 # Globals used from .BiblioSpecificGlobals: COOC_AUTHORIZED_ITEMS, COOC_AUTHORIZED_ITEMS_DICT, 
@@ -70,26 +70,26 @@ def build_item_cooc(item, in_dir, out_dir, size_min=None):
     
     if size_min==None: size_min = SIZE_MIN
 
-    assert item in COOC_AUTHORIZED_ITEMS, f"unknown item: {item}"
+    assert item in COOC_AUTHORIZED_ITEMS, f'unknown item: {item}'
 
     filename_in = DIC_OUTDIR_PARSING[item]
-    num_col = 2 if (item in ["AU", "CU"]) else 1
-    df = pd.read_csv(in_dir / Path(filename_in), sep="\t")
-    df = df[[0, num_col]]
-    df.columns = ["pub_id", "item"]
+    df = pd.read_csv(in_dir / Path(filename_in), sep='\t')
+    nb_col = df.shape[1]
+    df = df[[df.columns[0], df.columns[nb_col-1]]]
+    df.columns = ['pub_id', 'item']
 
     G = _generate_cooc_graph(df, size_min, item)
     del df
 
     if G is not None:
-        filename_out_prefix = "cooc_" + item + "_thr" + str(size_min)
+        filename_out_prefix = 'cooc_'+ item + '_thr' + str(size_min)
         _write_cooc_gdf(
             G,
             item,
             COOC_COLOR_NODES[item],
-            out_dir / Path(filename_out_prefix + ".gdf"),
+            out_dir / Path(filename_out_prefix + '.gdf'),
         )
-        _write_cooc_gexf(G, out_dir / Path(filename_out_prefix + ".gexf"))
+        _write_cooc_gexf(G, out_dir / Path(filename_out_prefix + '.gexf'))
 
     return G
 
