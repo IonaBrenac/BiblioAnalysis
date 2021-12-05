@@ -4,6 +4,7 @@ __all__ = ['biblio_parser',
            'country_normalization',
            'merge_database',
            'name_normalizer',
+           'upgrade_col_names',
            ]
 
 # Globals used from .BiblioGeneralGlobals: ALIAS_UK, CHANGE, COUNTRIES,
@@ -289,7 +290,7 @@ def upgrade_col_names(corpus_folder):
     # Local imports
     from .BiblioSpecificGlobals import COL_NAMES
     
-    # Beware: the new file authorsinst.dat is not present in the Iona's parsing folders
+    # Beware: the new file authorsinst.dat is not present in the old parsing folders
     dict_filename_conversion  = {'addresses.dat':'address',
                                 'articles.dat': 'articles',
                                 'authors.dat':'authors',
@@ -305,13 +306,25 @@ def upgrade_col_names(corpus_folder):
 
     for dirpath, dirs, files in os.walk(corpus_folder):  
         if ('parsing' in   dirpath) |  ('filter_' in  dirpath):
-            for file in  [file for file in files if (file.split('.')[1]=='dat') and (file!='database.dat') and (file!='keywords.dat')]:
+            for file in  [file for file in files
+                          if (file.split('.')[1]=='dat') 
+                          and (file!='database.dat')      # Not used this file is no longer generated
+                          and (file!='keywords.dat')      # Not used this file is no longer generated
+                          and (file!='authorsinst.dat')]: # authorsinst.dat is up to date by construction
                 try:
-                    # To Do : check if file has columns name or not
-                    print(file, COL_NAMES[dict_filename_conversion[file]],os.path.join(dirpath,file))
                     df = pd.read_csv(os.path.join(dirpath,file),sep='\t',header=None)
-                    df.columns = COL_NAMES[dict_filename_conversion[file]]
-                    pd.to_csv(os.path.join(dirpath,file),sep='\t')
-
+                    if df.shape[0] == 0:
+                        print("-------------------EMPTY FILE-------------------")
+                        df.columns = COL_NAMES[dict_filename_conversion[file]]
+                        df.to_csv(os.path.join(dirpath,file),sep='\t',index=False)
+                        print(f'*** The EMPTY file {os.path.join(dirpath,file)} has been upgraded ***')
+                    
+                    elif df.loc[0].tolist() == COL_NAMES[dict_filename_conversion[file]]:
+                        print(f'The file {os.path.join(dirpath,file)} is up to date')
+                    else:
+                        df.columns = COL_NAMES[dict_filename_conversion[file]]
+                        df.to_csv(os.path.join(dirpath,file),sep='\t',index=False)
+                        print(f'*** The file {os.path.join(dirpath,file)} has been upgraded ***')
                 except:
-                    print('ERROR ',file)
+                    print(f'ERROR with file {os.path.join(dirpath,file)}')
+
