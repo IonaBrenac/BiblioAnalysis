@@ -1,13 +1,14 @@
-__all__ = ['item_selection',
-           'cooc_selection',
-           'merge_database_gui',
-           'filters_selection',
-           'SAVE_CONFIG_FILTERS',
+__all__ = ['cooc_selection',
            'coupling_attr_selection',
-           'Select_multi_items',
+           'filters_selection',
            'filter_item_selection',
+           'item_selection',
+           'merge_database_gui',           
+           'SAVE_CONFIG_FILTERS',
            'select_folder_gui',
-           'select_folder_gui_new',]
+           'select_folder_gui_new',
+           'Select_multi_items',
+           'treemap_item_selection',]
 
 # Globals used from .BiblioSys: DISPLAYS
 # Globals used from .BiblioGeneralGlobals: IN_TO_MM
@@ -217,6 +218,93 @@ def item_selection(fact=3, win_widthmm=80, win_heightmm=130, font_size=16) :
     tk_root.mainloop()
     
     return selected_item
+
+
+def treemap_item_selection(fact=2, win_widthmm=70, win_heightmm=105, font_size=16):
+    
+    '''
+    Selection of items for treemaps
+    
+    Arguments: none
+    
+    Returns:
+        selected_item (string): choosen item
+
+    '''
+    
+    # Standard library imports
+    import os
+    import tkinter as tk
+    import tkinter.font as TkFont    
+    from tkinter import ttk
+    from tkinter import messagebox
+    
+    # Local imports
+    from .BiblioSys import DISPLAYS,GUI_DISP
+    
+    global selected_item
+    
+    def _choice(text, v):
+        global selected_item
+        selected_item = text
+    
+    def _help():
+        messagebox.showinfo("Item selection info", TREE_MAP_ITEM_HELP_TEXT)
+
+    # Getting the ppi of the selected prime display.
+    ppi = DISPLAYS[GUI_DISP]['ppi']
+    
+    # Setting the window title    
+    title = 'Treemap GUI'
+    
+    # Creating the gui window
+    tk_root = tk.Tk()
+    
+    # Setting the window geometry parameters
+    font_title = TkFont.Font(family='arial', size=font_size, weight='bold')
+    title_widthmm,_ = _str_size_mm(title, font_title, ppi)
+    win_widthmm = max(title_widthmm*fact,win_widthmm)
+    win_widthpx = str(_mm_to_px(win_widthmm,ppi)) 
+    win_heightpx = str(_mm_to_px(win_heightmm,ppi))
+
+    #win_widthpx = 350
+    #win_heightpx = 520
+    win_xpx = str(int(DISPLAYS[GUI_DISP]['x']) + 50)
+    win_ypx = str(int(DISPLAYS[GUI_DISP]['y']) + 50)
+
+    tk_root.attributes("-topmost", True)
+    tk_root.geometry(f'{win_widthpx}x{win_heightpx}+{win_xpx}+{win_ypx}')
+    tk_root.title(title) 
+    item_choice = ttk.LabelFrame(tk_root, text=' Label selection ')
+    item_choice.grid(column=0, row=0, padx=8, pady=4)
+    
+    menu = ttk.LabelFrame(tk_root, text=' Menu ')
+    menu.grid(column=1, row=0, padx=8, pady=4)
+        
+    selected_item = "subjects"
+       
+    # choice of the item for treemap
+    #
+    varitem = tk.IntVar()
+    varitem.set(TREE_MAP_ITEM[0][1])
+
+    tk.Label(item_choice, text='Choose the item for treemap :').grid(column=0, row=1, padx=8, pady=4)
+    
+    idx_row = 2
+    for txt, val in TREE_MAP_ITEM:
+        tk.Radiobutton(item_choice, text = txt, variable = varitem, value=val,
+            command=lambda t = txt, v = varitem: _choice(t, v)).grid(column=0, row=idx_row+2, padx=8, pady=4,sticky=tk.W)
+        idx_row += 1
+
+    help_button = ttk.Button(menu, text="HELP", command=_help)
+    help_button.grid(column=0, row=0)
+    
+    if os.name == 'nt':
+        tk.Button(menu, text="EXIT", command=tk_root.destroy).grid(column=0, row=1, padx=8, pady=4)
+    tk_root.mainloop()
+    
+    return selected_item
+
 
 def cooc_selection(fact=3, win_widthmm=80, win_heightmm=100, font_size=16) :
     
@@ -617,9 +705,9 @@ def _function_help():
     top.mainloop()
 
 def filters_selection(filters_filename, save_filename, parsing_dir, 
-                      fact=3, win_widthmm=80, win_heightmm=140, font_size=16) :
+                      fact=3, win_widthmm=80, win_heightmm=130, font_size=16) :
     
-    ''' The 'filters_selection' function allows an interactive setting the configuration
+    ''' The 'filters_selection' function allows an interactive setting of the configuration
     for the corpus filtering. 
     
     Arguments: 
@@ -1286,24 +1374,29 @@ def _split_path2str(in_str,sep,max_px,font,ppi):
     return (out_str1,out_str2)
 
 
-def _gui_params(titles, buttons_labels, fonts, mm_size_corr, gui_disp=0, widget_ratio = None, button_ratio = None, max_lines_nb = None):
+def _gui_params(titles, buttons_labels, fonts, mm_size_corr, 
+                gui_disp, widget_ratio, 
+                button_ratio, max_lines_nb):
     
     '''The function `_gui_params` define the geometry parameters in pixels for a gui window.
     
     Args: 
         titles (dict): titles of the window.
         buttons_labels(list): list of button labels as strings.
-        gui_disp (int): number identifying the used display (default: 0).
+        gui_disp (int): number identifying the used display.
         mm_size_corr (int): value in mm for the correction of the sizes in milimeters
                             before use for computing the widgets horizontal positions in pixels
                             (correction still to be understood).
+        widget_ratio (float): base ratio for defining the different widget ratio.
+        button_ratio (float): buttons-height to the label-height ratio 
+                              to vertically center the label in the button.
+        max_lines_nb (int): maximum lines number for editing the selected folder name.                    
     
     Returns:
         `(named tupple)`: display ppi and sizes and positions of the window widgets in pixels.
         
     Note:
-        Uses the globals: `IN_TO_MM`, `DISPLAYS`, `GUI_BUTTON_RATIO`,
-                          `GUI_TEXT_MAX_LINES_NB` and `GUI_WIDGET_RATIO`.
+        Uses the globals: `IN_TO_MM`, `DISPLAYS`.
         Based on two frames in the main window and two buttons in the top frame.
     
     '''
@@ -1314,7 +1407,6 @@ def _gui_params(titles, buttons_labels, fonts, mm_size_corr, gui_disp=0, widget_
     # Local imports
     from .BiblioSys import DISPLAYS
     from .BiblioGeneralGlobals import IN_TO_MM
-    from .BiblioSpecificGlobals import GUI_BUTTON_RATIO, GUI_TEXT_MAX_LINES_NB, GUI_WIDGET_RATIO
     
     ############# Local parameters setting ############# 
 
@@ -1329,12 +1421,7 @@ def _gui_params(titles, buttons_labels, fonts, mm_size_corr, gui_disp=0, widget_
         print('Number of buttons:', len(button_labels) )
         print('The number of titles should be 2 \
                and the number of buttons should be 2.\
-               Please define ad hoc number of widgets.')
-        
-    # Setting geometry parameters of gui widgets
-    if widget_ratio==None: widget_ratio = GUI_WIDGET_RATIO
-    if button_ratio==None: button_ratio = GUI_BUTTON_RATIO
-    if max_lines_nb==None: max_lines_nb = GUI_TEXT_MAX_LINES_NB                
+               Please define ad hoc number of widgets.')             
     
     # Setting the ratio of frames-width to the titles-max-width.
     frame_ratio = widget_ratio
@@ -1347,11 +1434,6 @@ def _gui_params(titles, buttons_labels, fonts, mm_size_corr, gui_disp=0, widget_
     # and the effective mm sizes on the screen for MacOs 
     # (correction still to be understood).
     buttonsize_mmtopx_ratios = (1,1,1)
-    
-    # Setting the value in mm for the correction of the sizes in milimeters 
-    # before use for computing the widgets horizontal positions in pixels 
-    # (correction still to be understood).
-    mm_size_corr = 1
 
     # Computing the maximum size in mm of the list of titles.
     titles_mm_max = _str_max_len_mm(titles.values(), fonts['frame'], ppi)
@@ -1427,7 +1509,8 @@ def _gui_params(titles, buttons_labels, fonts, mm_size_corr, gui_disp=0, widget_
 
 
 def select_folder_gui_new(in_dir, titles, buttons_labels, 
-                          gui_disp=0, widget_ratio=None, button_ratio=None, max_lines_nb=None):
+                          gui_disp=0, widget_ratio=None, 
+                          button_ratio=None, max_lines_nb=None):
 
     
     ''' The function `select_folder_gui_new` allows the interactive selection of a folder.
@@ -1436,16 +1519,20 @@ def select_folder_gui_new(in_dir, titles, buttons_labels,
         titles (dict): title of the tk window.
         buttons_labels(list): list of button labels as strings.
         gui_disp (int): number identifying the used display (default: 0).
-        widget_ratio (float): base ratio for defining the different widget ratii (default: 1.2).
+        widget_ratio (float): base ratio for defining the different widget ratii
+                              (default: `GUI_WIDGET_RATIO` global).
         button_ratio (float): buttons-height to the label-height ratio 
-                              to vertically center the label in the button (default: 2.5).
-        max_lines_nb (int): maximum lines number for editing the selected folder name (default: 3).
+                              to vertically center the label in the button
+                              (default: `GUI_BUTTON_RATIO` global).
+        max_lines_nb (int): maximum lines number for editing the selected folder name
+                            (default: `GUI_TEXT_MAX_LINES_NB` global).
     
     Returns:
         `(str)`: name of the selected folder.
         
     Note:
-        Uses the globals: `IN_TO_MM`, `DISPLAYS`, `FOLDER_SELECTION_HELP_TEXT`.
+        Uses the globals: `IN_TO_MM`, `DISPLAYS`, `FOLDER_SELECTION_HELP_TEXT`,
+                          `GUI_BUTTON_RATIO`, `GUI_TEXT_MAX_LINES_NB` and `GUI_WIDGET_RATIO`.
         Based on two frames in the main window and two buttons in the top frame.
     
     '''
@@ -1462,13 +1549,14 @@ def select_folder_gui_new(in_dir, titles, buttons_labels,
     from .BiblioSys import DISPLAYS
     from .BiblioGeneralGlobals import IN_TO_MM
     from .BiblioSpecificGlobals import FOLDER_SELECTION_HELP_TEXT
+    from .BiblioSpecificGlobals import GUI_BUTTON_RATIO, GUI_TEXT_MAX_LINES_NB, GUI_WIDGET_RATIO
     
     global out_dir
  
     ############# Definition of local functions #############    
 
-    def outdir_folder_choice():
-        '''The function `outdir_folder_choice' allows the interactive choice of a folder, 
+    def _outdir_folder_choice():
+        '''The function `_outdir_folder_choice' allows the interactive choice of a folder, 
         puts it in the `out_dir` global variable and prints the result in the `folder_choice` frame.
 
         '''
@@ -1510,13 +1598,18 @@ def select_folder_gui_new(in_dir, titles, buttons_labels,
         folder_label.place(x=text_xpx,
                            y=text_ypx)
     
-    def help():
+    def _help():
         messagebox.showinfo('Folder selection info', FOLDER_SELECTION_HELP_TEXT)
         
     # Setting the value in mm for the correction of the sizes in milimeters 
     # before use for computing the widgets horizontal positions in pixels 
     # (correction still to be understood).
     mm_size_corr = 1
+    
+        # Setting geometry parameters of gui widgets
+    if widget_ratio==None: widget_ratio = GUI_WIDGET_RATIO
+    if button_ratio==None: button_ratio = GUI_BUTTON_RATIO
+    if max_lines_nb==None: max_lines_nb = GUI_TEXT_MAX_LINES_NB  
    
     ############# Tkinter window management #############
     
@@ -1532,7 +1625,9 @@ def select_folder_gui_new(in_dir, titles, buttons_labels,
              'button':TkFont.Font(family='arial', size=12, weight='normal'),}
     
      # Get the gui geometry parameters
-    gui_params = _gui_params(titles, buttons_labels, fonts, mm_size_corr, gui_disp)
+    gui_params = _gui_params(titles, buttons_labels, fonts, mm_size_corr, 
+                             gui_disp, widget_ratio = widget_ratio, 
+                             button_ratio = button_ratio, max_lines_nb = max_lines_nb)
     
     ppi = gui_params.ppi
     
@@ -1569,7 +1664,7 @@ def select_folder_gui_new(in_dir, titles, buttons_labels,
     select_button = tk.Button(win,
                           text=buttons_labels[0],
                           font=fonts['button'],
-                          command=outdir_folder_choice)
+                          command=_outdir_folder_choice)
     select_button.place(x=buttons_xpx[0], 
                     y=button_ypx, 
                     width=buttons_widthpx[0], 
@@ -1579,7 +1674,7 @@ def select_folder_gui_new(in_dir, titles, buttons_labels,
     help_button = tk.Button(win,
                         text=buttons_labels[1],
                         font=fonts['button'],
-                        command=help)
+                        command=_help)
     help_button.place(x=buttons_xpx[1], 
                   y=button_ypx, 
                   width=buttons_widthpx[1], 

@@ -272,7 +272,7 @@ def check_and_drop_columns(database,df,filename):
     
     return df
 
-
+                    
 def upgrade_col_names(corpus_folder):
     
     '''Add names to the colummn of the parsing and filter_<i> files to take into account the
@@ -285,7 +285,12 @@ def upgrade_col_names(corpus_folder):
     import os
     
     # 3rd party imports
+    import colorama
     import pandas as pd
+    from colorama import Back
+    from colorama import Fore
+    from colorama import Style
+    from pandas.core.groupby.groupby import DataError
     
     # Local imports
     from .BiblioSpecificGlobals import COL_NAMES
@@ -309,22 +314,21 @@ def upgrade_col_names(corpus_folder):
             for file in  [file for file in files
                           if (file.split('.')[1]=='dat') 
                           and (file!='database.dat')      # Not used this file is no longer generated
-                          and (file!='keywords.dat')      # Not used this file is no longer generated
-                          and (file!='authorsinst.dat')]: # authorsinst.dat is up to date by construction
+                          and (file!='keywords.dat') ]:   # Not used this file is no longer generated
                 try:
                     df = pd.read_csv(os.path.join(dirpath,file),sep='\t',header=None)
-                    if df.shape[0] == 0:
-                        print("-------------------EMPTY FILE-------------------")
-                        df.columns = COL_NAMES[dict_filename_conversion[file]]
-                        df.to_csv(os.path.join(dirpath,file),sep='\t',index=False)
-                        print(f'*** The EMPTY file {os.path.join(dirpath,file)} has been upgraded ***')
                     
-                    elif df.loc[0].tolist() == COL_NAMES[dict_filename_conversion[file]]:
+                    if df.loc[0].tolist() == COL_NAMES[dict_filename_conversion[file]]:
                         print(f'The file {os.path.join(dirpath,file)} is up to date')
                     else:
                         df.columns = COL_NAMES[dict_filename_conversion[file]]
                         df.to_csv(os.path.join(dirpath,file),sep='\t',index=False)
-                        print(f'*** The file {os.path.join(dirpath,file)} has been upgraded ***')
+                        print(Fore.GREEN + f'*** The file {os.path.join(dirpath,file)} has been upgraded ***' + Style.RESET_ALL)
+                except  pd.errors.EmptyDataError:
+                    df = pd.DataFrame(columns=COL_NAMES[dict_filename_conversion[file]])
+                    df.to_csv(os.path.join(dirpath,file),sep='\t',index=False)
+                    print(Fore.BLUE + f'*** The EMPTY file {os.path.join(dirpath,file)} has been upgraded ***' + Style.RESET_ALL)
                 except:
-                    print(f'ERROR with file {os.path.join(dirpath,file)}')
+                    print(Fore.WHITE + Back.RED + f'Warning: File {os.path.join(dirpath,file)} not recognized as a parsing file' + Style.RESET_ALL)
 
+                
