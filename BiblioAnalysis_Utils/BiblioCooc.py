@@ -172,13 +172,13 @@ def _generate_cooc_graph(df_corpus, size_min, item):
         
     """
 
-    # Standard library import
+    # Standard library import    
+    import math
     from collections import defaultdict
-    from more_itertools import distinct_combinations
 
     # 3rd party import
-    import math
     import networkx as nx
+    from more_itertools import distinct_combinations
     
     # Local imports
     from .BiblioGeneralGlobals import COUNTRIES_GPS
@@ -377,8 +377,10 @@ def _write_cooc_gdf(G, item, color, filename):
     
     """
 
-    # 3rd party import
+    # Standard library imports
     import math
+    
+    # 3rd party imports
     import networkx as nx
     
     # Local imports

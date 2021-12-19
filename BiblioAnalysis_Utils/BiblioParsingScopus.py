@@ -366,7 +366,7 @@ def _build_authors_countries_institutions_scopus(df_corpus, dic_failed, inst_fil
                            | 
                            [a-z]?Univ[\.a-zé]{0,6}$''',re.X)
     
-    template_inst = Template('[\s,;:.]?($inst)[\s,;:.\/].*$country$$')
+    template_inst = Template('[\s,;:.]?($inst)[\s,;:.\-\/].*$country$$')
 
     def address_inst_list(inst_filter_dic,address):    
         secondary_inst_list = []

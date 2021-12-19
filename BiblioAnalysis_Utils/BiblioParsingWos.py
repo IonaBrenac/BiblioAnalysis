@@ -330,10 +330,10 @@ def _build_authors_countries_institutions_wos(df_corpus, dic_failed, inst_filter
        Otherwise, the parsing fields are set to empty strings.
        
        For example, the 'C1' field string:
-       '[Boujjat, Houssame] CEA, LITEN Solar & Thermodynam Syst Lab L2ST, F-38054 Grenoble, France;
-       [Boujjat, Houssame] Univ Grenoble Alpes, F-38000 Grenoble, France; 
+       '[Boujjat, Houssame] CEA, LITEN Solar & Thermodynam Syst Lab L2ST, F-38054 Grenoble, France; 
        [Rodat, Sylvain; Chuayboon, Srirat] CNRS, Proc Mat & Solar Energy Lab,
        PROMES, 7 Rue Four Solaire, F-66120 Font Romeu, France;
+       [Boujjat, Houssame; Dupont, Sylvain] Univ Grenoble Alpes, F-38000 Grenoble, France;
        [Abanades, Stephane] CEA, Leti, 17 rue des Martyrs, F-38054 Grenoble, France;
        [Dupont, Sylvain] CEA, Liten, INES. 50 avenue du Lac Leman, F-73370 Le Bourget-du-Lac, France;
        [Durand, Maurice] CEA, INES, DTS, 50 avenue du Lac Leman, F-73370 Le Bourget-du-Lac, France;
@@ -345,7 +345,8 @@ def _build_authors_countries_institutions_wos(df_corpus, dic_failed, inst_filter
             0       0        CEA, LITEN Solar & Thermodynam , ...    France     CEA             LITEN
             0       0        Univ Grenoble Alpes,...                 France     University ...
             0       1        CNRS, Proc Mat Lab, PROMES,...          France     CNRS            PROMES
-            0       2        CNRS, Proc Mat Lab, PROMES, ...         France     CNRS            PROMES 
+            0       2        CNRS, Proc Mat Lab, PROMES, ...         France     CNRS            PROMES
+            0       3        Univ Grenoble Alpes,...                 France     University ...
             0       3        CEA, Leti, 17 rue des Martyrs,...       France     CEA             LETI
             0       4        CEA, Liten, INES. 50 avenue...          France     CEA             LITEN;INES
             0       5        CEA, INES, DTS, 50 avenue...            France     CEA             INES
@@ -367,6 +368,7 @@ def _build_authors_countries_institutions_wos(df_corpus, dic_failed, inst_filter
     '''
     
     # Standard library imports
+    import itertools
     import re
     from collections import namedtuple
     from string import Template
@@ -397,7 +399,7 @@ def _build_authors_countries_institutions_wos(df_corpus, dic_failed, inst_filter
                              [^;]*                      # or inside ] end of string or ;
                             (?=; | $ )''',re.X)
     
-    template_inst = Template('[\s,;:.]?($inst)[\s,;:.\/].*$country$$')
+    template_inst = Template('[\s,;:.]?($inst)[\s,;:.\-\/].*$country$$')
 
     def address_inst_list(inst_filter_dic,address):    
         secondary_inst_list = []
@@ -410,9 +412,10 @@ def _build_authors_countries_institutions_wos(df_corpus, dic_failed, inst_filter
 
         secondary_institutions = ';'.join(secondary_inst_list)
         return secondary_institutions
-
-    address_alias = COL_NAMES['auth_inst'][2]
+        
     pub_id_alias = COL_NAMES['auth_inst'][0]
+    pub_idx_author_alias = COL_NAMES['auth_inst'][1]
+    address_alias = COL_NAMES['auth_inst'][2]
     institution_alias = COL_NAMES['auth_inst'][4]
     sec_institution_alias = COL_NAMES['auth_inst'][5]
     
@@ -429,12 +432,15 @@ def _build_authors_countries_institutions_wos(df_corpus, dic_failed, inst_filter
             # Builds the list of tuples [(Author<0>, address<0>),(Author<0>, address<1>),...,(Author<i>, address<j>)...]
             list_author_address_tup = [author_address_tup(y,x[1]) for x in list_tuples for y in x[0]]
 
-            # Builds and appends the namedtuple addr_country_inst to the list 
-            idx_author, last_author = -1, '' # Initialization for the author and address counter
+            # Builds and appends the namedtuple addr_country_inst to the list             
+            # Build the dict {author:idx_author} preserving the author index in the author list
+            authors_list = list(itertools.chain(*list_authors)) # flatten a list of lists of authors.
+            authors_list = list(dict.fromkeys(authors_list)) # Drops duplicate preserving the author rank.
+            dict_idx = {author:idx_author for idx_author,author 
+                        in enumerate(authors_list)}
+                        
             for tup in list_author_address_tup:
-                if last_author != tup.author:
-                    idx_author += 1
-                last_author = tup.author
+                idx_author = dict_idx[tup.author]
 
                 author_country = country_normalization(tup.address.split(',')[-1].replace(';','').strip())
                 author_institution = tup.address.split(',')[0]
@@ -454,6 +460,8 @@ def _build_authors_countries_institutions_wos(df_corpus, dic_failed, inst_filter
                                                                 ''))
     df_addr_country_inst = pd.DataFrame.from_dict({label:[s[idx] for s in list_addr_country_inst] 
                                                    for idx,label in enumerate(COL_NAMES['auth_inst'][:-1])})
+                                                   
+    df_addr_country_inst.sort_values(by=[pub_id_alias,pub_idx_author_alias], inplace=True)
 
     if inst_filter_dic is not None:
         df_addr_country_inst[sec_institution_alias] = df_addr_country_inst.apply(lambda row:
