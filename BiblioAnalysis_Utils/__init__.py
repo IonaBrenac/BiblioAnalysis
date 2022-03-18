@@ -2,19 +2,19 @@ __version__ = '0.0.0'
 __author__ = 'BiblioAnalysis team'
 __license__ = 'MIT'
 
-from .BiblioCooc import *
-from .BiblioCoupling import *
-from .BiblioDescription import *
-from .BiblioFilter import *
-from .BiblioGeneralGlobals import *
-from .BiblioGraphPlot import *
-from .BiblioGui import *
-from .BiblioNltk import *
-from .BiblioParsingScopus import *
-from .BiblioParsingWos import *
-from .BiblioParsingUtils import *
-from .BiblioRefs import *
-from .BiblioSpecificGlobals import *
-from .BiblioSys import *
-from .BiblioTempDev import *
-from .BiblioUnusedGlobals import *
+from BiblioAnalysis_Utils.BiblioCooc import *
+from BiblioAnalysis_Utils.BiblioCoupling import *
+from BiblioAnalysis_Utils.BiblioDescription import *
+from BiblioAnalysis_Utils.BiblioFilter import *
+from BiblioAnalysis_Utils.BiblioGeneralGlobals import *
+from BiblioAnalysis_Utils.BiblioGraphPlot import *
+from BiblioAnalysis_Utils.BiblioGui import *
+from BiblioAnalysis_Utils.BiblioNltk import *
+from BiblioAnalysis_Utils.BiblioParsingScopus import *
+from BiblioAnalysis_Utils.BiblioParsingWos import *
+from BiblioAnalysis_Utils.BiblioParsingUtils import *
+from BiblioAnalysis_Utils.BiblioRefs import *
+from BiblioAnalysis_Utils.BiblioSpecificGlobals import *
+from BiblioAnalysis_Utils.BiblioSys import *
+from BiblioAnalysis_Utils.BiblioTempDev import *
+from BiblioAnalysis_Utils.BiblioUnusedGlobals import *

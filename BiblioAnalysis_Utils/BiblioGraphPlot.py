@@ -2,6 +2,8 @@ __all__ = ['cooc_graph_html_plot',
            'coupling_graph_html_nwplt',
            'coupling_graph_html_plot',]
 
+# Globals imported from BiblioAnalysis_Utils.BiblioSpecificGlobals: COOC_HTML_PARAM, COUPL_HTML_PARAM
+
 def cooc_graph_html_plot(G,html_file,heading, cooc_html_param=None):
     
     # 3rd party import
@@ -9,7 +11,7 @@ def cooc_graph_html_plot(G,html_file,heading, cooc_html_param=None):
     from pyvis.network import Network
     
     # Local imports
-    from .BiblioSpecificGlobals import COOC_HTML_PARAM
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import COOC_HTML_PARAM
     
     if cooc_html_param==None: cooc_html_param=COOC_HTML_PARAM
     algo = COOC_HTML_PARAM['algo']
@@ -92,7 +94,7 @@ def coupling_graph_html_nwplt(G,html_file,community_id,attr_dic,colored_attr,
     from pyvis.network import Network
     
     # Local imports
-    from .BiblioSpecificGlobals import COUPL_HTML_PARAM
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import COUPL_HTML_PARAM
 
     if coupl_html_param==None: coupl_html_param=COUPL_HTML_PARAM        
     background_color = COUPL_HTML_PARAM['background_color']

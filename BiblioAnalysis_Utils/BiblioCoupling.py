@@ -15,12 +15,12 @@ __all__ = ['build_coupling_graph',
            'save_graph_gexf',
            'add_item_attribute',]
 
-# Globals used from .BiblioSpecificGlobals: COUPL_AUTHORIZED_ITEMS,
-#                                           COUPL_FILENAME_GEXF,
-#                                           COUPL_FILENAME_XLSX, 
-#                                           COUPL_GLOBAL_VALUES,
-#                                           DIC_OUTDIR_DESCRIPTION,
-#                                           DIC_OUTDIR_PARSING 
+# Globals used from BiblioAnalysis_Utils.BiblioSpecificGlobals: COUPL_AUTHORIZED_ITEMS,
+#                                                               COUPL_FILENAME_GEXF,
+#                                                               COUPL_FILENAME_XLSX, 
+#                                                               COUPL_GLOBAL_VALUES,
+#                                                               DIC_OUTDIR_DESCRIPTION,
+#                                                               DIC_OUTDIR_PARSING 
 
 
 def build_coupling_graph(in_dir):
@@ -59,9 +59,9 @@ def build_coupling_graph(in_dir):
     import pandas as pd
     
     # Local imports
-    from .BiblioSpecificGlobals import COL_NAMES
-    from .BiblioSpecificGlobals import COUPL_GLOBAL_VALUES
-    from .BiblioSpecificGlobals import DIC_OUTDIR_PARSING
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import COL_NAMES
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import COUPL_GLOBAL_VALUES
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import DIC_OUTDIR_PARSING
         
     BCTHR = COUPL_GLOBAL_VALUES['BCTHR']
     RTUTHR = COUPL_GLOBAL_VALUES['RTUTHR']
@@ -262,9 +262,9 @@ def add_item_attribute(G, item, m_max_attrs,
     import pandas as pd
 
     # Local imports
-    from .BiblioSpecificGlobals import COUPL_AUTHORIZED_ITEMS
-    from .BiblioSpecificGlobals import DIC_OUTDIR_DESCRIPTION
-    from .BiblioSpecificGlobals import DIC_OUTDIR_PARSING
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import COUPL_AUTHORIZED_ITEMS
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import DIC_OUTDIR_DESCRIPTION
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import DIC_OUTDIR_PARSING
     
     # Check valid input arguments
     add_item_attribute.__annotations__ = {'G': nx.Graph, 'item': str, 'm_max_attrs': int,
@@ -406,9 +406,9 @@ def save_communities_xls(partition,in_dir,out_dir):
     import pandas as pd
     
     # Local imports
-    from .BiblioSpecificGlobals import COL_NAMES
-    from .BiblioSpecificGlobals import COUPL_FILENAME_XLSX
-    from .BiblioSpecificGlobals import DIC_OUTDIR_PARSING
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import COL_NAMES
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import COUPL_FILENAME_XLSX
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import DIC_OUTDIR_PARSING
   
     pub_id_alias = COL_NAMES['articles'][0]
     
@@ -437,7 +437,7 @@ def save_graph_gexf(G,save_dir):
     import networkx as nx
     
     # Local imports
-    from .BiblioSpecificGlobals import COUPL_FILENAME_GEXF
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import COUPL_FILENAME_GEXF
     
     nx.write_gexf(G,save_dir / Path(COUPL_FILENAME_GEXF))
     

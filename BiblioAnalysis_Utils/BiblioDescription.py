@@ -9,10 +9,10 @@ __all__ = ['describe_corpus',
            'plot_histo',
            'treemap_item']
 
-# Globals used from .BiblioSpecificGlobals: COOC_NETWORKS_FILE, DIC_OUTDIR_PARSING, 
-#                                           DIC_OUTDIR_DESCRIPTION, DISTRIBS_ITEM_FILE,
-#                                           LABEL_MEANING, NAME_MEANING, NMAX_NODES,
-#                                           VALID_LABEL_GRAPH
+# Globals used from BiblioAnalysis_Utils.BiblioSpecificGlobals: COOC_NETWORKS_FILE, DIC_OUTDIR_PARSING, 
+#                                                               DIC_OUTDIR_DESCRIPTION, DISTRIBS_ITEM_FILE,
+#                                                               LABEL_MEANING, NAME_MEANING, NMAX_NODES,
+#                                                               VALID_LABEL_GRAPH
 
 
 def _frequency_analysis(df,corpus_size):
@@ -99,7 +99,7 @@ def _generate_cooc(df,item):
     from collections import defaultdict
     
     # Local imports
-    from .BiblioSpecificGlobals import NMAX_NODES
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import NMAX_NODES
 
     #                           Builds nodes
     #----------------------------------------------------------------------------
@@ -159,7 +159,7 @@ def _describe_item(df,item,dic_distrib_item,list_cooc_nodes,list_cooc_edges ,fre
     '''
     
     # Local imports
-    from .BiblioSpecificGlobals import VALID_LABEL_GRAPH
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import VALID_LABEL_GRAPH
     
     # Deal with .csv files
     corpus_size = dic_distrib_item['N']  #Retrieve the corpus size from the json dict
@@ -190,8 +190,8 @@ def _process_article(in_dir, out_dir, usecols, dic_distrib_item, list_cooc_nodes
     import pandas as pd
     
     # Local imports
-    from .BiblioSpecificGlobals import DIC_OUTDIR_PARSING
-    from .BiblioSpecificGlobals import DIC_OUTDIR_DESCRIPTION
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import DIC_OUTDIR_PARSING
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import DIC_OUTDIR_DESCRIPTION
     
     try:
         df_articles = pd.read_csv(in_dir/Path(DIC_OUTDIR_PARSING['A']),
@@ -246,8 +246,8 @@ def _process_references(in_dir, out_dir, usecols, dic_distrib_item, list_cooc_no
     import pandas as pd
     
     # Local imports
-    from .BiblioSpecificGlobals import DIC_OUTDIR_PARSING
-    from .BiblioSpecificGlobals import DIC_OUTDIR_DESCRIPTION
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import DIC_OUTDIR_PARSING
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import DIC_OUTDIR_DESCRIPTION
     
     try:
         item ='R'
@@ -290,8 +290,8 @@ def _process_item(in_dir, out_dir, item, usecols, dic_distrib_item, list_cooc_no
     import pandas as pd
     
     # Local imports
-    from .BiblioSpecificGlobals import DIC_OUTDIR_PARSING
-    from .BiblioSpecificGlobals import DIC_OUTDIR_DESCRIPTION
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import DIC_OUTDIR_PARSING
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import DIC_OUTDIR_DESCRIPTION
     
     try:
         df = pd.read_csv(in_dir / Path(DIC_OUTDIR_PARSING[item]),
@@ -349,9 +349,9 @@ def describe_corpus(in_dir, out_dir, database_type, verbose):
     from pathlib import Path
     
     # Local imports
-    from .BiblioSpecificGlobals import COOC_NETWORKS_FILE
-    from .BiblioSpecificGlobals import COL_NAMES
-    from .BiblioSpecificGlobals import DISTRIBS_ITEM_FILE
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import COOC_NETWORKS_FILE
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import COL_NAMES
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import DISTRIBS_ITEM_FILE
     
     dic_distrib_item = {}
     list_cooc_nodes = []   # Only one .json file is used to describe all the graph
@@ -445,8 +445,8 @@ def plot_graph(in_dir,item):
     import pandas as pd
     
     # Local imports
-    from .BiblioSpecificGlobals import LABEL_MEANING
-    from .BiblioSpecificGlobals import VALID_LABEL_GRAPH
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import LABEL_MEANING
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import VALID_LABEL_GRAPH
 
 
     assert (item in VALID_LABEL_GRAPH),\
@@ -535,8 +535,8 @@ def plot_histo(item_label, file_distrib_item):
     import matplotlib.pyplot as plt
     
     # Local imports
-    from .BiblioSpecificGlobals import LABEL_MEANING
-    from .BiblioSpecificGlobals import NAME_MEANING
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import LABEL_MEANING
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import NAME_MEANING
 
     #file_distrib_item = in_dir / Path('DISTRIBS_itemuse.json')
     with open(file_distrib_item, 'r') as read_file:

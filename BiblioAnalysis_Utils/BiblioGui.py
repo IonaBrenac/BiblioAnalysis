@@ -10,12 +10,12 @@ __all__ = ['cooc_selection',
            'Select_multi_items',
            'treemap_item_selection',]
 
-# Globals used from .BiblioSys: DISPLAYS
-# Globals used from .BiblioGeneralGlobals: IN_TO_MM
+# Globals used from BiblioAnalysis_Utils.BiblioSys: DISPLAYS
+# Globals used from BiblioAnalysis_Utils.BiblioGeneralGlobals: IN_TO_MM
 
-from .BiblioSpecificGlobals import (DIC_OUTDIR_PARSING,
-                            LABEL_MEANING,
-                            COOC_AUTHORIZED_ITEMS_DICT)
+from BiblioAnalysis_Utils.BiblioSpecificGlobals import (DIC_OUTDIR_PARSING,
+                                                        LABEL_MEANING,
+                                                        COOC_AUTHORIZED_ITEMS_DICT)
 
 ACRONYME_MEANING = dict(zip(LABEL_MEANING.values(),LABEL_MEANING.keys()))
 
@@ -154,7 +154,7 @@ def item_selection(fact=3, win_widthmm=80, win_heightmm=130, font_size=16) :
     from tkinter import messagebox
     
     # Local imports
-    from .BiblioSys import DISPLAYS,GUI_DISP
+    from BiblioAnalysis_Utils.BiblioSys import DISPLAYS,GUI_DISP
     
     global selected_item
     
@@ -240,7 +240,7 @@ def treemap_item_selection(fact=2, win_widthmm=70, win_heightmm=105, font_size=1
     from tkinter import messagebox
     
     # Local imports
-    from .BiblioSys import DISPLAYS,GUI_DISP
+    from BiblioAnalysis_Utils.BiblioSys import DISPLAYS,GUI_DISP
     
     global selected_item
     
@@ -327,7 +327,7 @@ def cooc_selection(fact=3, win_widthmm=80, win_heightmm=100, font_size=16) :
     from tkinter import messagebox
     
     # Local imports
-    from .BiblioSys import DISPLAYS,GUI_DISP
+    from BiblioAnalysis_Utils.BiblioSys import DISPLAYS,GUI_DISP
       
     global selected_item, minimum_size_node
     
@@ -442,7 +442,7 @@ def merge_database_gui(fact=3, win_widthmm=80, win_heightmm=100, font_size=16):
     from pathlib import Path
     
     # Local imports
-    from .BiblioSys import DISPLAYS,GUI_DISP
+    from BiblioAnalysis_Utils.BiblioSys import DISPLAYS,GUI_DISP
     
     global database_type, database_filename, in_dir, out_dir
     
@@ -623,7 +623,7 @@ def _select_item_attributes(dg, item_tag, config_filter,
     import tkinter as tk 
    
     # Local imports
-    from .BiblioSys import DISPLAYS,GUI_DISP
+    from BiblioAnalysis_Utils.BiblioSys import DISPLAYS,GUI_DISP
     
     global val
  
@@ -734,7 +734,7 @@ def filters_selection(filters_filename, save_filename, parsing_dir,
     from pathlib import Path
     
     # Local imports
-    from .BiblioSys import DISPLAYS,GUI_DISP
+    from BiblioAnalysis_Utils.BiblioSys import DISPLAYS,GUI_DISP
     
     global number_of_call    
                 
@@ -939,7 +939,7 @@ def coupling_attr_selection(fact=2, win_widthmm=80, win_heightmm=60, font_size=1
     import tkinter.font as TkFont
     
     # Local imports
-    from .BiblioSys import DISPLAYS,GUI_DISP    
+    from BiblioAnalysis_Utils.BiblioSys import DISPLAYS,GUI_DISP    
     
     global selected_item, m_max_attrs
     
@@ -1048,7 +1048,7 @@ def Select_multi_items(list_item,mode='multiple', fact=2, win_widthmm=80, win_he
     import tkinter.font as TkFont
     
     # Local imports
-    from .BiblioSys import DISPLAYS,GUI_DISP
+    from BiblioAnalysis_Utils.BiblioSys import DISPLAYS,GUI_DISP
     
     global val
     
@@ -1125,7 +1125,7 @@ def filter_item_selection(fact=2, win_widthmm=80, win_heightmm=100, font_size=16
     import tkinter.font as TkFont
     
     # Local imports
-    from .BiblioSys import DISPLAYS,GUI_DISP
+    from BiblioAnalysis_Utils.BiblioSys import DISPLAYS,GUI_DISP
     
     global selected_item
 
@@ -1278,7 +1278,7 @@ def _str_size_mm(text, font, ppi):
     '''
 
     # Local imports
-    from .BiblioGeneralGlobals import IN_TO_MM
+    from BiblioAnalysis_Utils.BiblioGeneralGlobals import IN_TO_MM
        
     (w_px,h_px) = (font.measure(text),font.metrics("linespace"))
     w_mm = w_px * IN_TO_MM / ppi
@@ -1323,7 +1323,7 @@ def _mm_to_px(size_mm,ppi,fact=1.0):
     import math
     
     # Local imports
-    from .BiblioGeneralGlobals import IN_TO_MM
+    from BiblioAnalysis_Utils.BiblioGeneralGlobals import IN_TO_MM
 
     size_px = math.ceil((size_mm * fact / IN_TO_MM) * ppi)
     
@@ -1405,8 +1405,8 @@ def _gui_params(titles, buttons_labels, fonts, mm_size_corr,
     from collections import namedtuple
     
     # Local imports
-    from .BiblioSys import DISPLAYS
-    from .BiblioGeneralGlobals import IN_TO_MM
+    from BiblioAnalysis_Utils.BiblioSys import DISPLAYS
+    from BiblioAnalysis_Utils.BiblioGeneralGlobals import IN_TO_MM
     
     ############# Local parameters setting ############# 
 
@@ -1546,10 +1546,10 @@ def select_folder_gui_new(in_dir, titles, buttons_labels,
     import tkinter.font as TkFont
     
     # Local imports
-    from .BiblioSys import DISPLAYS
-    from .BiblioGeneralGlobals import IN_TO_MM
-    from .BiblioSpecificGlobals import FOLDER_SELECTION_HELP_TEXT
-    from .BiblioSpecificGlobals import GUI_BUTTON_RATIO, GUI_TEXT_MAX_LINES_NB, GUI_WIDGET_RATIO
+    from BiblioAnalysis_Utils.BiblioSys import DISPLAYS
+    from BiblioAnalysis_Utils.BiblioGeneralGlobals import IN_TO_MM
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import FOLDER_SELECTION_HELP_TEXT
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import GUI_BUTTON_RATIO, GUI_TEXT_MAX_LINES_NB, GUI_WIDGET_RATIO
     
     global out_dir
  

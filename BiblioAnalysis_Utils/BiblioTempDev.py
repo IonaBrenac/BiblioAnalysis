@@ -1,6 +1,6 @@
 __all__ = ['temporaldev_itemvalues_freq','read_config_temporaldev','write_config_temporaldev','temporaldev_result_toxlsx']
 
-from .BiblioSpecificGlobals import DIC_OUTDIR_DESCRIPTION
+#Globals imported from BiblioAnalysis_Utils.BiblioSpecificGlobals: DIC_OUTDIR_DESCRIPTION
 
 def temporaldev_itemvalues_freq(keyword_filters ,items, years, corpuses_folder):
     
@@ -22,9 +22,7 @@ def temporaldev_itemvalues_freq(keyword_filters ,items, years, corpuses_folder):
     import pandas as pd
     
     # Local imports
-    import BiblioAnalysis_Utils as bau
-    
-    DIC_OUTDIR_DESCRIPTION = bau.DIC_OUTDIR_DESCRIPTION
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import DIC_OUTDIR_DESCRIPTION
 
     def _filter(df,keyword_filter,mode):
         

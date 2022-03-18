@@ -23,10 +23,10 @@ The `build_item_cooc` function calls the following local functions of the module
 
 __all__ = ['build_item_cooc', 'plot_cooc_graph']
 
-# Globals used from .BiblioGeneralGlobals: COUNTRIES_GPS
-# Globals used from .BiblioSpecificGlobals: COOC_AUTHORIZED_ITEMS, COOC_AUTHORIZED_ITEMS_DICT, 
-#                                           COOC_COLOR_NODES, DIC_OUTDIR_PARSING,
-#                                           NODE_SIZE_REF, SIZE_MIN
+# Globals used from BiblioAnalysis_Utils.BiblioGeneralGlobals: COUNTRIES_GPS
+# Globals used from BiblioAnalysis_Utils.BiblioSpecificGlobals: COOC_AUTHORIZED_ITEMS, COOC_AUTHORIZED_ITEMS_DICT, 
+#                                                               COOC_COLOR_NODES, DIC_OUTDIR_PARSING,
+#                                                               NODE_SIZE_REF, SIZE_MIN
 
 
 def build_item_cooc(item, in_dir, out_dir, size_min=None):
@@ -63,10 +63,10 @@ def build_item_cooc(item, in_dir, out_dir, size_min=None):
     import pandas as pd
     
     # Local imports
-    from .BiblioSpecificGlobals import COOC_AUTHORIZED_ITEMS
-    from .BiblioSpecificGlobals import COOC_COLOR_NODES
-    from .BiblioSpecificGlobals import DIC_OUTDIR_PARSING
-    from .BiblioSpecificGlobals import SIZE_MIN
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import COOC_AUTHORIZED_ITEMS
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import COOC_COLOR_NODES
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import DIC_OUTDIR_PARSING
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import SIZE_MIN
     
     if size_min==None: size_min = SIZE_MIN
 
@@ -181,7 +181,7 @@ def _generate_cooc_graph(df_corpus, size_min, item):
     from more_itertools import distinct_combinations
     
     # Local imports
-    from .BiblioGeneralGlobals import COUNTRIES_GPS
+    from BiblioAnalysis_Utils.BiblioGeneralGlobals import COUNTRIES_GPS
 
     #                           Cleaning of the dataframe
     # -----------------------------------------------------------------------------------------
@@ -302,10 +302,10 @@ def plot_cooc_graph(G, item, size_min=None, node_size_ref=None):
     import matplotlib.pyplot as plt
     
     # Local imports
-    from .BiblioSpecificGlobals import COOC_AUTHORIZED_ITEMS
-    from .BiblioSpecificGlobals import COOC_AUTHORIZED_ITEMS_DICT
-    from .BiblioSpecificGlobals import NODE_SIZE_REF
-    from .BiblioSpecificGlobals import SIZE_MIN
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import COOC_AUTHORIZED_ITEMS
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import COOC_AUTHORIZED_ITEMS_DICT
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import NODE_SIZE_REF
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import SIZE_MIN
     
     if node_size_ref==None: size_min = NODE_SIZE_REF
     if size_min==None: size_min = SIZE_MIN    
@@ -384,7 +384,7 @@ def _write_cooc_gdf(G, item, color, filename):
     import networkx as nx
     
     # Local imports
-    from .BiblioGeneralGlobals import COUNTRIES_GPS
+    from BiblioAnalysis_Utils.BiblioGeneralGlobals import COUNTRIES_GPS
 
     assert isinstance(G, nx.classes.graph.Graph), "G should be a networkx Graph"
 

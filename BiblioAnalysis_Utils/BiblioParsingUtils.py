@@ -7,9 +7,9 @@ __all__ = ['biblio_parser',
            'upgrade_col_names',
            ]
 
-# Globals used from .BiblioGeneralGlobals: ALIAS_UK, CHANGE, COUNTRIES,
-# Globals used from .BiblioSpecificGlobals: BLACKLISTED_WORDS, INST_FILTER_DIC, 
-#                                           NLTK_VALID_TAG_LIST, NOUN_MINIMUM_OCCURRENCES
+# Globals used from BiblioAnalysis_Utils.BiblioGeneralGlobals: ALIAS_UK, CHANGE, COUNTRIES,
+# Globals used from BiblioAnalysis_Utils.BiblioSpecificGlobals: BLACKLISTED_WORDS, INST_FILTER_LIST, 
+#                                                               NLTK_VALID_TAG_LIST, NOUN_MINIMUM_OCCURRENCES
 
 
 def build_title_keywords(df):
@@ -52,9 +52,9 @@ def build_title_keywords(df):
     import numpy as np
     
     # Local imports
-    from .BiblioSpecificGlobals import NLTK_VALID_TAG_LIST
-    from .BiblioSpecificGlobals import NOUN_MINIMUM_OCCURRENCES
-    from .BiblioSpecificGlobals import BLACKLISTED_WORDS
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import NLTK_VALID_TAG_LIST
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import NOUN_MINIMUM_OCCURRENCES
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import BLACKLISTED_WORDS
     
     def tokenizer(text):
         
@@ -102,8 +102,8 @@ def country_normalization(country):
     '''
 
     # Local imports
-    from .BiblioGeneralGlobals import ALIAS_UK
-    from .BiblioGeneralGlobals import COUNTRIES
+    from BiblioAnalysis_Utils.BiblioGeneralGlobals import ALIAS_UK
+    from BiblioAnalysis_Utils.BiblioGeneralGlobals import COUNTRIES
     
     country_clean = country
     if country not in COUNTRIES:
@@ -144,7 +144,7 @@ def merge_database(database,filename,in_dir,out_dir):
     import pandas as pd
     
     # Local imports
-    from .BiblioSpecificGlobals import USECOLS_SCOPUS
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import USECOLS_SCOPUS
 
     list_data_base = []
     list_df = []
@@ -190,7 +190,7 @@ def name_normalizer(text):
     import unicodedata
     
     # Local imports
-    from .BiblioGeneralGlobals import CHANGE
+    from BiblioAnalysis_Utils.BiblioGeneralGlobals import CHANGE
 
     nfc = functools.partial(unicodedata.normalize,'NFD')
     
@@ -226,29 +226,29 @@ def name_normalizer(text):
            
     return text
 
-def biblio_parser(in_dir_parsing, out_dir_parsing, database, expert, rep_utils, inst_filter_dic=None):
+def biblio_parser(in_dir_parsing, out_dir_parsing, database, expert, rep_utils, inst_filter_list=None):
     
     '''Chooses the appropriate parser to parse wos or scopus databases.
     '''
     
     # Local imports
-    from .BiblioParsingScopus import biblio_parser_scopus
-    from .BiblioParsingWos import biblio_parser_wos
-    from .BiblioSpecificGlobals import INST_FILTER_DIC
+    from BiblioAnalysis_Utils.BiblioParsingScopus import biblio_parser_scopus
+    from BiblioAnalysis_Utils.BiblioParsingWos import biblio_parser_wos
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import INST_FILTER_LIST
     
-    if inst_filter_dic== None: inst_filter_dic = INST_FILTER_DIC
+    if inst_filter_list== None: inst_filter_list = INST_FILTER_LIST
     
     if database == "wos":
-        biblio_parser_wos(in_dir_parsing, out_dir_parsing, inst_filter_dic)
+        biblio_parser_wos(in_dir_parsing, out_dir_parsing, inst_filter_list)
     elif database == "scopus":
-        biblio_parser_scopus(in_dir_parsing, out_dir_parsing, rep_utils, inst_filter_dic)
+        biblio_parser_scopus(in_dir_parsing, out_dir_parsing, rep_utils, inst_filter_list)
     else:
         raise Exception("Sorry, unrecognized database {database} : should be wos or scopus ")
 
 def check_and_drop_columns(database,df,filename):
 
-    from .BiblioSpecificGlobals import COLUMN_LABEL_WOS 
-    from .BiblioSpecificGlobals import COLUMN_LABEL_SCOPUS     
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import COLUMN_LABEL_WOS 
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import COLUMN_LABEL_SCOPUS     
 
     # Check for missing mandatory columns
     if database == 'wos':
@@ -293,7 +293,7 @@ def upgrade_col_names(corpus_folder):
     from pandas.core.groupby.groupby import DataError
     
     # Local imports
-    from .BiblioSpecificGlobals import COL_NAMES
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import COL_NAMES
     
     # Beware: the new file authorsinst.dat is not present in the old parsing folders
     dict_filename_conversion  = {'addresses.dat':'address',

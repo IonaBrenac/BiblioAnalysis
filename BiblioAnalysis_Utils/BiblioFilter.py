@@ -4,8 +4,8 @@ __all__ = ['filter_corpus_new',
            'item_values_list',
            'read_config_filters',]
 
-# Functions used from .BiblioGui: Select_multi_items, filter_item_selection
-# Globals used from .BiblioSpecificGlobals: DIC_OUTDIR_PARSING
+# Functions used from BiblioAnalysis_Utils.BiblioGui: Select_multi_items, filter_item_selection
+# Globals used from BiblioAnalysis_Utils.BiblioSpecificGlobals: DIC_OUTDIR_PARSING
 
 def filter_corpus_new(in_dir, out_dir, verbose, file_config_filters):
     
@@ -82,8 +82,8 @@ def _filter_pub_id(combine,exclusion,filter_param,in_dir):
     import pandas as pd
     
     # Local imports
-    from .BiblioSpecificGlobals import DIC_OUTDIR_PARSING
-    from .BiblioSpecificGlobals import COL_NAMES
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import DIC_OUTDIR_PARSING
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import COL_NAMES
     
 
     filter_on = list(filter_param.keys()) # List of items to be filtered
@@ -265,7 +265,7 @@ def _save_filtered_files(tokeep,in_dir,out_dir):
     import pandas as pd
     
     # Local imports
-    from .BiblioSpecificGlobals import DIC_OUTDIR_PARSING
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import DIC_OUTDIR_PARSING
     
     t = Template('$colname in @tokeep') # Template for the query
 
@@ -350,8 +350,8 @@ def filters_modification(config_folder,file_config_filters):
     from pathlib import Path
     
     # Local imports
-    from .BiblioGui import Select_multi_items
-    from .BiblioGui import filter_item_selection
+    from BiblioAnalysis_Utils.BiblioGui import Select_multi_items
+    from BiblioAnalysis_Utils.BiblioGui import filter_item_selection
 
     # Identifying the item to be modified in the filters configuration
     filter_item = filter_item_selection()
