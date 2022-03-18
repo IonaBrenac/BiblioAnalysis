@@ -416,7 +416,7 @@ def _build_authors_countries_institutions_scopus(df_corpus, dic_failed, inst_fil
                         author_country='unknown'
                         warning = (f'WARNING: the invalid country name "{author_country_raw}" '
                                    f'in pub_id {pub_id} has been replaced by "unknown"'
-                                   f'in "_build_addresses_countries_institutions_scopus" function of "BiblioParsingScopus.py" module')
+                                   f'in "_build_authors_countries_institutions_scopus" function of "BiblioParsingScopus.py" module')
                         print(warning)
                    
                     author_institution = affiliation.split(',')[0]
