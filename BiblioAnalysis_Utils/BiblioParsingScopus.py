@@ -858,6 +858,48 @@ def _build_references_scopus(df_corpus):
     return df_references
 
 
+def _check_affiliation_column_scopus(df):
+    
+    '''
+    The `_check_affiliation_column_scopus` function checks the correcteness of the column affiliation of a df 
+    read from a csv scopus file.
+    A cell of the column affiliation should reads:
+    address<0>, country<0>;...; address<i>, country<i>;...
+    
+    Some cells can be misformatted with an uncorrect country field. The function eliminates, for each
+    cell of the column, those items address<i>, country<i> uncorrectly formatted. When such an item is detected
+    a warning message is printed.    
+    '''
+    
+    # Local imports
+    from BiblioAnalysis_Utils.BiblioParsingUtils import country_normalization 
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import COLUMN_LABEL_SCOPUS
+        
+    def _valid_affiliation(row):
+        nonlocal idx
+        idx += 1
+        valid_affiliation_list = []
+        for affiliation in row[COLUMN_LABEL_SCOPUS['affiliations']].split(';'):
+            raw_country = affiliation.split(',')[-1].strip()
+            if country_normalization(raw_country):
+                valid_affiliation_list.append(affiliation)
+            else:
+                warning = (f'\nWARNING in "_check_affiliation_column_scopus" function of "BiblioParsingScopus.py" module:'
+                           f'\nAt row {idx} of the scopus corpus, the invalid affiliation "{affiliation}" '
+                           f'has been droped from the list of affiliations. '
+                           f'\nTherefore, attention should be given to the resulting list of affiliations for each of the authors of this publication.\n' )           
+                print(warning)
+        if  valid_affiliation_list:  
+            return ';'.join(valid_affiliation_list)
+        else:
+            return 'unkown'
+    
+    idx = -1
+    df[COLUMN_LABEL_SCOPUS['affiliations']] = df.apply(_valid_affiliation,axis=1) 
+    
+    return df
+
+
 def biblio_parser_scopus(in_dir_parsing, out_dir_parsing, rep_utils, inst_filter_list):
     
     '''Using the files xxxx.csv stored in the folder rawdata, the function biblio_parser_scopus
@@ -918,6 +960,8 @@ def biblio_parser_scopus(in_dir_parsing, out_dir_parsing, rep_utils, inst_filter
     df = pd.read_csv(in_dir_parsing / Path(filename)) 
     
     df = check_and_drop_columns('scopus',df,filename)
+    
+    df = _check_affiliation_column_scopus(df)    
     
     dic_failed = {}
     dic_failed['number of article'] = len(df)
