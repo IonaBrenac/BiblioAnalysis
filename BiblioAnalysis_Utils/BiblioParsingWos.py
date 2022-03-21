@@ -209,6 +209,7 @@ def _build_addresses_countries_institutions_wos(df_corpus,dic_failed):
 
     # Standard library imports
     import re
+    from colorama import Fore
     from collections import namedtuple
     
     # 3rd party imports
@@ -267,7 +268,7 @@ def _build_addresses_countries_institutions_wos(df_corpus,dic_failed):
                     warning = (f'WARNING: the invalid country name "{author_country_raw}" '
                                f'in pub_id {pub_id} has been replaced by "unknown"'
                                f'in "_build_addresses_countries_institutions_wos" function of "BiblioParsingWos.py" module')
-                    print(warning)
+                    print(Fore.BLUE + warning + Fore.BLACK)
 
                 list_countries.append(country(pub_id,
                                               idx,
@@ -314,7 +315,7 @@ def _build_addresses_countries_institutions_wos(df_corpus,dic_failed):
     if not(len(df_address)==len(df_country)==len(df_institution)):
         warning = (f'WARNING: Lengths of "df_address", "df_country" and "df_institution" dataframes are not equal'
                    f'in "_build_addresses_countries_institutions_wos" function of "BiblioParsingWos.py" module')
-        print(warning)
+        print(Fore.BLUE + warning + Fore.BLACK)
     
     return df_address, df_country, df_institution
 
@@ -365,6 +366,7 @@ def _build_authors_countries_institutions_wos(df_corpus, dic_failed, inst_filter
     # Standard library imports
     import itertools
     import re
+    from colorama import Fore
     from collections import namedtuple
     from string import Template
     
@@ -442,7 +444,7 @@ def _build_authors_countries_institutions_wos(df_corpus, dic_failed, inst_filter
                     warning = (f'WARNING: the invalid country name "{author_country_raw}" '
                                f'in pub_id {pub_id} has been replaced by "unknown"'
                                f'in "_build_addresses_countries_institutions_wos" function of "BiblioParsingWos.py" module')
-                    print(warning)
+                    print(Fore.BLUE + warning + Fore.BLACK)
                 author_institution = tup.address.split(',')[0]
                 author_institution = re.sub(RE_SUB,'University'+' ', author_institution)
 

@@ -199,6 +199,7 @@ def _build_addresses_countries_institutions_scopus(df_corpus,dic_failed):
     
     # Standard library imports
     import re
+    from colorama import Fore
     from collections import namedtuple
     
     # 3rd party imports
@@ -246,7 +247,7 @@ def _build_addresses_countries_institutions_scopus(df_corpus,dic_failed):
                     warning = (f'WARNING: the invalid country name "{country_raw}" '
                                f'in pub_id {pub_id} has been replaced by "unknown"'
                                f'in "_build_addresses_countries_institutions_scopus" function of "BiblioParsingScopus.py" module')
-                    print(warning)
+                    print(Fore.BLUE + warning + Fore.BLACK)
 
                 list_countries.append(ref_country(pub_id,
                                                   idx_address,
@@ -294,7 +295,7 @@ def _build_addresses_countries_institutions_scopus(df_corpus,dic_failed):
     if not(len(df_address)==len(df_country)==len(df_institution)):
         warning = (f'WARNING: Lengths of "df_address", "df_country" and "df_institution" dataframes are not equal'
                    f'in "_build_addresses_countries_institutions_scopus" function of "BiblioParsingScopus.py" module')
-        print(warning)
+        print(Fore.BLUE + warning + Fore.BLACK)
     
     return df_address, df_country, df_institution
 
@@ -355,6 +356,7 @@ def _build_authors_countries_institutions_scopus(df_corpus, dic_failed, inst_fil
     
     # Standard library imports
     import re
+    from colorama import Fore
     from collections import namedtuple
     from string import Template
     
@@ -417,7 +419,7 @@ def _build_authors_countries_institutions_scopus(df_corpus, dic_failed, inst_fil
                         warning = (f'WARNING: the invalid country name "{author_country_raw}" '
                                    f'in pub_id {pub_id} has been replaced by "unknown"'
                                    f'in "_build_authors_countries_institutions_scopus" function of "BiblioParsingScopus.py" module')
-                        print(warning)
+                        print(Fore.BLUE + warning + Fore.BLACK)
                    
                     author_institution = affiliation.split(',')[0]
                     author_institution = re.sub(RE_SUB,'University'+' ', author_institution)
@@ -503,10 +505,6 @@ def _build_subjects_scopus(df_corpus,
 
     pub_id_alias = COL_NAMES['subject'][0]
     subject_alias = COL_NAMES['subject'][1] 
-    
-    path_scopus_cat_codes = Path(__file__).parent.parent / Path('BiblioAnalysis_RefFiles/scopus_cat_codes.txt')
-    path_scopus_journals_issn_cat = Path(__file__).parent.parent / Path('BiblioAnalysis_RefFiles/scopus_journals_issn_cat.txt')
-    
 
     # Builds the dict "code_cat" {ASJC classification codes:description} out 
     # of the file "scopus_cat_codes.txt"
@@ -611,15 +609,9 @@ def _build_sub_subjects_scopus(df_corpus,
     # Local imports
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import COL_NAMES
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import COLUMN_LABEL_SCOPUS
-    from BiblioAnalysis_Utils.BiblioSpecificGlobals import SCOPUS_JOURNALS_ISSN_CAT
-    from BiblioAnalysis_Utils.BiblioSpecificGlobals import SCOPUS_JOURNALS_ISSN_CAT
-    from BiblioAnalysis_Utils.BiblioSpecificGlobals import SCOPUS_CAT_CODES
     
     pub_id_alias = COL_NAMES['sub_subject'][0]
     sub_subject_alias = COL_NAMES['sub_subject'][1] 
-    
-    path_scopus_cat_codes = Path(__file__).parent.parent / Path('BiblioAnalysis_RefFiles') / Path(SCOPUS_CAT_CODES)
-    path_scopus_journals_issn_cat = Path(__file__).parent.parent / Path('BiblioAnalysis_RefFiles') / Path(SCOPUS_JOURNALS_ISSN_CAT)
 
     # Builds the dict "code_cat" {ASJC classification codes:description} out of the file "scopus_cat_codes.txt"
     # ex: {1000: 'Multidisciplinary', 1100: 'General Agricultural and Biological Sciences',...}
@@ -870,6 +862,8 @@ def _check_affiliation_column_scopus(df):
     cell of the column, those items address<i>, country<i> uncorrectly formatted. When such an item is detected
     a warning message is printed.    
     '''
+    # Standard library imports
+    from colorama import Fore
     
     # Local imports
     from BiblioAnalysis_Utils.BiblioParsingUtils import country_normalization 
@@ -888,7 +882,7 @@ def _check_affiliation_column_scopus(df):
                            f'\nAt row {idx} of the scopus corpus, the invalid affiliation "{affiliation}" '
                            f'has been droped from the list of affiliations. '
                            f'\nTherefore, attention should be given to the resulting list of affiliations for each of the authors of this publication.\n' )           
-                print(warning)
+                print(Fore.BLUE + warning + Fore.BLACK)
         if  valid_affiliation_list:  
             return ';'.join(valid_affiliation_list)
         else:
@@ -951,98 +945,109 @@ def biblio_parser_scopus(in_dir_parsing, out_dir_parsing, rep_utils, inst_filter
     for path, _, files in os.walk(in_dir_parsing):
         list_data_base.extend(Path(path) / Path(file) for file in files 
                                                       if file.endswith(".csv"))
-
+    
+    # Selecting the first csv file
     filename = list_data_base[0]
-    filename1 = rep_utils / Path(SCOPUS_CAT_CODES)
-    filename2 = rep_utils / Path(SCOPUS_JOURNALS_ISSN_CAT)
+    
+    # Setting the specific files for subjects ans sub-subjects assignement for scopus corpuses    
+    path_scopus_cat_codes = Path(__file__).parent.parent / rep_utils / Path(SCOPUS_CAT_CODES)
+    path_scopus_journals_issn_cat = Path(__file__).parent.parent / rep_utils / Path(SCOPUS_JOURNALS_ISSN_CAT)
 
-    
-    df = pd.read_csv(in_dir_parsing / Path(filename)) 
-    
-    df = check_and_drop_columns('scopus',df,filename)
-    
-    df = _check_affiliation_column_scopus(df)    
-    
+    # Reading and checking the corpus file
+    df_corpus = pd.read_csv(in_dir_parsing / Path(filename))     
+    df_corpus = check_and_drop_columns('scopus',df_corpus,filename)    
+    df_corpus = _check_affiliation_column_scopus(df_corpus)    
+
+    # Initializing the dic_failed dict for the parsing control
     dic_failed = {}
-    dic_failed['number of article'] = len(df)
+    dic_failed['number of article'] = len(df_corpus)
     
-    item = 'AU' # Deals with authors
-    df_AU = _build_authors_scopus(df_corpus=df)
+    # Building the file for authors (.dat)
+    item = 'AU' 
+    df_AU = _build_authors_scopus(df_corpus)
     df_AU.to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item]), 
                  index=False,
                  sep='\t')
 
-          # Deals with keywords
-    df_keyword_AK,df_keyword_IK, df_keyword_TK = _build_keywords_scopus(df_corpus=df,dic_failed=dic_failed)
-    
-    item = 'AK'  # Deals with authors keywords
+    # Building and saving the files for keywords
+    df_keyword_AK,df_keyword_IK, df_keyword_TK = _build_keywords_scopus(df_corpus,dic_failed=dic_failed)    
+      # Saving author keywords file (.dat)
+    item = 'AK'  
     df_keyword_AK.to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item]),
                 index=False,
                 sep='\t')
-    
-    item = 'IK'  # Deals with journal keywords
+      # Saving journal (indexed) keywords file (.dat)
+    item = 'IK' 
     df_keyword_IK.to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item]),
                 index=False,
                 sep='\t')
-    
-    item = 'TK'  # Deals with title keywords
+      # Saving title keywords file (.dat)
+    item = 'TK'  
     df_keyword_TK.to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item]),
                 index=False,
                 sep='\t')
     
-    item = 'AD'   # Deals with addresses
-    df_AD, df_CU, df_I  = _build_addresses_countries_institutions_scopus(df_corpus=df,
+    # Building and saving the files for addresses, countries and institutions
+    item = 'AD'  
+    df_AD, df_CU, df_I  = _build_addresses_countries_institutions_scopus(df_corpus,
                                                                          dic_failed=dic_failed)
+      # Saving addresses file (.dat)
     df_AD.to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item]),
                  index=False,
                  sep='\t')
-    
-    item = 'CU'   # Deals with counties    
+      # Saving countries file (.dat)  
+    item = 'CU'       
     df_CU.to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item]),
                  index=False, 
                  sep='\t')
-    
-    item = 'I'   # Deals with institutions
+      # Saving institutions file (.dat)    
+    item = 'I'   
     df_I.to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item]),
                 index=False,
                 sep='\t')    
-    
+
+    # Building the file for authors and their institutions (.dat) 
     item = 'I2' # Deals with authors and their institutions
-    df_I2 = _build_authors_countries_institutions_scopus(df, dic_failed, inst_filter_list)
+    df_I2 = _build_authors_countries_institutions_scopus(df_corpus, dic_failed, inst_filter_list)
     df_I2.to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item] ), 
                  index=False,
                  sep='\t')
-    
-    item = 'S'   # Deals with subjects
-    df_S = _build_subjects_scopus(df_corpus=df,
-                                  path_scopus_cat_codes=filename1,
-                                  path_scopus_journals_issn_cat=filename2,
+
+    # Building and saving the file for subjects (.dat)
+    item = 'S'
+    df_S = _build_subjects_scopus(df_corpus,
+                                  path_scopus_cat_codes,
+                                  path_scopus_journals_issn_cat,
                                   dic_failed=dic_failed)
     df_S.to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item]),
                 index=False,
                 sep='\t')
-    
-    item = 'S2'   # Deals with sub-subjects
-    df_S2 = _build_sub_subjects_scopus(df_corpus=df,
-                                       path_scopus_cat_codes=filename1,
-                                       path_scopus_journals_issn_cat=filename2,
+
+    # Building and saving the file for sub-subjects (.dat)
+    item = 'S2'  
+    df_S2 = _build_sub_subjects_scopus(df_corpus,
+                                       path_scopus_cat_codes,
+                                       path_scopus_journals_issn_cat,
                                        dic_failed=dic_failed)
     df_S2.to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item]),
                  index=False, 
                  sep='\t')
-    
-    item = 'A'   # Deals with articles
-    df_A = _build_articles_scopus(df_corpus=df)
+
+    # Building and saving the file for articles (.dat)
+    item = 'A'  
+    df_A = _build_articles_scopus(df_corpus)
     df_A.to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item]),
                 index=False,
                 sep='\t')
-           
-    item = 'R'   # Deals with references
-    df_R = _build_references_scopus(df_corpus=df)
+
+    # Building and saving the file for references (.dat)
+    item = 'R'  
+    df_R = _build_references_scopus(df_corpus)
     df_R.to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item]),
                 index=False, 
                 sep='\t')
     
+    # Saving the dic_failed dict for the parsing control (.json)
     with open(Path(out_dir_parsing) / Path('failed.json'), 'w') as write_json:
         json.dump(dic_failed, write_json,indent=4)
         

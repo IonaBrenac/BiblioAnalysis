@@ -8,7 +8,7 @@ __all__ = ['biblio_parser',
            ]
 
 # Globals used from BiblioAnalysis_Utils.BiblioGeneralGlobals: ALIAS_UK, CHANGE, COUNTRIES,
-# Globals used from BiblioAnalysis_Utils.BiblioSpecificGlobals: BLACKLISTED_WORDS, INST_FILTER_LIST, 
+# Globals used from BiblioAnalysis_Utils.BiblioSpecificGlobals: BLACKLISTED_WORDS, INST_FILTER_LIST, REP_UTILS
 #                                                               NLTK_VALID_TAG_LIST, NOUN_MINIMUM_OCCURRENCES
 
 
@@ -226,7 +226,7 @@ def name_normalizer(text):
            
     return text
 
-def biblio_parser(in_dir_parsing, out_dir_parsing, database, expert, rep_utils, inst_filter_list=None):
+def biblio_parser(in_dir_parsing, out_dir_parsing, database, expert, rep_utils=None, inst_filter_list=None):
     
     '''Chooses the appropriate parser to parse wos or scopus databases.
     '''
@@ -235,12 +235,14 @@ def biblio_parser(in_dir_parsing, out_dir_parsing, database, expert, rep_utils, 
     from BiblioAnalysis_Utils.BiblioParsingScopus import biblio_parser_scopus
     from BiblioAnalysis_Utils.BiblioParsingWos import biblio_parser_wos
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import INST_FILTER_LIST
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import REP_UTILS
     
     if inst_filter_list== None: inst_filter_list = INST_FILTER_LIST
     
     if database == "wos":
         biblio_parser_wos(in_dir_parsing, out_dir_parsing, inst_filter_list)
     elif database == "scopus":
+        if rep_utils == None: rep_utils = REP_UTILS
         biblio_parser_scopus(in_dir_parsing, out_dir_parsing, rep_utils, inst_filter_list)
     else:
         raise Exception("Sorry, unrecognized database {database} : should be wos or scopus ")

@@ -48,6 +48,7 @@ __all__ = ['BLACKLISTED_WORDS',
            'RE_REF_YEAR_SCOPUS',
            'RE_REF_YEAR_WOS',
            'RE_SUB',
+           'REP_UTILS',
            'SCOPUS_CAT_CODES',
            'SCOPUS_JOURNALS_ISSN_CAT',
            'SIZE_MIN',
@@ -333,7 +334,9 @@ RE_REF_YEAR_WOS = re.compile(',\s\d{4},')               # Captures: ", dddd,"
 
 RE_SUB = re.compile('''[a-z]?Univ[\.a-zé]{0,6}\s    # Captures alias of University
                     |[a-z]?Univ[\.a-zé]{0,6}$''',re.X)
-    
+
+REP_UTILS = 'BiblioAnalysis_RefFiles'
+
 SCOPUS_CAT_CODES = 'scopus_cat_codes.txt'
 
 SCOPUS_JOURNALS_ISSN_CAT = 'scopus_journals_issn_cat.txt' 
