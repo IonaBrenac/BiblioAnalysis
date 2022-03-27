@@ -19,6 +19,7 @@ __all__ = ['BLACKLISTED_WORDS',
            'COUPL_HTML_PARAM',
            'DIC_OUTDIR_DESCRIPTION',
            'DIC_OUTDIR_PARSING',
+           'DIC_INST_FILENAME',
            'DISTRIBS_ITEM_FILE',
            'ENCODING',
            'FIELD_SIZE_LIMIT',
@@ -90,7 +91,7 @@ COL_NAMES = {   'address':      [pub_id,
                                  'Idx_author',
                                  'Address',
                                  'Country',
-                                 'Institution',
+                                 'Institutions',
                                  'Secondary_institutions'
                                  ], 
                 'country':      [pub_id,
@@ -224,6 +225,8 @@ DIC_OUTDIR_PARSING = {'A':'articles.dat',
                       'S2':'subjects2.dat',
                       'R':'references.dat',
                      }
+
+DIC_INST_FILENAME = 'Inst_dic.csv'
 
 DISTRIBS_ITEM_FILE = 'DISTRIBS_itemuse.json'
 

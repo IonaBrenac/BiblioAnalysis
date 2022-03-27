@@ -2,10 +2,14 @@ __all__ = ['biblio_parser_wos','read_database_wos']
 
 # Globals used from BiblioAnalysis_Utils.BiblioSpecificGlobals: DIC_OUTDIR_PARSING, ENCODING,
 #                                                               FIELD_SIZE_LIMIT, USECOLS_WOS,
-#                                                               RE_ADDRESS, RE_AUTHOR, RE_REF_AUTHOR_WOS, RE_REF_JOURNAL_WOS,
-#                                                               RE_REF_PAGE_WOS, RE_REF_VOL_WOS, RE_REF_YEAR_WOS, RE_SUB, SYMBOL 
+#                                                               RE_ADDRESS, RE_AUTHOR,
+#                                                               RE_REF_AUTHOR_WOS, RE_REF_JOURNAL_WOS,
+#                                                               RE_REF_PAGE_WOS, RE_REF_VOL_WOS, 
+#                                                               RE_REF_YEAR_WOS, RE_SUB, SYMBOL 
 
-# Functions used from BiblioAnalysis_Utils.BiblioParsingUtils: build_title_keywords, country_normalization, name_normalizer
+# Functions used from BiblioAnalysis_Utils.BiblioParsingUtils: build_title_keywords, build_institutions_dic
+#                                                              country_normalization, name_normalizer 
+                                                              
 
 
 def _build_authors_wos(df_corpus):
@@ -193,7 +197,7 @@ def _build_addresses_countries_institutions_wos(df_corpus,dic_failed):
       
    df_institution: 
    
-   pub_id  idx_author   country
+   pub_id  idx_author   institution
      0       0          CEA
      0       1          University Grenoble Alpes
      0       2          CNRS
@@ -201,10 +205,14 @@ def _build_addresses_countries_institutions_wos(df_corpus,dic_failed):
      0       4          CNRS
 
     Args:
-        df_corpus (dataframe): the dataframe of the wos/scopus corpus
+        df_corpus (dataframe): the dataframe of the wos/scopus corpus.
 
     Returns:
-        The dataframe df_address, df_country, df_institution
+        The dataframe df_address, df_country, df_institution.
+        
+    Notes:
+        The globals 'COL_NAMES', 'COLUMN_LABEL_WOS', 'RE_ADDRESS', 'RE_AUTHOR' and 'RE_SUB' are used.
+        The function `country_normalization`is used from `BiblioAnalysis_utils` package.
     '''
 
     # Standard library imports
@@ -255,8 +263,8 @@ def _build_addresses_countries_institutions_wos(df_corpus,dic_failed):
                                               idx,
                                               author_address))
 
-                author_institution = author_address.split(',')[0]
-                author_institution = re.sub(RE_SUB,'University'+' ', author_institution)
+                author_institution_raw = author_address.split(',')[0]
+                author_institution = re.sub(RE_SUB,'University'+' ', author_institution_raw)
                 list_institutions.append(institution(pub_id,
                                                      idx,
                                                      author_institution))
@@ -340,27 +348,48 @@ def _build_authors_countries_institutions_wos(df_corpus, dic_failed, inst_filter
        [Durand, Maurice] CEA, INES, DTS, 50 avenue du Lac Leman, F-73370 Le Bourget-du-Lac, France;
        [David, David] Lund University, Department of Physical Geography and Ecosystem Science (INES), Lund, Sweden'
 
-        will be parsed in the following dataframe:
+        will be parsed in the "df_addr_country_inst" dataframe if affiliation filter is not defined (initialization step):
    
-        pub_id  idx_author                     address               country    institution     LITEN_France  INES_France PROMES_France Lund..._Sweden        
-            0       0        CEA, LITEN Solar & Thermodynam , ...    France     CEA             1              0            0            0
-            0       0        Univ Grenoble Alpes,...                 France     University ...  0              0            0            0
-            0       1        CNRS, Proc Mat Lab, PROMES,...          France     CNRS            0              0            1            0
-            0       2        CNRS, Proc Mat Lab, PROMES, ...         France     CNRS            0              0            1            0     
-            0       3        CEA, Leti, 17 rue des Martyrs,...       France     CEA             0              0            0            0           
-            0       4        CEA, Liten, INES. 50 avenue...          France     CEA             1              1            0            0    
-            0       5        CEA, INES, DTS, 50 avenue...            France     CEA             0              1            0            0
-            0       6        Lund University,...(INES),...           Sweden     Lund Univ...    0              0            0            1            
+        pub_id  idx_author                     address               country    institutions                   
+            0       0        CEA, LITEN Solar & Thermodynam , ...    France     CEA_France;LITEN_France        
+            0       0        Univ Grenoble Alpes,...                 France     UGA_France;Universities_France      
+            0       1        CNRS, Proc Mat Lab, PROMES,...          France     CNRS_France;PROMES_France                                  
+            0       2        CNRS, Proc Mat Lab, PROMES, ...         France     CNRS_France;PROMES_France           
+            0       3        CEA, Leti, 17 rue des Martyrs,...       France     CEA_France;LETI_France                        
+            0       4        CEA, Liten, INES. 50 avenue...          France     CEA_France;LITEN_France;INES_France               
+            0       5        CEA, INES, DTS, 50 avenue...            France     CEA_France;INES_France             
+            0       6        Lund University,...(INES),...           Sweden     Lund Univ_Sweden;Universities_Sweden               
         
-        with the affiliation filter based on the following list of tuples (institution, country):
-        inst_filter_list = [('LITEN','France'), ('INES','France'),('PROMES','France'), (Lund University, Sweden)] 
-
+        The institutions are identified and normalized using "inst_dic" dict which should be specified by the user.
+        
+        If affiliation filter is defined based on the following list of tuples (institution, country), 
+        inst_filter_list = [('LITEN','France'),('INES','France'),('PROMES','France'), (Lund University, Sweden)]. 
+        
+        The "df_addr_country_inst" dataframe will be expended with the following columns (for pub_id = 0):
+            LITEN_France  INES_France  PROMES_France  Lund University_Sweden                   
+                 1            0              0                  0             
+                 0            0              0                  0                              
+                 0            0              1                  0                     
+                 0            0              1                  0             
+                 0            0              0                  0             
+                 1            1              0                  0                              
+                 0            1              0                  0                              
+                 0            0              0                  1                      
+                 
+                 
     Args:
         df_corpus (dataframe): the dataframe of the wos corpus.
-        inst_filter_list (list): the affiliation filter list of tuples (institution, country)
+        dic_failed (dict): the dict to be extended with key "'authors_inst'" and value (%) of the parsing success.
+        inst_filter_list (list): the affiliation filter list of tuples (institution, country) 
+                                 which value is 'None' at initialization of the parsing.
                             
     Returns:
-        The dataframe df_addr_country_inst.
+        (dataframe):  "df_addr_country_inst".
+        
+    Notes:
+        The globals 'COL_NAMES', 'COLUMN_LABEL_WOS', 'RE_ADDRESS', 'RE_AUTHOR', 'RE_SUB' and 'SYMBOL' are used.
+        The functions `build_institutions_dic`and `country_normalization` are used 
+        from `BiblioAnalysis_utils` package.
     '''
     
     # Standard library imports
@@ -375,6 +404,7 @@ def _build_authors_countries_institutions_wos(df_corpus, dic_failed, inst_filter
     from fuzzywuzzy import process
     
     # Local imports
+    from BiblioAnalysis_Utils.BiblioParsingUtils import build_institutions_dic
     from BiblioAnalysis_Utils.BiblioParsingUtils import country_normalization
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import COL_NAMES
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import COLUMN_LABEL_WOS
@@ -386,7 +416,28 @@ def _build_authors_countries_institutions_wos(df_corpus, dic_failed, inst_filter
     addr_country_inst = namedtuple('address',COL_NAMES['auth_inst'][:-1] )
     author_address_tup = namedtuple('author_address','author address')
     
-    template_inst = Template('[$symbol1]?($inst)[$symbol2].*($country)(?:$$|;)')    
+    template_inst = Template('[$symbol1]?($inst)[$symbol2].*($country)(?:$$|;)')  
+    
+    # Definition of internal functions
+    def _address_inst_full_list(address, inst_dic):
+
+        country_raw = address.split(',')[-1].strip()
+        country = country_normalization(country_raw)
+
+        inst_full_list = []        
+        for raw_inst, norm_inst in inst_dic.items():  
+            raw_inst_split = raw_inst.split()
+            template_inst = Template(r'\s+'.join([r'(\b$inst'+str(i)+r'\b)' for i in range(len(raw_inst_split))]))
+            dic = {'inst'+str(i):inst for i,inst in enumerate(raw_inst_split)}
+            re_inst  = re.compile(template_inst.substitute(dic), re.IGNORECASE)
+            if re_inst.findall(address):
+                inst_full_list.append(norm_inst + '_' + country)
+        if inst_full_list:
+            inst_full_list_str = ';'.join(inst_full_list)
+        else:
+            inst_full_list_str = address.split(',')[0] + '_' + country
+
+        return inst_full_list_str
 
     def _address_inst_list(inst_filter_list,address):
 
@@ -401,8 +452,7 @@ def _build_authors_countries_institutions_wos(df_corpus, dic_failed, inst_filter
                 secondary_institutions.append(1)
             else:
                 secondary_institutions.append(0)  
-                
-        
+             
         return secondary_institutions
         
     pub_id_alias = COL_NAMES['auth_inst'][0]
@@ -411,19 +461,23 @@ def _build_authors_countries_institutions_wos(df_corpus, dic_failed, inst_filter
     institution_alias = COL_NAMES['auth_inst'][4]
     sec_institution_alias = COL_NAMES['auth_inst'][5]
     
+    inst_dic = build_institutions_dic(rep_utils = None, dic_inst_filename = None)    
+    
     list_addr_country_inst = []
     
     for pub_id, affiliation in zip(df_corpus.index,
                                    df_corpus[COLUMN_LABEL_WOS['authors_with_affiliations']]):
         if '['  in affiliation:  # Proceed if the field author is present in affiliation.
+
+            
             # From the wos column C1 builds the list of tuples [([Author1, Author2,...], address1),...].
             list_authors = [[x.strip() for x in authors.split(';')] for authors in RE_AUTHOR.findall(affiliation)]
             list_affiliation = [x.strip() for x in RE_ADDRESS.findall(affiliation)]
             list_affiliation = list_affiliation if list_affiliation else ['']
-            list_tuples = tuple(zip(list_authors, list_affiliation))
+            list_tuples = tuple(zip(list_authors, list_affiliation)) 
 
             # Builds the list of tuples [(Author<0>, address<0>),(Author<0>, address<1>),...,(Author<i>, address<j>)...]
-            list_author_address_tup = [author_address_tup(y,x[1]) for x in list_tuples for y in x[0]]
+            list_author_address_tup = [author_address_tup(y,x[1]) for x in list_tuples for y in x[0]]            
             
             # Build the dict {author:idx_author} preserving the author index in the author list
             authors_list = list(itertools.chain(*list_authors)) # flatten a list of lists of authors.
@@ -437,6 +491,7 @@ def _build_authors_countries_institutions_wos(df_corpus, dic_failed, inst_filter
                         
             for tup in list_author_address_tup:
                 idx_author = dict_idx[tup.author]
+                
                 author_country_raw = tup.address.split(',')[-1].replace(';','').strip()
                 author_country = country_normalization(author_country_raw)
                 if author_country == '':
@@ -445,14 +500,17 @@ def _build_authors_countries_institutions_wos(df_corpus, dic_failed, inst_filter
                                f'in pub_id {pub_id} has been replaced by "unknown"'
                                f'in "_build_addresses_countries_institutions_wos" function of "BiblioParsingWos.py" module')
                     print(Fore.BLUE + warning + Fore.BLACK)
-                author_institution = tup.address.split(',')[0]
-                author_institution = re.sub(RE_SUB,'University'+' ', author_institution)
+
+                
+                author_address_raw = tup.address
+                author_address = re.sub(RE_SUB,'University' + ' ', author_address_raw)
+                author_institutions = _address_inst_full_list(author_address, inst_dic)
 
                 list_addr_country_inst.append(addr_country_inst(pub_id,
                                                                 idx_author,
                                                                 tup.address,
                                                                 author_country,
-                                                                author_institution))
+                                                                author_institutions))
                 
         else:  # If the field author is not present in affiliation complete namedtuple with ''
             list_addr_country_inst.append(addr_country_inst(pub_id,
@@ -460,28 +518,33 @@ def _build_authors_countries_institutions_wos(df_corpus, dic_failed, inst_filter
                                                                 '',
                                                                 '',
                                                                 ''))
+    # Building the a first version of the returned dataframe with 'list_addr_country_inst'
+    # with columns "COL_NAMES['auth_inst'][:-1]"
     df_addr_country_inst = pd.DataFrame.from_dict({label:[s[idx] for s in list_addr_country_inst] 
                                                    for idx,label in enumerate(COL_NAMES['auth_inst'][:-1])})
-                                                   
-    if inst_filter_list is not None:
+
+    if inst_filter_list is not None:        
+        # Building the "sec_institution_alias" column in the returned dataframe using "inst_filter_list"
         df_addr_country_inst[sec_institution_alias] = df_addr_country_inst.apply(lambda row:
                                                                                  _address_inst_list(inst_filter_list,row[address_alias]),
                                                                                  axis = 1)
-        col_names = [f'{x[0]}_{x[1]}' for x in inst_filter_list]
-        
+
+        # Adding a column in the return dataframe for each of the institutions indicated in the institutions filter
+        col_names = [f'{x[0]}_{x[1]}' for x in inst_filter_list]        
         df_addr_country_inst_split = pd.DataFrame(df_addr_country_inst['Secondary_institutions'].sort_index().to_list(),
                                               columns=col_names)
-
         df_addr_country_inst = pd.concat([df_addr_country_inst, df_addr_country_inst_split], axis=1)
 
-        df_addr_country_inst.drop(['Secondary_institutions'], axis=1, inplace=True)
+        df_addr_country_inst.drop([sec_institution_alias], axis=1, inplace=True)
         
+    # Sorting the values in the dataframe returned by two columns
     df_addr_country_inst.sort_values(by=[pub_id_alias,pub_idx_author_alias], inplace=True)
     
+    # Updating the dic_failed dict
     list_id = df_addr_country_inst[df_addr_country_inst[institution_alias] == ''][pub_id_alias].values
     dic_failed['authors_inst'] = {'success (%)':100*(1-len(list_id)/len(df_corpus)),
-                                  pub_id_alias:[int(x) for x in list(list_id)]}
-    
+                                  pub_id_alias:[int(x) for x in list(list_id)]}    
+
     return df_addr_country_inst
 
 
@@ -824,7 +887,6 @@ def biblio_parser_wos(in_dir_parsing, out_dir_parsing, inst_filter_list):
     for path, _, files in os.walk(in_dir_parsing):
         list_data_base.extend(Path(path) / Path(file) for file in files
                                                       if file.endswith(".txt"))
-
     filename = list_data_base[0]
     
     df = read_database_wos(filename)
@@ -875,7 +937,7 @@ def biblio_parser_wos(in_dir_parsing, out_dir_parsing, inst_filter_list):
     df_I2 = _build_authors_countries_institutions_wos(df, dic_failed, inst_filter_list)
     df_I2.to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item] ), 
                  index=False,
-                 sep='\t') 
+                sep='\t') 
     
     item = 'S'   # Deals with subjects
     df_S = _build_subjects_wos(df,dic_failed)

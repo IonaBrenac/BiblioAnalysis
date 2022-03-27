@@ -10,6 +10,8 @@ __all__ = ['cooc_selection',
            'Select_multi_items',
            'treemap_item_selection',]
 
+# To Do: change 'Select_multi_items' to 'select_multi_items'
+
 # Globals used from BiblioAnalysis_Utils.BiblioSys: DISPLAYS
 # Globals used from BiblioAnalysis_Utils.BiblioGeneralGlobals: IN_TO_MM
 
