@@ -10,7 +10,8 @@ __all__ = ['biblio_parser',
            ]
 
 # Globals used from BiblioAnalysis_Utils.BiblioGeneralGlobals:  ALIAS_UK, CHANGE, COUNTRIES,
-# Globals used from BiblioAnalysis_Utils.BiblioSpecificGlobals: BLACKLISTED_WORDS, DIC_INST_FILENAME,                 #                 #.                             #                                                               INST_FILTER_LIST, REP_UTILS, 
+# Globals used from BiblioAnalysis_Utils.BiblioSpecificGlobals: BLACKLISTED_WORDS, DIC_INST_FILENAME,                
+#                                                               INST_FILTER_LIST, REP_UTILS, 
 #                                                               NLTK_VALID_TAG_LIST, NOUN_MINIMUM_OCCURRENCES
 
 
@@ -161,7 +162,7 @@ def build_institutions_dic(rep_utils = None, dic_inst_filename = None):
     if rep_utils == None: rep_utils = REP_UTILS 
     
     # Setting the file path for dic_inst_filename file reading    
-    path_dic_inst = Path(__file__).parent.parent / rep_utils / Path(dic_inst_filename)
+    path_dic_inst = Path(__file__).parent / rep_utils / Path(dic_inst_filename)
     
     # Reading and cleaning the dic_inst_filename file
     inst_dic = pd.read_csv(path_dic_inst,sep=':',header=None)

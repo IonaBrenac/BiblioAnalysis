@@ -995,8 +995,8 @@ def biblio_parser_scopus(in_dir_parsing, out_dir_parsing, rep_utils, inst_filter
     filename = list_data_base[0]
     
     # Setting the specific file paths for subjects ans sub-subjects assignement for scopus corpuses    
-    path_scopus_cat_codes = Path(__file__).parent.parent / rep_utils / Path(SCOPUS_CAT_CODES)
-    path_scopus_journals_issn_cat = Path(__file__).parent.parent / rep_utils / Path(SCOPUS_JOURNALS_ISSN_CAT)
+    path_scopus_cat_codes = Path(__file__).parent / rep_utils / Path(SCOPUS_CAT_CODES)
+    path_scopus_journals_issn_cat = Path(__file__).parent / rep_utils / Path(SCOPUS_JOURNALS_ISSN_CAT)
 
     # Reading and checking the corpus file
     df_corpus = pd.read_csv(in_dir_parsing / Path(filename))     
