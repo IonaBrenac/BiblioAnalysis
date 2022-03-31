@@ -3,16 +3,24 @@ __all__ = ['biblio_parser',
            'build_title_keywords',
            'check_and_drop_columns',
            'country_normalization',
+           'extend_author_institutions',
            'merge_database',
            'name_normalizer',
            'setting_secondary_inst_filter',
            'upgrade_col_names',
            ]
 
+# 
 # Globals used from BiblioAnalysis_Utils.BiblioGeneralGlobals:  ALIAS_UK, CHANGE, COUNTRIES,
-# Globals used from BiblioAnalysis_Utils.BiblioSpecificGlobals: BLACKLISTED_WORDS, DIC_INST_FILENAME,                
+# Globals used from BiblioAnalysis_Utils.BiblioSpecificGlobals: BLACKLISTED_WORDS, COL_NAMES
+#                                                               DIC_INST_FILENAME, DIC_OUTDIR_PARSING               
 #                                                               INST_FILTER_LIST, REP_UTILS, 
 #                                                               NLTK_VALID_TAG_LIST, NOUN_MINIMUM_OCCURRENCES
+#                                                               USECOLS_SCOPUS
+
+# Functions used from BiblioAnalysis_Utils.BiblioGui: Select_multi_items
+# Functions used from BiblioAnalysis_Utils.BiblioParsingScopus: biblio_parser_scopus
+# Functions used from BiblioAnalysis_Utils.BiblioParsingWos: biblio_parser_wos
 
 
 def build_title_keywords(df):
@@ -240,6 +248,9 @@ def merge_database(database,filename,in_dir,out_dir):
         in_dir (str): name of the folder where the databases are stored
         out_dir (str): name of the folder where the merged databases will be stored
     
+    Notes:
+        The USECOLS_SCOPUS global is used.
+        
     '''
     # Standard library imports
     import os
@@ -288,6 +299,9 @@ def name_normalizer(text):
     
     Returns
         The normalized text
+        
+    Notes:
+        The CHANGE global is used.
     '''
 
     # Standard library imports
@@ -440,3 +454,81 @@ def upgrade_col_names(corpus_folder):
                     print(Fore.WHITE + Back.RED + f'Warning: File {os.path.join(dirpath,file)} not recognized as a parsing file' + Style.RESET_ALL)
 
                 
+def extend_author_institutions(in_dir,inst_filter_list):
+    ''' The `extend_author_institutions`function extends the .dat file of authors with institutions 
+    initialy obtained by the parsing of the corpus, with complementary information about institutions
+    selected by the user.
+    
+    Args:
+        in_dir (path): path to the .dat file of authors with institutions
+        inst_filter_list (list): the affiliation filter list of tuples (institution, country) 
+
+    Retruns:
+        None
+        
+    Notes:
+        The globals 'COL_NAMES' and 'DIC_OUTDIR_PARSING' are used
+        from `BiblioAnalysis_utils` package.
+    
+    '''
+    
+    # Standard library imports
+    from pathlib import Path
+    
+    # 3rd party imports
+    import pandas as pd
+    
+    # Local imports
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import COL_NAMES
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import DIC_OUTDIR_PARSING
+    
+    def _address_inst_list(inst_names_list,institutions):
+
+        secondary_institutions = []
+        for inst in inst_names_list:
+            if inst in institutions:
+                secondary_institutions.append(1)
+            else:
+                secondary_institutions.append(0)  
+             
+        return secondary_institutions
+    
+    institutions_alias = COL_NAMES['auth_inst'][4]
+    sec_institutions_alias = COL_NAMES['auth_inst'][5]
+    
+    # Setting the key for the name of the '.dat' file of authors with institutions 
+    # obtained by parsing the corpus
+    item = 'I2' 
+    
+    # Reading the '.dat' file                   
+    read_usecols = [COL_NAMES['auth_inst'][x] for x in [0,1,2,3,4]]     
+    df_I2= pd.read_csv(in_dir / Path(DIC_OUTDIR_PARSING[item]),
+                     sep='\t',
+                     usecols=read_usecols)
+    
+    # Setting an institution name for each of the institutions indicated in the institutions filter
+    inst_names_list = [f'{x[0]}_{x[1]}' for x in inst_filter_list]   
+    
+    # Building the "sec_institution_alias" column in the 'df_I2' dataframe using "inst_filter_list"
+    df_I2[sec_institutions_alias] = df_I2.apply(lambda row:
+                                             _address_inst_list(inst_names_list,row[institutions_alias]),
+                                             axis = 1)
+
+    # Distributing in a 'df_inst_split' df the value lists of 'df_I2[sec_institutions_alias]' column  
+    # into columns which names are in 'inst_names_list' list     
+    df_inst_split = pd.DataFrame(df_I2[sec_institutions_alias].sort_index().to_list(),
+                                          columns=inst_names_list)
+    
+    # Extending the 'df' dataframe with 'df_inst_split' dataframe
+    df_I2 = pd.concat([df_I2, df_inst_split], axis=1)
+
+    # Droping the 'df[sec_institutions_alias]' column which is no more usefull
+    df_I2.drop([sec_institutions_alias], axis=1, inplace=True)
+    
+    # Saving the extended 'df_I2' dataframe in the same '.dat' file 
+    df_I2.to_csv(in_dir/ Path(DIC_OUTDIR_PARSING[item]), 
+                 index=False,
+                 sep='\t') 
+            
+            
+            
