@@ -1,14 +1,15 @@
 __all__ = ['biblio_parser_wos','read_database_wos']
 
-# Globals used from BiblioAnalysis_Utils.BiblioSpecificGlobals: DIC_OUTDIR_PARSING, ENCODING,
-#                                                               FIELD_SIZE_LIMIT, USECOLS_WOS,
+# Globals used from BiblioAnalysis_Utils.BiblioSpecificGlobals: DIC_OUTDIR_PARSING, DIC_DOCTYPE, 
+#                                                               ENCODING, FIELD_SIZE_LIMIT,
 #                                                               RE_ADDRESS, RE_AUTHOR,
 #                                                               RE_REF_AUTHOR_WOS, RE_REF_JOURNAL_WOS,
 #                                                               RE_REF_PAGE_WOS, RE_REF_VOL_WOS, 
-#                                                               RE_REF_YEAR_WOS, RE_SUB, SYMBOL 
+#                                                               RE_REF_YEAR_WOS, RE_SUB, SYMBOL, 
+#                                                               UNKNOWN, USECOLS_WOS, WOS
 
 # Functions used from BiblioAnalysis_Utils.BiblioParsingUtils: build_title_keywords, build_institutions_dic
-#                                                              country_normalization, name_normalizer 
+#                                                              country_normalization, normalize_journal_names, name_normalizer 
                                                               
 
 
@@ -99,6 +100,7 @@ def _build_keywords_wos(df_corpus,dic_failed):
     from BiblioAnalysis_Utils.BiblioParsingUtils import build_title_keywords    
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import COL_NAMES
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import COLUMN_LABEL_WOS
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import UNKNOWN
 
     key_word = namedtuple('key_word',COL_NAMES['keywords'] )
     
@@ -121,7 +123,7 @@ def _build_keywords_wos(df_corpus,dic_failed):
         list_keywords_IK = keywords_IK.split(';')
         for keyword_IK in list_keywords_IK:
             keyword_IK = keyword_IK.lower().strip()
-            if keyword_IK == 'null': keyword_IK = 'unknown' # replace 'null' by the keyword 'unknown'
+            if keyword_IK == 'null': keyword_IK = UNKNOWN # replace 'null' by the keyword UNKNOWN
             list_keyword_IK.append(key_word(pub_id,
                                             keyword_IK if keyword_IK != 'null' else '”null”'))
             
@@ -230,6 +232,7 @@ def _build_addresses_countries_institutions_wos(df_corpus,dic_failed):
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import RE_ADDRESS
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import RE_AUTHOR
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import RE_SUB
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import UNKNOWN
 
     address = namedtuple('address',COL_NAMES['address'] )
     country = namedtuple('country',COL_NAMES['country'] )
@@ -272,9 +275,9 @@ def _build_addresses_countries_institutions_wos(df_corpus,dic_failed):
                 author_country_raw = author_address.split(',')[-1].replace(';','').strip()
                 author_country = country_normalization(author_country_raw)
                 if author_country == '':
-                    author_country='unknown'
+                    author_country = UNKNOWN
                     warning = (f'WARNING: the invalid country name "{author_country_raw}" '
-                               f'in pub_id {pub_id} has been replaced by "unknown"'
+                               f'in pub_id {pub_id} has been replaced by "{UNKNOWN}" '
                                f'in "_build_addresses_countries_institutions_wos" function of "BiblioParsingWos.py" module')
                     print(Fore.BLUE + warning + Fore.BLACK)
 
@@ -412,6 +415,7 @@ def _build_authors_countries_institutions_wos(df_corpus, dic_failed, inst_filter
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import RE_AUTHOR
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import RE_SUB
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import SYMBOL
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import UNKNOWN
     
     addr_country_inst = namedtuple('address',COL_NAMES['auth_inst'][:-1] )
     author_address_tup = namedtuple('author_address','author address')
@@ -495,9 +499,9 @@ def _build_authors_countries_institutions_wos(df_corpus, dic_failed, inst_filter
                 author_country_raw = tup.address.split(',')[-1].replace(';','').strip()
                 author_country = country_normalization(author_country_raw)
                 if author_country == '':
-                    author_country='unknown'
+                    author_country = UNKNOWN
                     warning = (f'WARNING: the invalid country name "{author_country_raw}" '
-                               f'in pub_id {pub_id} has been replaced by "unknown"'
+                               f'in pub_id {pub_id} has been replaced by "{UNKNOWN}" '
                                f'in "_build_addresses_countries_institutions_wos" function of "BiblioParsingWos.py" module')
                     print(Fore.BLUE + warning + Fore.BLACK)
 
@@ -673,23 +677,36 @@ def _build_articles_wos(df_corpus):
     '''
     
     # Local imports
+    from BiblioAnalysis_Utils.BiblioGeneralGlobals import CHANGE
     from BiblioAnalysis_Utils.BiblioParsingUtils import name_normalizer
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import COL_NAMES
-    from BiblioAnalysis_Utils.BiblioSpecificGlobals import COLUMN_LABEL_WOS    
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import COLUMN_LABEL_WOS
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import DIC_DOCTYPE
 
-    def str_int_convertor(x):
+    def _str_int_convertor(x):
         if x:
             return(str(x))
         else:
             return '0'
     
-    def treat_author(list_authors):
+    def _treat_author(list_authors):
         first_author = list_authors.split(';')[0] # we pick the first author
         return  name_normalizer(first_author)
+    
+    def _treat_doctype(doctype):
+        for doctype_key,doctype_list in DIC_DOCTYPE.items():
+            if doctype in doctype_list: doctype = doctype_key
+        return doctype
+    
+    def _treat_title(title):
+        title = title.translate(CHANGE)
+        return title
     
     pub_id_alias = COL_NAMES['articles'][0]
     author_alias = COL_NAMES['articles'][1]
     year_alias = COL_NAMES['articles'][2]
+    doc_type_alias = COL_NAMES['articles'][7] 
+    title_alias = COL_NAMES['articles'][9] 
 
     wos_columns = [COLUMN_LABEL_WOS['authors'],
                    COLUMN_LABEL_WOS['year'],
@@ -707,8 +724,10 @@ def _build_articles_wos(df_corpus):
     df_article.rename (columns = dict(zip(wos_columns,COL_NAMES['articles'][1:])),
                        inplace = True)    
                                                                                                 
-    df_article[author_alias] = df_article[author_alias].apply(treat_author)    
-    df_article[year_alias] = df_article[year_alias].apply(str_int_convertor)
+    df_article[author_alias] = df_article[author_alias].apply(_treat_author)    
+    df_article[year_alias] = df_article[year_alias].apply(_str_int_convertor)
+    df_article[doc_type_alias] = df_article[doc_type_alias].apply(_treat_doctype)
+    df_article[title_alias] = df_article[title_alias].apply(_treat_title)
     
     df_article.insert(0, pub_id_alias, list(df_corpus.index))
    
@@ -749,6 +768,7 @@ def _build_references_wos(df_corpus):
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import RE_REF_PAGE_WOS
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import RE_REF_VOL_WOS
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import RE_REF_YEAR_WOS
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import UNKNOWN
  
     ref_article = namedtuple('ref_article', COL_NAMES['references'])
  
@@ -782,18 +802,18 @@ def _build_references_wos(df_corpus):
                     if len(journal):
                         journal = journal[0].strip()
                     else:
-                        journal = 'unknown'
+                        journal = UNKNOWN
  
                     author = re.findall(RE_REF_AUTHOR_WOS, field)
                     if len(author):
                         author = name_normalizer(author[0][:-1])
                     else:
-                        author = 'unknown'
+                        author = UNKNOWN
  
-                    if (author != 'unknown') and (journal != 'unknown'):
+                    if (author != UNKNOWN) and (journal != UNKNOWN):
                         list_ref_article.append(ref_article(pub_id,author,year,journal,vol,page))
  
-                    if (vol==0) & (page==0) & (author != 'unknown'):
+                    if (vol==0) & (page==0) & (author != UNKNOWN):
                         pass
  
     df_references = pd.DataFrame.from_dict({label:[s[idx] for s in list_ref_article] 
@@ -819,8 +839,11 @@ def read_database_wos(filename):
     
     # Local imports
     from BiblioAnalysis_Utils.BiblioParsingUtils import check_and_drop_columns
+    from BiblioAnalysis_Utils.BiblioParsingUtils import normalize_journal_names
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import ENCODING
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import FIELD_SIZE_LIMIT
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import UNKNOWN
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import WOS
         
     csv.field_size_limit(FIELD_SIZE_LIMIT) # To extend the field size limit for reading .txt files
 
@@ -837,7 +860,9 @@ def read_database_wos(filename):
     df = check_and_drop_columns("wos",df,filename)
     df = df.dropna()
     df.index = list(range(len(df)))
-    
+    df = df.replace('',UNKNOWN,regex=True)
+    df = normalize_journal_names(WOS,df)
+        
     return df
 
 
@@ -889,79 +914,91 @@ def biblio_parser_wos(in_dir_parsing, out_dir_parsing, inst_filter_list):
                                                       if file.endswith(".txt"))
     filename = list_data_base[0]
     
-    df = read_database_wos(filename)
-    dic_failed = {}
-    dic_failed['number of article'] = len(df)
+    # Reading and checking the corpus file
+    df_corpus = read_database_wos(filename)
     
-    item = 'AU' # Deals with authors
-    df_AU = _build_authors_wos(df_corpus=df)
+    # Initializing the dic_failed dict for the parsing control
+    dic_failed = {}
+    dic_failed['number of article'] = len(df_corpus)
+    
+    # Building the file for authors (.dat)
+    item = 'AU' 
+    df_AU = _build_authors_wos(df_corpus)
     df_AU.to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item] ), 
                  index=False,
                  sep='\t')
     
-                # Deals with keywords
-    df_keyword_AK,df_keyword_IK, df_keyword_TK = _build_keywords_wos(df,dic_failed)
-   
-    item = 'AK'  # Deals with authors keywords
+    # Building and saving the files for keywords
+    df_keyword_AK,df_keyword_IK, df_keyword_TK = _build_keywords_wos(df_corpus,dic_failed)   
+      # Saving author keywords file (.dat)
+    item = 'AK' 
     df_keyword_AK.to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item]),
                 index=False,
-                sep='\t')
-    
-    item = 'IK'  # Deals with journal keywords
+                sep='\t')    
+      # Saving journal (indexed) keywords file (.dat)
+    item = 'IK'  
     df_keyword_IK.to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item]),
                 index=False,
-                sep='\t')
-    
-    item = 'TK'  # Deals with title keywords
+                sep='\t')    
+      # Saving title keywords file (.dat)
+    item = 'TK'
     df_keyword_TK.to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item]),
                 index=False,
                 sep='\t')    
                     
-    item = 'AD'  # Deals with addresses
-    df_AD, df_CU, df_I = _build_addresses_countries_institutions_wos(df,dic_failed)
+    # Building and saving the files for addresses, countries and institutions
+    item = 'AD' 
+    df_AD, df_CU, df_I = _build_addresses_countries_institutions_wos(df_corpus,dic_failed)
+      # Saving addresses file (.dat)
     df_AD.to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item]),
                  index=False,
                  sep='\t')
-    
+      # Saving countries file (.dat) 
     item = 'CU'  # Deals with countries
     df_CU.to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item]),
                  index=False, 
                  sep='\t')
-    
+      # Saving institutions file (.dat)
     item = 'I'   # Deals with institutions
     df_I.to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item]),
                  index=False, 
                  sep='\t')
     
-    item = 'I2' # Deals with authors and their institutions 
-    df_I2 = _build_authors_countries_institutions_wos(df, dic_failed, inst_filter_list)
+    # Building and saving the file for authors and their institutions (.dat)
+    item = 'I2'
+    df_I2 = _build_authors_countries_institutions_wos(df_corpus, dic_failed, inst_filter_list)
     df_I2.to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item] ), 
                  index=False,
                 sep='\t') 
     
-    item = 'S'   # Deals with subjects
-    df_S = _build_subjects_wos(df,dic_failed)
+    # Building and saving the file for subjects (.dat)
+    item = 'S' 
+    df_S = _build_subjects_wos(df_corpus,dic_failed)
     df_S.to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item]),
                 index=False,
                 sep='\t')
 
-    item = 'S2'   # Deals with sub-subjects
-    df_S2 = _build_sub_subjects_wos(df,dic_failed)
+    # Building and saving the file for sub-subjects (.dat)
+    item = 'S2' 
+    df_S2 = _build_sub_subjects_wos(df_corpus,dic_failed)
     df_S2.to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item]),
                 index=False,
                 sep='\t')
     
-    item = 'A'   # Deals with articles
-    df_A = _build_articles_wos(df)
+    # Building and saving the file for articles (.dat)
+    item = 'A'
+    df_A = _build_articles_wos(df_corpus)
     df_A.to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item]),
                 index=False,
                 sep='\t')
     
-    item = 'R'   # Deals with references
-    df_R = _build_references_wos(df)
+    # Building and saving the file for references (.dat)
+    item = 'R' 
+    df_R = _build_references_wos(df_corpus)
     df_R.to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item]),
                 index=False, 
                 sep='\t')
                 
+    # Saving the dic_failed dict for the parsing control (.json)
     with open(Path(out_dir_parsing) / Path('failed.json'), 'w') as write_json:
         json.dump(dic_failed, write_json,indent=4)

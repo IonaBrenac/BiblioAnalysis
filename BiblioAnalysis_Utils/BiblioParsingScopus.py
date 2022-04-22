@@ -1,14 +1,15 @@
 __all__ = ['biblio_parser_scopus']
 
-# Globals used from BiblioAnalysis_Utils.BiblioSpecificGlobals: DIC_OUTDIR_PARSING,
+# Globals used from BiblioAnalysis_Utils.BiblioSpecificGlobals: CHANGE, DIC_OUTDIR_PARSING, DIC_DOCTYPE,
+#                                                               RE_REF_AUTHOR_SCOPUS, RE_REF_JOURNAL_SCOPUS,
+#                                                               RE_REF_PAGE_SCOPUS, RE_REF_VOL_SCOPUS,
+#                                                               RE_REF_YEAR_SCOPUS, RE_SUB, SCOPUS
 #                                                               SCOPUS_CAT_CODES, SCOPUS_JOURNALS_ISSN_CAT,
-#                                                               USECOLS_SCOPUS
-#                                                               RE_REF_AUTHOR_SCOPUS, RE_REF_JOURNAL_SCOPUS
-#                                                               RE_REF_PAGE_SCOPUS, RE_REF_VOL_SCOPUS
-#                                                               RE_REF_YEAR_SCOPUS, RE_SUB
+#                                                               UNKNOWN, USECOLS_SCOPUS
+
 
 # Functions used from BiblioAnalysis_Utils.BiblioParsingUtils: build_title_keywords, build_institutions_dic
-#                                                              country_normalization, name_normalizer 
+#                                                              country_normalization, normalize_journal_names, name_normalizer 
 
 def _build_authors_scopus(df_corpus):
     
@@ -102,6 +103,7 @@ def _build_keywords_scopus(df_corpus,dic_failed):
     from BiblioAnalysis_Utils.BiblioParsingUtils import build_title_keywords
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import COL_NAMES
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import COLUMN_LABEL_SCOPUS
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import UNKNOWN
     
     COL_NAMES = {}
     COL_NAMES['keywords'] = ['Pub_id', 'Keyword']
@@ -127,13 +129,13 @@ def _build_keywords_scopus(df_corpus,dic_failed):
         list_keywords_IK = keywords_IK.split(';')
         for keyword_IK in list_keywords_IK:
             keyword_IK = keyword_IK.strip()
-            if keyword_IK == 'null': keyword_IK = 'unknown' # replace 'null' by the keyword 'unknown'
+            if keyword_IK == 'null': keyword_IK = UNKNOWN # replace 'null' by the keyword UNKNOWN
             list_keyword_IK.append(key_word(pub_id,
                                             keyword_IK if keyword_IK != 'null' else '”null”'))
             
     list_keyword_TK = []
     df_title = pd.DataFrame(df_corpus[COLUMN_LABEL_SCOPUS['title']].fillna(''))
-    df_title.columns = ['Title']  # To be coherent with the convention of function build_title_keywords
+    df_title.columns = ['Title']  # To be coherent with the convention of function build_title_keywords          # To check
     df_TK,list_of_words_occurrences = build_title_keywords(df_title)
     for pub_id in df_TK.index:
         for token in df_TK.loc[pub_id,'kept_tokens']:
@@ -210,6 +212,7 @@ def _build_addresses_countries_institutions_scopus(df_corpus,dic_failed):
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import COL_NAMES
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import COLUMN_LABEL_SCOPUS
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import RE_SUB
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import UNKNOWN
 
     address = namedtuple('address',COL_NAMES['address'] )
     ref_country = namedtuple('country',COL_NAMES['country'] )
@@ -243,9 +246,9 @@ def _build_addresses_countries_institutions_scopus(df_corpus,dic_failed):
                 country_raw = address_pub.split(',')[-1].replace(';','').strip()  
                 country = country_normalization(country_raw)
                 if country == '':
-                    country='unknown'
+                    country=UNKNOWN
                     warning = (f'WARNING: the invalid country name "{country_raw}" '
-                               f'in pub_id {pub_id} has been replaced by "unknown"'
+                               f'in pub_id {pub_id} has been replaced by "{UNKNOWN}"'
                                f'in "_build_addresses_countries_institutions_scopus" function of "BiblioParsingScopus.py" module')
                     print(Fore.BLUE + warning + Fore.BLACK)
 
@@ -287,7 +290,6 @@ def _build_addresses_countries_institutions_scopus(df_corpus,dic_failed):
     df_country = df_country[df_country[country_alias] != '']
     
     list_id = df_institution[df_institution[institution_alias] == ''][pub_id_alias].values
-    #list_id = list(set(list_id)
     dic_failed[institution_alias] = {'success (%)':100*(1-len(list_id)/len(df_corpus)),
                                      pub_id_alias:[int(x) for x in list(list_id)]}
     df_institution = df_institution[df_institution[institution_alias] != '']
@@ -746,36 +748,49 @@ def _build_articles_scopus(df_corpus):
     import re
     
     # Local imports
+    from BiblioAnalysis_Utils.BiblioGeneralGlobals import CHANGE
     from BiblioAnalysis_Utils.BiblioParsingUtils import name_normalizer
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import COL_NAMES
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import COLUMN_LABEL_SCOPUS
-
-    pub_id_alias = COL_NAMES['articles'][0]
-    author_alias = COL_NAMES['articles'][1]
-    year_alias = COL_NAMES['articles'][2]
-    issn_alias = COL_NAMES['articles'][-1]
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import DIC_DOCTYPE
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import UNKNOWN
 
     re_issn = re.compile(r'^[0-9]{8}|[0-9]{4}|[0-9]{3}X') # Use to normalize the ISSN to the
                                                           # form dddd-dddd or dddd-dddX used by wos
     
-    def convert_issn(text):
-        
+    def _convert_issn(text):        
         y = ''.join(re.findall(re_issn,  text))
         if len(y) != 0:
-            return y[0:4]+"-"+y[4:]
+            return y[0:4] + "-" + y[4:]
         else:
-            return 'unknown'
+            return UNKNOWN
    
-    def str_int_convertor(x):
+    def _str_int_convertor(x):
         try:
             return(int(float(x)))
         except:
             return 0
         
-    def treat_author(list_authors):
+    def _treat_author(list_authors):
         first_author = name_normalizer(list_authors.split(',')[0]) # we pick the first author
         return first_author
- 
+    
+    def _treat_doctype(doctype):
+        for doctype_key,doctype_list in DIC_DOCTYPE.items():
+            if doctype in doctype_list: doctype = doctype_key
+        return doctype 
+    
+    def _treat_title(title):
+        title = title.translate(CHANGE)
+        return title
+    
+    pub_id_alias = COL_NAMES['articles'][0]
+    author_alias = COL_NAMES['articles'][1]
+    year_alias = COL_NAMES['articles'][2]
+    doc_type_alias = COL_NAMES['articles'][7]
+    title_alias = COL_NAMES['articles'][9]
+    issn_alias = COL_NAMES['articles'][-1]
+    
     scopus_columns = [COLUMN_LABEL_SCOPUS['authors'],
                       COLUMN_LABEL_SCOPUS['year'],
                       COLUMN_LABEL_SCOPUS['journal'],
@@ -786,15 +801,17 @@ def _build_articles_scopus(df_corpus):
                       COLUMN_LABEL_SCOPUS['language'],
                       COLUMN_LABEL_SCOPUS['title'],
                       COLUMN_LABEL_SCOPUS['issn']]
-    
+
     df_article = df_corpus[scopus_columns].astype(str)
 
     df_article.rename (columns = dict(zip(scopus_columns,COL_NAMES['articles'][1:])),
                        inplace = True)                      
    
-    df_article[author_alias] = df_article[author_alias].apply(treat_author)
-    df_article[year_alias] = df_article[year_alias].apply(str_int_convertor)
-    df_article[issn_alias] = df_article[issn_alias].apply(convert_issn)
+    df_article[author_alias] = df_article[author_alias].apply(_treat_author)
+    df_article[year_alias] = df_article[year_alias].apply(_str_int_convertor)
+    df_article[doc_type_alias] = df_article[doc_type_alias].apply(_treat_doctype)
+    df_article[title_alias] = df_article[title_alias].apply(_treat_title)
+    df_article[issn_alias] = df_article[issn_alias].apply(_convert_issn)
     
     df_article.insert(0, pub_id_alias, list(df_corpus.index))
 
@@ -835,6 +852,7 @@ def _build_references_scopus(df_corpus):
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import RE_REF_PAGE_SCOPUS
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import RE_REF_VOL_SCOPUS
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import RE_REF_YEAR_SCOPUS
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import UNKNOWN
 
     ref_article = namedtuple('ref_article',COL_NAMES['references'])
                    
@@ -851,7 +869,7 @@ def _build_references_scopus(df_corpus):
                 if len(author):
                     author = name_normalizer(author[0])
                 else:
-                    author = 'unknown'
+                    author = UNKNOWN
 
                 year = re.findall(RE_REF_YEAR_SCOPUS, field)  
                 if len(year):
@@ -866,7 +884,7 @@ def _build_references_scopus(df_corpus):
                     else:
                         journal = journal[0][6:].upper()
                 else:
-                    journal = 'unknown'
+                    journal = UNKNOWN
 
                 vol = re.findall(RE_REF_VOL_SCOPUS, field)
                 if len(vol):
@@ -883,10 +901,10 @@ def _build_references_scopus(df_corpus):
                 else:
                     page = page[0].split('p.')[1]
 
-                if (author != 'unknown') and (journal != 'unknown'):
+                if (author != UNKNOWN) and (journal != UNKNOWN):
                     list_ref_article.append(ref_article(pub_id,author,year,journal,vol,page))
 
-                if (vol==0) & (page==0) & (author != 'unknown'):
+                if (vol==0) & (page==0) & (author != UNKNOWN):
                     pass
 
     df_references = pd.DataFrame.from_dict({label:[s[idx] for s in list_ref_article] 
@@ -973,15 +991,19 @@ def biblio_parser_scopus(in_dir_parsing, out_dir_parsing, rep_utils, inst_filter
     from pathlib import Path
     
     # 3rd party imports
+    import numpy as np
     import pandas as pd 
     
     # Local imports
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import COL_NAMES
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import DIC_OUTDIR_PARSING
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import SCOPUS
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import SCOPUS_CAT_CODES
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import SCOPUS_JOURNALS_ISSN_CAT
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import UNKNOWN
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import USECOLS_SCOPUS
     from BiblioAnalysis_Utils.BiblioParsingUtils import check_and_drop_columns
+    from BiblioAnalysis_Utils.BiblioParsingUtils import normalize_journal_names
     
     pub_id_alias = COL_NAMES['keywords'][0]
     keyword_alias = COL_NAMES['keywords'][1]
@@ -1000,8 +1022,10 @@ def biblio_parser_scopus(in_dir_parsing, out_dir_parsing, rep_utils, inst_filter
 
     # Reading and checking the corpus file
     df_corpus = pd.read_csv(in_dir_parsing / Path(filename))     
-    df_corpus = check_and_drop_columns('scopus',df_corpus,filename)    
-    df_corpus = _check_affiliation_column_scopus(df_corpus)    
+    df_corpus = check_and_drop_columns(SCOPUS,df_corpus,filename)    
+    df_corpus = _check_affiliation_column_scopus(df_corpus)
+    df_corpus = df_corpus.replace(np.nan,UNKNOWN,regex=True)
+    df_corpus = normalize_journal_names(SCOPUS,df_corpus)
 
     # Initializing the dic_failed dict for the parsing control
     dic_failed = {}
@@ -1034,8 +1058,7 @@ def biblio_parser_scopus(in_dir_parsing, out_dir_parsing, rep_utils, inst_filter
     
     # Building and saving the files for addresses, countries and institutions
     item = 'AD'  
-    df_AD, df_CU, df_I  = _build_addresses_countries_institutions_scopus(df_corpus,
-                                                                         dic_failed=dic_failed)
+    df_AD, df_CU, df_I  = _build_addresses_countries_institutions_scopus(df_corpus, dic_failed)
       # Saving addresses file (.dat)
     df_AD.to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item]),
                  index=False,
@@ -1051,8 +1074,8 @@ def biblio_parser_scopus(in_dir_parsing, out_dir_parsing, rep_utils, inst_filter
                 index=False,
                 sep='\t')    
 
-    # Building the file for authors and their institutions (.dat) 
-    item = 'I2' # Deals with authors and their institutions
+    # Building and saving the file for authors and their institutions (.dat) 
+    item = 'I2'
     df_I2 = _build_authors_countries_institutions_scopus(df_corpus, dic_failed, inst_filter_list)
     df_I2.to_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING[item] ), 
                  index=False,

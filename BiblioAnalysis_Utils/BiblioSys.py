@@ -76,7 +76,7 @@ def _get_displays(in_to_mm=None):
         diag_px = math.sqrt(int(width_px)**2 + int(height_px)**2)    
         width_mm = displays[disp]['width_mm']
         height_mm = displays[disp]['height_mm']
-        if width_mm is None or height_mm is None:        
+        if width_mm is None or height_mm is None: 
             diag_in = float(input('Enter the diagonal size of the screen n°' + str(disp) + ' (inches)'))
             width_mm = round(int(width_px) * (diag_in/diag_px) * in_to_mm,1)
             height_mm = round(int(height_px) * (diag_in/diag_px) * in_to_mm,1)

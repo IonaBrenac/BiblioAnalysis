@@ -10,6 +10,7 @@ from BiblioAnalysis_Utils.BiblioGeneralGlobals import *
 from BiblioAnalysis_Utils.BiblioGraphPlot import *
 from BiblioAnalysis_Utils.BiblioGui import *
 from BiblioAnalysis_Utils.BiblioNltk import *
+from BiblioAnalysis_Utils.BiblioParsingConcat import *
 from BiblioAnalysis_Utils.BiblioParsingScopus import *
 from BiblioAnalysis_Utils.BiblioParsingWos import *
 from BiblioAnalysis_Utils.BiblioParsingUtils import *

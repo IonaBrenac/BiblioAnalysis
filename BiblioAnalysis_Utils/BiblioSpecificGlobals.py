@@ -7,6 +7,7 @@ __all__ = ['BLACKLISTED_WORDS',
            'COL_NAMES',
            'COLUMN_LABEL_SCOPUS',
            'COLUMN_LABEL_WOS',
+           'CONCATENATED_XLSX',
            'COOC_AUTHORIZED_ITEMS',
            'COOC_AUTHORIZED_ITEMS_DICT',
            'COOC_COLOR_NODES',
@@ -17,10 +18,13 @@ __all__ = ['BLACKLISTED_WORDS',
            'COUPL_FILENAME_XLSX',
            'COUPL_GLOBAL_VALUES',
            'COUPL_HTML_PARAM',
+           'DEDUPLICATED_XLSX',
+           'DIC_DOCTYPE',
+           'DIC_LOW_WORDS',
            'DIC_OUTDIR_DESCRIPTION',
            'DIC_OUTDIR_PARSING',
            'DIC_INST_FILENAME',
-           'DISTRIBS_ITEM_FILE',
+           'DISTRIBS_ITEM_FILE',           
            'ENCODING',
            'FIELD_SIZE_LIMIT',
            'FOLDER_NAMES',
@@ -36,7 +40,9 @@ __all__ = ['BLACKLISTED_WORDS',
            'NMAX_NODES',
            'NOUN_MINIMUM_OCCURRENCES',
            'NODE_SIZE_REF',
+           'PARSING_PERF',
            'RE_ADDRESS',
+           'RE_ADDS_JOURNAL',
            'RE_AUTHOR',
            'RE_REF_AUTHOR_SCOPUS',
            'RE_REF_AUTHOR_WOS',
@@ -49,14 +55,20 @@ __all__ = ['BLACKLISTED_WORDS',
            'RE_REF_YEAR_SCOPUS',
            'RE_REF_YEAR_WOS',
            'RE_SUB',
+           'RE_YEAR',
+           'RE_YEAR_JOURNAL',
            'REP_UTILS',
+           'SCOPUS',
            'SCOPUS_CAT_CODES',
            'SCOPUS_JOURNALS_ISSN_CAT',
+           'SIMILARITY_THRESHOLD',
            'SIZE_MIN',
            'SYMBOL',
+           'UNKNOWN',
            'USECOLS_SCOPUS',
            'USECOLS_WOS',
            'VALID_LABEL_GRAPH',
+           'WOS',
           ]
 
 # Standard library imports
@@ -70,7 +82,8 @@ BLACKLISTED_WORDS = [] #['null','nan'] for title keywords
 
 pub_id = 'Pub_id'
 
-COL_NAMES = {   'address':      [pub_id,
+COL_NAMES = {   'pub_id':       pub_id,
+                'address':      [pub_id,
                                  'Idx_address',
                                  'Address'],
                 'articles':     [pub_id,
@@ -152,6 +165,8 @@ COLUMN_LABEL_WOS = {'affiliations': '',
                     'year': 'PY' ,
                     }
 
+CONCATENATED_XLSX = 'articles_concat.xlsx'
+
 COOC_AUTHORIZED_ITEMS = ['AU','CU','AK','IK','TK','S','S2']
 
 COOC_COLOR_NODES = {"Y": "255,255,0",  # default color for gephi display
@@ -194,8 +209,6 @@ COUPL_GLOBAL_VALUES = {'BCTHR':  1, # minimum number of shared references
                        'NRTHR':  1, # minimum number of references to keep a node
                        }
 
-
-
 COUPL_HTML_PARAM = {'background_color': '#EAEDED', #light grey,
                     'font_color': 'black',
                     'edges_color': '#808080',       # gray,
@@ -211,6 +224,27 @@ COUPL_HTML_PARAM = {'background_color': '#EAEDED', #light grey,
                                      'uncolor': '#e0e0e0',  # grey 300 - for nodes out of colored values
                                      },
                     }
+
+DEDUPLICATED_XLSX = 'articles_dedup.xlsx'
+
+DIC_DOCTYPE = {'Article':              ['Article'],
+               'Article; Early Access':['Article; Early Access'], 
+               'Conference Paper':     ['Conference Paper','Proceedings Paper'],
+               'Data Paper':           ['Data Paper','Article; Data Paper'],
+               'Correction':           ['Correction'],
+               'Editorial Material':   ['Editorial Material'],               
+               'Erratum':              ['Erratum'],
+               'Note':                 ['Note'], 
+               'Review':               ['Review'],
+               'Review; Early Access': ['Review; Early Access']}
+
+DIC_LOW_WORDS = {'proceedings of':'',
+                 'conference record of':'',
+                 '&': 'and',                # & to and 
+                 ':': ' ',                  # colon to space
+                 '-': ' ',                  # hyphen-minus to space
+                 ',': ' ',                  # comma to space
+                }
 
 DIC_OUTDIR_PARSING = {'A':'articles.dat',
                       'AU':'authors.dat',
@@ -234,12 +268,17 @@ ENCODING = 'iso-8859-1' # encoding used by the function read_database_wos
 
 FIELD_SIZE_LIMIT = 256<<10 # extend maximum field size for wos file reading
 
-FOLDER_NAMES = {'rawdata':     'rawdata',
-                'parsing':     'parsing',
-                'description': 'freq',
-                'filtering':   'filter',
-                'coupling':    'coupling',
+FOLDER_NAMES = {'corpus':      'Corpus',
+                'concat':      'concatenation',
                 'cooccurrence':'cooc',
+                'coupling':    'coupling',
+                'description': 'freq',
+                'dedup':       'deduplication',
+                'filtering':   'filter',
+                'parsing':     'parsing',
+                'rawdata':     'rawdata',
+                'scopus':      'scopus',
+                'wos':         'wos',
                }
 
 FOLDER_SELECTION_HELP_TEXT ='''The selected folder is edited.
@@ -299,16 +338,18 @@ NOUN_MINIMUM_OCCURRENCES = 3 # Minimum occurrences of a noun to be retained when
     
 NODE_SIZE_REF = 30
 
+PARSING_PERF = 'failed.json'
+
 RE_ADDRESS = re.compile('''(?<=\]\s)               # Captures: "xxxxx" in string between "]" and "["  
                         [^;]*                      # or  between "]" and end of string or ";"
                         (?=; | $ )''',re.X)
+
+RE_ADDS_JOURNAL = re.compile(r'\([^\)]+\)')        # Captures string between "()" in journal name
 
 RE_AUTHOR = re.compile('''(?<=\[)
                       [a-zA-Z,;\s\.\-']*(?=, | \s )
                       [a-zA-Z,;\s\.\-']*
                       (?=\])''',re.X)               # Captures: "xxxx, xxx" or "xxxx xxx" in string between "[" and "]"
-
-
 
 RE_REF_AUTHOR_SCOPUS = re.compile('^[^,0123456789:]*,'               # Captures: "ccccc, ccccc,"
                                   '[^,0123456789:]*,') 
@@ -331,22 +372,33 @@ RE_REF_VOL_SCOPUS = re.compile(''',\s+\d{1,6},                       # Capture: 
 
 RE_REF_VOL_WOS = re.compile(',\s+V\d{1,6}')             # Captures: ", Vdddd"
 
-RE_REF_YEAR_SCOPUS = re.compile(r'(?<=\()\d{4}(?=\))')               # Captures: "dddd" within parenthesis
+RE_REF_YEAR_SCOPUS = re.compile(r'(?<=\()\d{4}(?=\))')  # Captures: "dddd" within parenthesis in scopus references
 
-RE_REF_YEAR_WOS = re.compile(',\s\d{4},')               # Captures: ", dddd,"
+RE_REF_YEAR_WOS = re.compile(',\s\d{4},')               # Captures: ", dddd," in wos references
 
-RE_SUB = re.compile('''[a-z]?Univ[\.a-zé]{0,6}\s    # Captures alias of University
+RE_SUB = re.compile('''[a-z]?Univ[\.a-zé]{0,6}\s        # Captures alias of University
                     |[a-z]?Univ[\.a-zé]{0,6}$''',re.X)
+
+RE_YEAR= re.compile('\d{4}')                            # Captures "dddd" as the string giving the year
+
+RE_YEAR_JOURNAL = re.compile('\s\d{4}\s')               # Captures " dddd " as the year in journal name
 
 REP_UTILS = 'BiblioAnalysis_RefFiles'
 
+# Scopus database name
+SCOPUS = 'scopus'
+
 SCOPUS_CAT_CODES = 'scopus_cat_codes.txt'
 
-SCOPUS_JOURNALS_ISSN_CAT = 'scopus_journals_issn_cat.txt' 
+SCOPUS_JOURNALS_ISSN_CAT = 'scopus_journals_issn_cat.txt'
+
+SIMILARITY_THRESHOLD = 0.8
 
 SIZE_MIN = 1 # Minimum size of co-occurrence nodes
 
 SYMBOL = '\s,;:.\-\/'
+
+UNKNOWN = 'unknown'
 
 USECOLS_SCOPUS = '''Abstract,Affiliations,Authors,Author Keywords,Authors with affiliations,
        CODEN,Document Type,DOI,EID,Index Keywords,ISBN,ISSN,Issue,Language of Original Document,
@@ -356,7 +408,10 @@ USECOLS_WOS ='''AB,AU,BP,BS,C1,CR,DE,DI,DT,ID,IS,LA,PY,RP,
                 SC,SN,SO,TI,UT,VL,WC'''
 
 # Cooccurrence graph built only for the following labels
-VALID_LABEL_GRAPH = ['AU', 'CU', 'S', 'S2', 'IK', 'R', 'RJ', 'I', 'AK', 'TK']  
+VALID_LABEL_GRAPH = ['AU', 'CU', 'S', 'S2', 'IK', 'R', 'RJ', 'I', 'AK', 'TK'] 
+
+# WOS database name
+WOS = 'wos'
 
 #################
 # Built globals #

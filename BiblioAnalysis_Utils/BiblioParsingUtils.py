@@ -6,17 +6,19 @@ __all__ = ['biblio_parser',
            'extend_author_institutions',
            'merge_database',
            'name_normalizer',
+           'normalize_journal_names',
            'setting_secondary_inst_filter',
            'upgrade_col_names',
            ]
 
 # 
 # Globals used from BiblioAnalysis_Utils.BiblioGeneralGlobals:  ALIAS_UK, CHANGE, COUNTRIES,
-# Globals used from BiblioAnalysis_Utils.BiblioSpecificGlobals: BLACKLISTED_WORDS, COL_NAMES
-#                                                               DIC_INST_FILENAME, DIC_OUTDIR_PARSING               
+# Globals used from BiblioAnalysis_Utils.BiblioSpecificGlobals: BLACKLISTED_WORDS, COL_NAMES,
+#                                                               DIC_INST_FILENAME, DIC_OUTDIR_PARSING ,              
 #                                                               INST_FILTER_LIST, REP_UTILS, 
-#                                                               NLTK_VALID_TAG_LIST, NOUN_MINIMUM_OCCURRENCES
-#                                                               USECOLS_SCOPUS
+#                                                               NLTK_VALID_TAG_LIST, NOUN_MINIMUM_OCCURRENCES,
+#                                                               RE_ADDS_JOURNAL, RE_YEAR_JOURNAL,
+#                                                               SCOPUS, USECOLS_SCOPUS, WOS
 
 # Functions used from BiblioAnalysis_Utils.BiblioGui: Select_multi_items
 # Functions used from BiblioAnalysis_Utils.BiblioParsingScopus: biblio_parser_scopus
@@ -261,24 +263,29 @@ def merge_database(database,filename,in_dir,out_dir):
     import pandas as pd
     
     # Local imports
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import SCOPUS
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import USECOLS_SCOPUS
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import WOS
 
     list_data_base = []
     list_df = []
-    if database == 'wos':
+    if database == WOS:
         for path, _, files in os.walk(in_dir):
             list_data_base.extend(Path(path) / Path(file) for file in files
                                                           if file.endswith(".txt"))
         for file in list_data_base:
             list_df.append(read_database_wos(file))
 
-    else:
+    elif database == SCOPUS:
         for path, _, files in os.walk(in_dir):
             list_data_base.extend(Path(path) / Path(file) for file in files
                                                           if file.endswith(".csv"))
         for file in list_data_base:
             df = pd.read_csv(file,usecols=USECOLS_SCOPUS) # reads the database
             list_df.append(df)
+            
+    else:
+        raise Exception(f"Sorry, unrecognized database {database} : should be {WOS} or {SCOPUS} ")
         
     result = pd.concat(list_df,ignore_index=True)
     result.to_csv(out_dir / Path(filename),sep='\t')
@@ -346,6 +353,65 @@ def name_normalizer(text):
            
     return text
 
+
+def normalize_journal_names(database,df_corpus):
+    '''The `normalize_journal_names` function normalizes the journal names in the journals specific column 
+    of the corpus dataframe through the replace of low words defined in the global 'DIC_LOW_WORDS' 
+    and the drop of particular items using the regular expressions defined by 'RE_ADDS_JOURNAL' and 'RE_YEAR_JOURNAL'
+    globals.
+    
+    Args:
+        database (string): type of database among the ones defined by SCOPUS and WOS globals.
+        df_corpus (dataframe): corpus dataframe to be normalized in terms of journal names.
+        
+    Returns:
+        (dataframe): the dataframe with normalized journal names.
+        
+    Note:
+        The globals 'COLUMN_LABEL_WOS', 'COLUMN_LABEL_SCOPUS','DIC_LOW_WORDS', 'RE_ADDS_JOURNAL',
+        'RE_YEAR_JOURNAL', 'SCOPUS' and 'WOS' are used.
+    
+    '''
+    # Standard library imports
+    import re
+    
+    # Local imports
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import COLUMN_LABEL_WOS 
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import COLUMN_LABEL_SCOPUS
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import DIC_LOW_WORDS
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import RE_ADDS_JOURNAL
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import RE_YEAR_JOURNAL
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import SCOPUS
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import WOS
+    
+   
+    def _normalize_low_word(text):    
+        for low_word in DIC_LOW_WORDS.keys():
+            text = text.replace(low_word, DIC_LOW_WORDS[low_word]).strip()
+        return text
+
+    def _journal_normalizer(journal):    
+        journal = journal.lower()
+        journal_list = [" " + x + " " for x in journal.split()]
+        new_journal = " ".join(journal_list)
+        if RE_YEAR_JOURNAL.findall(journal) or RE_ADDS_JOURNAL.findall(journal):
+            to_remove = [x for x in journal_list if (RE_YEAR_JOURNAL.findall(x) or RE_ADDS_JOURNAL.findall(x))]
+            for x in to_remove: new_journal = new_journal.replace(x,'')
+        new_journal = _normalize_low_word(" ".join(new_journal.split()))        
+        return new_journal
+    
+    if database == WOS:
+        journal_alias = COLUMN_LABEL_WOS['journal']
+    elif database == SCOPUS:
+        journal_alias = COLUMN_LABEL_SCOPUS['journal']
+    else:
+        raise Exception(f"Sorry, unrecognized database {database} : should be {WOS} or {SCOPUS} ") 
+    
+    df_corpus[journal_alias] = df_corpus[journal_alias].apply(_journal_normalizer)
+    
+    return df_corpus
+
+
 def biblio_parser(in_dir_parsing, out_dir_parsing, database, expert, rep_utils=None, inst_filter_list=None):
     
     '''Chooses the appropriate parser to parse wos or scopus databases.
@@ -356,29 +422,34 @@ def biblio_parser(in_dir_parsing, out_dir_parsing, database, expert, rep_utils=N
     from BiblioAnalysis_Utils.BiblioParsingWos import biblio_parser_wos
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import INST_FILTER_LIST
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import REP_UTILS
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import SCOPUS
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import WOS
     
     if inst_filter_list== None: inst_filter_list = INST_FILTER_LIST
     
-    if database == "wos":
+    if database == WOS:
         biblio_parser_wos(in_dir_parsing, out_dir_parsing, inst_filter_list)
-    elif database == "scopus":
+    elif database == SCOPUS:
         if rep_utils == None: rep_utils = REP_UTILS
         biblio_parser_scopus(in_dir_parsing, out_dir_parsing, rep_utils, inst_filter_list)
     else:
-        raise Exception("Sorry, unrecognized database {database} : should be wos or scopus ")
+        raise Exception(f"Sorry, unrecognized database {database} : should be wos or scopus ")
 
 def check_and_drop_columns(database,df,filename):
 
+    # Local imports
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import COLUMN_LABEL_WOS 
-    from BiblioAnalysis_Utils.BiblioSpecificGlobals import COLUMN_LABEL_SCOPUS     
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import COLUMN_LABEL_SCOPUS
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import SCOPUS
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import WOS
 
     # Check for missing mandatory columns
-    if database == 'wos':
+    if database == WOS:
         cols_mandatory = set([val for val in COLUMN_LABEL_WOS.values() if val])
-    elif database == 'scopus':
+    elif database == SCOPUS:
         cols_mandatory = set([val for val in COLUMN_LABEL_SCOPUS.values() if val])    
     else:
-        raise Exception(f'Unknown database {database}')
+        raise Exception(f"Sorry, unrecognized database {database} : should be {WOS} or {SCOPUS} ")
         
     cols_available = set(df.columns)
     missing_columns = cols_mandatory.difference(cols_available)

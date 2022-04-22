@@ -1,10 +1,16 @@
 __all__ = ['ALIAS_UK',
+           'BOLD_TEXT',
            'CHANGE',
            'COUNTRIES',
            'COUNTRIES_GPS',
            'DIC_CHANGE_CHAR',
            'IN_TO_MM',
+           'LIGHT_TEXT',
            'USA_STATES',]
+
+# Text format control
+BOLD_TEXT = '\033[1m'
+LIGHT_TEXT = '\033[0m'
 
 # Countries normalized names and GPS coordinates
 COUNTRY = '''
@@ -107,6 +113,8 @@ DIC_CHANGE_CHAR = {"Ł":"L",   # polish capital to L
                    "ł":"l",   # polish l
                    "ı":"i",    
                    "‐":"-",   # Non-Breaking Hyphen to hyphen-minus
+                   "—":"-",   # En-dash to hyphen-minus
+                   "–":"-",   # Em-dash to hyphen-minus
                    "Đ":"D",   # D with stroke (Vietamese,South Slavic) to D
                    ".":"",
                    ",":""}
