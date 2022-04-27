@@ -1,7 +1,7 @@
 __all__ = ['parsing_concatenate_deduplicate',]
 
 
-def parsing_concatenate_deduplicate(project_folder):
+def parsing_concatenate_deduplicate(useful_path_list, inst_filter_list=None):
     ''' The `parsing_concatenate_deduplicate` function concatenates parsing files of two corpuses 
     using the `_get_common_files` and `_concatenate_dat` functions. 
     Then it proceeds with deduplication of article lines using the `_deduplicate_articles` function.
@@ -29,65 +29,60 @@ def parsing_concatenate_deduplicate(project_folder):
     import pandas as pd
 
     # Local imports
+    from BiblioAnalysis_Utils.BiblioParsingUtils import extend_author_institutions
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import CONCATENATED_XLSX
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import DEDUPLICATED_XLSX
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import DIC_OUTDIR_PARSING
-    from BiblioAnalysis_Utils.BiblioSpecificGlobals import FOLDER_NAMES
-
+    
     # Setting global aliases
     articles_dat_alias = DIC_OUTDIR_PARSING['A']
-    concat_folder_alias = FOLDER_NAMES['concat']
-    corpus_folder_alias = FOLDER_NAMES['corpus']
-    rational_folder_alias = FOLDER_NAMES['dedup']
-    parsing_folder_alias = FOLDER_NAMES['parsing']
-    scopus_folder_alias = FOLDER_NAMES['scopus']
-    wos_folder_alias = FOLDER_NAMES['wos']
 
     # Setting the useful paths
-    path_scopus = project_folder / Path(scopus_folder_alias) / Path(parsing_folder_alias)
-    path_wos = project_folder / Path(wos_folder_alias) / Path(parsing_folder_alias)
-    path_concat = project_folder / Path(concat_folder_alias) / Path(parsing_folder_alias)
-    if not os.path.exists(path_concat):
-        os.mkdir(path_concat)
-    path_rational = project_folder / Path(rational_folder_alias) / Path(parsing_folder_alias)    
-    if not os.path.exists(path_rational):
-        os.mkdir(path_rational)
+    path_scopus_parsing = useful_path_list[0]
+    path_wos_parsing = useful_path_list[1]
+    path_concat_parsing = useful_path_list[2]
+    path_rational_parsing = useful_path_list[3]        
 
     # Getting a list of the .dat files to be concatenated
-    files_list = sorted(_get_common_files(path_scopus, path_wos))
+    files_list = sorted(_get_common_files(path_scopus_parsing, path_wos_parsing))
 
     # Concatenating the .dat files having the same same name .dat file of the list of files files_list 
     # of the first corpus with the one of the second corpus 
     for file in files_list: 
-        _concatenate_dat(file, path_scopus, path_wos, path_concat)
-    print(f'\nParsing files successfully concatenated and saved in:\n{path_concat}')
+        _concatenate_dat(file, path_scopus_parsing, path_wos_parsing, path_concat_parsing)
+    print(f'\nParsing files successfully concatenated and saved in:\n{path_concat_parsing}')
+    
+    # Setting the secondary institutions
+    if inst_filter_list: 
+        # Extending the author with institutions parsing file
+        extend_author_institutions(path_concat_parsing, inst_filter_list)
 
     # Saving concatenated articles list to .xlsx file for checking concatenation
-    df_articles_concat = pd.read_csv(path_concat / Path(articles_dat_alias), 
+    df_articles_concat = pd.read_csv(path_concat_parsing / Path(articles_dat_alias), 
                                      sep="\t")
-    df_articles_concat.to_excel(path_concat / Path(CONCATENATED_XLSX)) 
-    print(f'\nConcatenated articles list file successfully saved as EXCEL file in: \n{path_concat}')
+    df_articles_concat.to_excel(path_concat_parsing / Path(CONCATENATED_XLSX)) 
+    print(f'\nConcatenated articles list file successfully saved as EXCEL file in: \n{path_concat_parsing}')
 
     # Getting rid of duplicates 
-    df_articles_dedup, pub_id_to_drop = _deduplicate_articles(path_concat)
+    df_articles_dedup, pub_id_to_drop = _deduplicate_articles(path_concat_parsing)
 
     # Saving deduplicated articles list to .dat file
-    print(f'\nArticles list file successfully deduplicated and saved in: \n{path_rational}')
-    df_articles_dedup.to_csv(path_rational / Path(articles_dat_alias),
+    print(f'\nArticles list file successfully deduplicated and saved in: \n{path_rational_parsing}')
+    df_articles_dedup.to_csv(path_rational_parsing / Path(articles_dat_alias),
                              index=False,
                              sep='\t')
     
     # Saving deduplicated articles list to .xlsx file for checking deduplication
-    df_articles_dedup.to_excel(path_rational / Path(DEDUPLICATED_XLSX))
-    print(f'\nDeduplicated articles list file successfully saved as EXCEL file in: \n{path_rational}')
+    df_articles_dedup.to_excel(path_rational_parsing / Path(DEDUPLICATED_XLSX))
+    print(f'\nDeduplicated articles list file successfully saved as EXCEL file in: \n{path_rational_parsing}')
     
 
     # Updating and saving all other .dat files except the one of articles list
     files_list_wo_articles_dat = files_list
     files_list_wo_articles_dat.remove(articles_dat_alias)
     for file in files_list_wo_articles_dat: 
-        _deduplicate_dat(file, pub_id_to_drop, path_concat, path_rational)
-    print(f'\nOther parsing files successfully deduplicated and saved in: \n{path_rational}')
+        _deduplicate_dat(file, pub_id_to_drop, path_concat_parsing, path_rational_parsing)
+    print(f'\nOther parsing files successfully deduplicated and saved in: \n{path_rational_parsing}')
 
     
 def _get_common_files(path_first_corpus,path_second_corpus):
@@ -122,7 +117,7 @@ def _get_common_files(path_first_corpus,path_second_corpus):
     return common_list
     
 
-def _concatenate_dat(filename, path_first_corpus, path_second_corpus, path_concat):
+def _concatenate_dat(filename, path_first_corpus, path_second_corpus, path_concat_result):
     
     '''The `_concatenate_dat` function concatenates the .dat files having the same name "filename" 
     in the parsing folders of two corpuses referenced as first corpus and second corpus.
@@ -133,7 +128,7 @@ def _concatenate_dat(filename, path_first_corpus, path_second_corpus, path_conca
                                   for the first corpus.
         path_second_corpus (path): path of the folder where the .dat file "filename" is saved 
                                    for the second corpus.
-        path_concat (path): path of the folder where the concatenated .dat file will be saved 
+        path_concat_result (path): path of the folder where the concatenated .dat file will be saved 
                             with the name "filename".
     
     '''
@@ -162,7 +157,7 @@ def _concatenate_dat(filename, path_first_corpus, path_second_corpus, path_conca
     df_concat.sort_values([pub_id_alias],inplace=True)
     
     # Saving the concatenated dataframe 
-    df_concat.to_csv(path_concat / Path(filename),
+    df_concat.to_csv(path_concat_result / Path(filename),
                              index=False,
                              sep='\t')
     
@@ -181,7 +176,8 @@ def _deduplicate_articles(path_in):
                 and a list of the duplicate indices.
         
     Notes:
-       The globals `COL_NAMES` and `DIC_OUTDIR_PARSING` are used.
+       The globals `BOLD_TEXT`, `LIGHT_TEXT`, `COL_NAMES`, `DIC_OUTDIR_PARSING`, 
+       `LENGTH_THRESHOLD`, `SIMILARITY_THRESHOLD` and `UNKNOWN` are used.
     
     '''
     # Standard library imports
@@ -197,6 +193,7 @@ def _deduplicate_articles(path_in):
     from BiblioAnalysis_Utils.BiblioGeneralGlobals import LIGHT_TEXT
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import COL_NAMES
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import DIC_OUTDIR_PARSING
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import LENGTH_THRESHOLD
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import SIMILARITY_THRESHOLD
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import UNKNOWN
     
@@ -207,13 +204,7 @@ def _deduplicate_articles(path_in):
         value_to_keep = col_values_list[0] if len(col_values_list)>0 else UNKNOWN
         return value_to_keep 
     
-    def _most_similar(journal_to_check):
-        similar = lambda a,b:SequenceMatcher(None, a, b).ratio()
-        most_similar = journal_to_check
-        for journal in set(journals_list) - {journal_to_check}:
-            if (similar(journal,journal_to_check) > SIMILARITY_THRESHOLD) and (len(journal_to_check)<len(journal)):
-                most_similar = journal
-        return most_similar
+    similar = lambda a,b:SequenceMatcher(None, a, b).ratio()
     
     # Defining aliases for text format control
     bold_text = BOLD_TEXT
@@ -230,7 +221,11 @@ def _deduplicate_articles(path_in):
     
     # Setting the name of a temporal column of titles in lower case 
     # to be added to working dataframes for case unsensitive dropping of duplicates
-    lc_title_alias = title_alias + '_LC'    
+    lc_title_alias = title_alias + '_LC' 
+    
+    # Setting the name of a temporal column of journals normalized 
+    # to be added to working dataframes for dropping of duplicates
+    norm_journal_alias = journal_alias + '_norm'
     
     # Setting alias for the articles file (.dat)
     articles_dat_alias = DIC_OUTDIR_PARSING['A']
@@ -239,14 +234,24 @@ def _deduplicate_articles(path_in):
     df_articles_concat_init = pd.read_csv(path_in / Path(articles_dat_alias), 
                                          sep="\t") 
  
-    # Setting same journal name for similar journal names
+    # Setting same journal name for similar journal names                                            
     journals_list = df_articles_concat_init[journal_alias].to_list()
-    df_articles_concat_init[journal_alias] = df_articles_concat_init[journal_alias].apply(_most_similar)   
+    df_journal = pd.DataFrame(journals_list, columns = [norm_journal_alias])
+    for j1 in df_journal[norm_journal_alias]:     
+        for j2 in df_journal[norm_journal_alias]:
+            if j2 != j1 and (len(j1) > LENGTH_THRESHOLD and len(j2) > LENGTH_THRESHOLD):
+                j1_set, j2_set = set(j1.split()), set(j2.split())
+                common_words =  j2_set.intersection(j1_set)
+                j1_specific_words, j2_specific_words = (j1_set - common_words), (j2_set - common_words)
+                similarity = round(similar(j1,j2)*100)    
+                if (similarity > SIMILARITY_THRESHOLD) or (j1_specific_words == set() or j2_specific_words == set()):
+                    df_journal.loc[df_journal[norm_journal_alias] == j2] = j1
+    df_articles_concat_inter = pd.concat([df_articles_concat_init, df_journal], axis = 1)
     
     # Setting issn when unknown for given article ID using available issn values 
     # of journals of same normalized names from other article IDs
     df_list = []
-    for j, dg in df_articles_concat_init.groupby(journal_alias): 
+    for j, dg in df_articles_concat_inter.groupby(norm_journal_alias): 
         dg[issn_alias] = _find_value_to_keep(issn_alias)
         df_list.append(dg) 
     df_articles_concat = pd.concat(df_list)
@@ -266,14 +271,14 @@ def _deduplicate_articles(path_in):
             dg.drop_duplicates(subset=[lc_title_alias,doc_type_alias],keep='first',inplace=True)
                 # Dropping the temporarily created column of lower_case titles
             dg = dg.drop([lc_title_alias], axis = 1)
-        df_list.append(dg) 
+        df_list.append(dg)
     df_inter = pd.concat(df_list)
     
     # Dropping duplicated article lines after merging by titles, document type, first author and journal
         # Adding temporarily a column with lower-case titles for case_insensitive grouping
     df_inter[lc_title_alias] = df_inter[title_alias].str.lower() 
     df_list = []   
-    for _, dg in df_inter.groupby([lc_title_alias,doc_type_alias,author_alias,journal_alias]): 
+    for idx, dg in df_inter.groupby([lc_title_alias,doc_type_alias,norm_journal_alias]): 
         if len(dg)<3:
             # Deduplicating article lines with same title, document type, first author and journal
             # and also with same DOI if not UNKNOWN
@@ -293,8 +298,12 @@ def _deduplicate_articles(path_in):
                                   f'Article lines with DOIs "{UNKNOWN}" has been droped.')                      
             print(Fore.BLUE + warning + Fore.BLACK)
         dg = dg.drop([lc_title_alias], axis = 1)
-        df_list.append(dg)   
-    df_articles_dedup = pd.concat(df_list)
+        df_list.append(dg) 
+    if df_list != []:
+        df_articles_dedup = pd.concat(df_list)
+    else:
+        df_articles_dedup = df_inter
+    df_articles_dedup.sort_values([pub_id_alias], inplace=True)
     
     # Identifying the set of articles IDs to drop in the other parsing files of the concatenated corpus
     pub_id_set_init =  set(df_articles_concat[pub_id_alias].to_list())
@@ -311,7 +320,7 @@ def _deduplicate_articles(path_in):
     print(f'    Final articles number: {articles_nb_end}')
     warning = (f'    WARNING: {articles_nb_drop} articles have been dropped as duplicates')
     print(Fore.BLUE +  bold_text + warning + light_text + Fore.BLACK)
-    
+                                
     return df_articles_dedup, pub_id_to_drop
 
 

@@ -14,10 +14,10 @@ __all__ = ['biblio_parser',
 # 
 # Globals used from BiblioAnalysis_Utils.BiblioGeneralGlobals:  ALIAS_UK, CHANGE, COUNTRIES,
 # Globals used from BiblioAnalysis_Utils.BiblioSpecificGlobals: BLACKLISTED_WORDS, COL_NAMES,
-#                                                               DIC_INST_FILENAME, DIC_OUTDIR_PARSING ,              
+#                                                               DIC_INST_FILENAME, DIC_LOW_WORDS, DIC_OUTDIR_PARSING ,              
 #                                                               INST_FILTER_LIST, REP_UTILS, 
 #                                                               NLTK_VALID_TAG_LIST, NOUN_MINIMUM_OCCURRENCES,
-#                                                               RE_ADDS_JOURNAL, RE_YEAR_JOURNAL,
+#                                                               RE_NUM_CONF, RE_YEAR_JOURNAL,
 #                                                               SCOPUS, USECOLS_SCOPUS, WOS
 
 # Functions used from BiblioAnalysis_Utils.BiblioGui: Select_multi_items
@@ -368,8 +368,7 @@ def normalize_journal_names(database,df_corpus):
         (dataframe): the dataframe with normalized journal names.
         
     Note:
-        The globals 'COLUMN_LABEL_WOS', 'COLUMN_LABEL_SCOPUS','DIC_LOW_WORDS', 'RE_ADDS_JOURNAL',
-        'RE_YEAR_JOURNAL', 'SCOPUS' and 'WOS' are used.
+        The globals 'COLUMN_LABEL_WOS', 'COLUMN_LABEL_SCOPUS','DIC_LOW_WORDS', 'RE_YEAR_JOURNAL', 'SCOPUS' and 'WOS' are used.
     
     '''
     # Standard library imports
@@ -379,25 +378,28 @@ def normalize_journal_names(database,df_corpus):
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import COLUMN_LABEL_WOS 
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import COLUMN_LABEL_SCOPUS
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import DIC_LOW_WORDS
-    from BiblioAnalysis_Utils.BiblioSpecificGlobals import RE_ADDS_JOURNAL
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import RE_NUM_CONF
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import RE_YEAR_JOURNAL
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import SCOPUS
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import WOS
     
    
-    def _normalize_low_word(text):    
+    def _normalize_low_words(text): 
         for low_word in DIC_LOW_WORDS.keys():
             text = text.replace(low_word, DIC_LOW_WORDS[low_word]).strip()
+        text = " ".join(text.split())
         return text
 
-    def _journal_normalizer(journal):    
+    def _journal_normalizer(journal):
+        journal = ' ' + journal + ' '
         journal = journal.lower()
         journal_list = [" " + x + " " for x in journal.split()]
         new_journal = " ".join(journal_list)
-        if RE_YEAR_JOURNAL.findall(journal) or RE_ADDS_JOURNAL.findall(journal):
-            to_remove = [x for x in journal_list if (RE_YEAR_JOURNAL.findall(x) or RE_ADDS_JOURNAL.findall(x))]
+        if RE_YEAR_JOURNAL.findall(journal) or RE_NUM_CONF.findall(journal): 
+            to_remove = [x for x in journal_list if (RE_YEAR_JOURNAL.findall(x) or RE_NUM_CONF.findall(x))]
             for x in to_remove: new_journal = new_journal.replace(x,'')
-        new_journal = _normalize_low_word(" ".join(new_journal.split()))        
+        new_journal = " ".join(new_journal.split())
+        new_journal = _normalize_low_words(new_journal) 
         return new_journal
     
     if database == WOS:
@@ -405,7 +407,7 @@ def normalize_journal_names(database,df_corpus):
     elif database == SCOPUS:
         journal_alias = COLUMN_LABEL_SCOPUS['journal']
     else:
-        raise Exception(f"Sorry, unrecognized database {database} : should be {WOS} or {SCOPUS} ") 
+        raise Exception(f"Sorry, unrecognized database {database}: should be {WOS} or {SCOPUS} ") 
     
     df_corpus[journal_alias] = df_corpus[journal_alias].apply(_journal_normalizer)
     
