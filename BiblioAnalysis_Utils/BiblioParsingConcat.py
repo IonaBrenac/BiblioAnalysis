@@ -30,12 +30,14 @@ def parsing_concatenate_deduplicate(useful_path_list, inst_filter_list=None):
 
     # Local imports
     from BiblioAnalysis_Utils.BiblioParsingUtils import extend_author_institutions
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import COL_NAMES
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import CONCATENATED_XLSX
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import DEDUPLICATED_XLSX
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import DIC_OUTDIR_PARSING
     
     # Setting global aliases
     articles_dat_alias = DIC_OUTDIR_PARSING['A']
+    norm_journal_alias = COL_NAMES['temp_col'][1]
 
     # Setting the useful paths
     path_scopus_parsing = useful_path_list[0]
@@ -66,16 +68,18 @@ def parsing_concatenate_deduplicate(useful_path_list, inst_filter_list=None):
     # Getting rid of duplicates 
     df_articles_dedup, pub_id_to_drop = _deduplicate_articles(path_concat_parsing)
 
-    # Saving deduplicated articles list to .dat file
-    print(f'\nArticles list file successfully deduplicated and saved in: \n{path_rational_parsing}')
+    # Saving deduplicated articles list to .xlsx file for checking deduplication
+    df_articles_dedup.to_excel(path_rational_parsing / Path(DEDUPLICATED_XLSX))
+    print(f'\nDeduplicated articles list file successfully saved as EXCEL file in: \n{path_rational_parsing}')    
+      
+    # Dropping the temporarily created column of normalized journal names in the deduplicated articles dataframe
+    df_articles_dedup = df_articles_dedup.drop([norm_journal_alias], axis = 1)
+    
+    # Saving deduplicated articles list to .dat file  
     df_articles_dedup.to_csv(path_rational_parsing / Path(articles_dat_alias),
                              index=False,
                              sep='\t')
-    
-    # Saving deduplicated articles list to .xlsx file for checking deduplication
-    df_articles_dedup.to_excel(path_rational_parsing / Path(DEDUPLICATED_XLSX))
-    print(f'\nDeduplicated articles list file successfully saved as EXCEL file in: \n{path_rational_parsing}')
-    
+    print(f'\nArticles list file successfully deduplicated and saved in: \n{path_rational_parsing}')    
 
     # Updating and saving all other .dat files except the one of articles list
     files_list_wo_articles_dat = files_list
@@ -221,11 +225,11 @@ def _deduplicate_articles(path_in):
     
     # Setting the name of a temporal column of titles in lower case 
     # to be added to working dataframes for case unsensitive dropping of duplicates
-    lc_title_alias = title_alias + '_LC' 
+    lc_title_alias = COL_NAMES['temp_col'][0] 
     
     # Setting the name of a temporal column of journals normalized 
     # to be added to working dataframes for dropping of duplicates
-    norm_journal_alias = journal_alias + '_norm'
+    norm_journal_alias = COL_NAMES['temp_col'][1]
     
     # Setting alias for the articles file (.dat)
     articles_dat_alias = DIC_OUTDIR_PARSING['A']

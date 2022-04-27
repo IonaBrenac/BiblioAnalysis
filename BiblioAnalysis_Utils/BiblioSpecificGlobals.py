@@ -127,7 +127,9 @@ COL_NAMES = {   'pub_id':       pub_id,
                 'subject':      [pub_id,
                                  'Subject'],
                 'sub_subject':  [pub_id,
-                                 'Sub_subject']
+                                 'Sub_subject'],
+                'temp_col':     ['Title_LC', 
+                                 'Journal_norm'],
             }                   
             
 COLUMN_LABEL_SCOPUS = {'affiliations': 'Affiliations',
