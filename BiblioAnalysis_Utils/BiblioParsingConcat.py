@@ -263,7 +263,7 @@ def _deduplicate_articles(path_in):
     # Dropping duplicated article lines after merging by doi or, for unknown doi, by title and document type 
     df_list = []
     for doi, dg in df_articles_concat.groupby(doi_alias):
-        if doi != 'unknown':
+        if doi != UNKNOWN:
             # Deduplicating article lines by DOI
             dg[title_alias] = _find_value_to_keep(title_alias)
             dg[doc_type_alias] = _find_value_to_keep(doc_type_alias)
