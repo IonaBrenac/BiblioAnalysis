@@ -176,7 +176,7 @@ def build_institutions_dic(rep_utils = None, dic_inst_filename = None):
     path_dic_inst = Path(__file__).parent / rep_utils / Path(dic_inst_filename)
     
     # Reading and cleaning the dic_inst_filename file
-    inst_dic = pd.read_csv(path_dic_inst,sep=':',header=None)
+    inst_dic = pd.read_csv(path_dic_inst,sep=':',header=None,encoding='latin1')
     inst_dic.sort_values([0],inplace=True)
     inst_dic[0] = inst_dic[0].str.strip()
     inst_dic[1] = inst_dic[1].str.strip()
@@ -436,6 +436,7 @@ def biblio_parser(in_dir_parsing, out_dir_parsing, database, expert, rep_utils=N
     else:
         raise Exception(f"Sorry, unrecognized database {database} : should be wos or scopus ")
 
+        
 def check_and_drop_columns(database,df,filename):
 
     # Local imports

@@ -1,5 +1,6 @@
 __all__ = ['biblio_parser_wos','read_database_wos']
 
+# Globals used from BiblioAnalysis_Utils.BiblioGeneralGlobals: ACCENT_CHANGE
 # Globals used from BiblioAnalysis_Utils.BiblioSpecificGlobals: DIC_OUTDIR_PARSING, DIC_DOCTYPE, 
 #                                                               ENCODING, FIELD_SIZE_LIMIT,
 #                                                               RE_ADDRESS, RE_AUTHOR,
@@ -210,10 +211,10 @@ def _build_addresses_countries_institutions_wos(df_corpus,dic_failed):
         df_corpus (dataframe): the dataframe of the wos/scopus corpus.
 
     Returns:
-        The dataframe df_address, df_country, df_institution.
+        The dataframes df_address, df_country, df_institution.
         
     Notes:
-        The globals 'COL_NAMES', 'COLUMN_LABEL_WOS', 'RE_ADDRESS', 'RE_AUTHOR' and 'RE_SUB' are used.
+        The globals 'ACCENT_CHANGE', 'COL_NAMES', 'COLUMN_LABEL_WOS', 'RE_ADDRESS', 'RE_AUTHOR' and 'RE_SUB' are used.
         The function `country_normalization`is used from `BiblioAnalysis_utils` package.
     '''
 
@@ -227,6 +228,7 @@ def _build_addresses_countries_institutions_wos(df_corpus,dic_failed):
     
     # Local imports
     from BiblioAnalysis_Utils.BiblioParsingUtils import country_normalization
+    from BiblioAnalysis_Utils.BiblioGeneralGlobals import ACCENT_CHANGE
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import COL_NAMES
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import COLUMN_LABEL_WOS
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import RE_ADDRESS
@@ -260,8 +262,9 @@ def _build_addresses_countries_institutions_wos(df_corpus,dic_failed):
             print(pub_id,affiliation)
         
         if addresses:
-            for idx, author_address in enumerate(addresses): 
-
+            for idx, author_address in enumerate(addresses):
+                
+                author_address = author_address.translate(ACCENT_CHANGE) # Translate accentuated characters using global ACCENT_CHANGE 
                 list_addresses.append(address(pub_id,
                                               idx,
                                               author_address))
@@ -390,9 +393,9 @@ def _build_authors_countries_institutions_wos(df_corpus, dic_failed, inst_filter
         (dataframe):  "df_addr_country_inst".
         
     Notes:
-        The globals 'COL_NAMES', 'COLUMN_LABEL_WOS', 'RE_ADDRESS', 'RE_AUTHOR', 'RE_SUB' and 'SYMBOL' are used.
-        The functions `build_institutions_dic`and `country_normalization` are used 
-        from `BiblioAnalysis_utils` package.
+        The globals 'ACCENT_CHANGE', 'COL_NAMES', 'COLUMN_LABEL_WOS', 'RE_ADDRESS', 'RE_AUTHOR', 'RE_SUB' and 'SYMBOL' are used.
+        The functions `build_institutions_dic`and `country_normalization` are used from `BiblioAnalysis_utils` package.
+        
     '''
     
     # Standard library imports
@@ -409,6 +412,7 @@ def _build_authors_countries_institutions_wos(df_corpus, dic_failed, inst_filter
     # Local imports
     from BiblioAnalysis_Utils.BiblioParsingUtils import build_institutions_dic
     from BiblioAnalysis_Utils.BiblioParsingUtils import country_normalization
+    from BiblioAnalysis_Utils.BiblioGeneralGlobals import ACCENT_CHANGE
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import COL_NAMES
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import COLUMN_LABEL_WOS
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import RE_ADDRESS
@@ -507,6 +511,7 @@ def _build_authors_countries_institutions_wos(df_corpus, dic_failed, inst_filter
 
                 
                 author_address_raw = tup.address
+                author_address_raw = author_address_raw.translate(ACCENT_CHANGE) # Translate accentuated characters using global ACCENT_CHANGE 
                 author_address = re.sub(RE_SUB,'University' + ' ', author_address_raw)
                 author_institutions = _address_inst_full_list(author_address, inst_dic)
 
@@ -603,7 +608,7 @@ def _build_subjects_wos(df_corpus,dic_failed):
     
     df_subject = df_subject[df_subject[subject_alias] != '']
 
-    return   df_subject
+    return df_subject
 
 
 def _build_sub_subjects_wos(df_corpus,dic_failed):

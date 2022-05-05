@@ -1,9 +1,9 @@
-__all__ = ['ALIAS_UK',
+__all__ = ['ACCENT_CHANGE',
+           'ALIAS_UK',
            'BOLD_TEXT',
            'CHANGE',
            'COUNTRIES',
            'COUNTRIES_GPS',
-           'DIC_CHANGE_CHAR',
            'IN_TO_MM',
            'LIGHT_TEXT',
            'USA_STATES',]
@@ -109,6 +109,21 @@ for country in COUNTRIES_GPS_STRING.split(';'):
     COUNTRIES_GPS[match.group("country")] = (float(match.group("long")),float(match.group("lat")))
 
 # Character replacements
+DIC_CHANGE_ACCENT = {'À': 'A', 'Á': 'A', 'Â': 'A', 'Ã': 'A', 'Ä': 'A',
+                      'à': 'a', 'á': 'a', 'â': 'a', 'ã': 'a', 'ä': 'a', 'ª': 'A',
+                      'È': 'E', 'É': 'E', 'Ê': 'E', 'Ë': 'E',
+                      'è': 'e', 'é': 'e', 'ê': 'e', 'ë': 'e',
+                      'Í': 'I', 'Ì': 'I', 'Î': 'I', 'Ï': 'I',
+                      'í': 'i', 'ì': 'i', 'î': 'i', 'ï': 'i',
+                      'Ò': 'O', 'Ó': 'O', 'Ô': 'O', 'Õ': 'O', 'Ö': 'O',
+                      'ò': 'o', 'ó': 'o', 'ô': 'o', 'õ': 'o', 'ö': 'o', 'º': 'O',
+                      'Ù': 'U', 'Ú': 'U', 'Û': 'U', 'Ü': 'U',
+                      'ù': 'u', 'ú': 'u', 'û': 'u', 'ü': 'u',
+                      'Ñ': 'N', 'ñ': 'n',
+                      'Ç': 'C', 'ç': 'c',}
+
+ACCENT_CHANGE = str.maketrans(DIC_CHANGE_ACCENT)
+
 DIC_CHANGE_CHAR = {"Ł":"L",   # polish capital to L 
                    "ł":"l",   # polish l
                    "ı":"i",    
@@ -117,8 +132,9 @@ DIC_CHANGE_CHAR = {"Ł":"L",   # polish capital to L
                    "–":"-",   # Em-dash to hyphen-minus
                    "Đ":"D",   # D with stroke (Vietamese,South Slavic) to D
                    ".":"",
-                   ",":""}
+                   ",":"",}
 
 CHANGE = str.maketrans(DIC_CHANGE_CHAR)
 
+# Conversion factor for inch to millimeter
 IN_TO_MM = 25.4

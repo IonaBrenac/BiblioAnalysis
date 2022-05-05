@@ -1,5 +1,6 @@
 __all__ = ['biblio_parser_scopus']
 
+# Globals used from BiblioAnalysis_Utils.BiblioGeneralGlobals: ACCENT_CHANGE
 # Globals used from BiblioAnalysis_Utils.BiblioSpecificGlobals: CHANGE, DIC_OUTDIR_PARSING, DIC_DOCTYPE,
 #                                                               RE_REF_AUTHOR_SCOPUS, RE_REF_JOURNAL_SCOPUS,
 #                                                               RE_REF_PAGE_SCOPUS, RE_REF_VOL_SCOPUS,
@@ -195,7 +196,11 @@ def _build_addresses_countries_institutions_scopus(df_corpus,dic_failed):
 
 
     Returns:
-        The dataframe df_address
+        The dataframes df_address, df_country, df_institution.
+        
+    Notes:
+        The globals 'ACCENT_CHANGE', 'COL_NAMES', 'COLUMN_LABEL_SCOPUS', 'RE_SUB' and 'UNKNOWN' are used.
+        The function `country_normalization`is used from `BiblioAnalysis_utils` package.
          
     '''
     
@@ -209,6 +214,7 @@ def _build_addresses_countries_institutions_scopus(df_corpus,dic_failed):
     
     # Local imports
     from BiblioAnalysis_Utils.BiblioParsingUtils import country_normalization
+    from BiblioAnalysis_Utils.BiblioGeneralGlobals import ACCENT_CHANGE
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import COL_NAMES
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import COLUMN_LABEL_SCOPUS
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import RE_SUB
@@ -233,7 +239,8 @@ def _build_addresses_countries_institutions_scopus(df_corpus,dic_failed):
         
         if list_affiliation:
             for idx_address, address_pub in enumerate(list_affiliation):
-
+                
+                address_pub = address_pub.translate(ACCENT_CHANGE) # Translate accentuated characters using global ACCENT_CHANGE 
                 list_addresses.append(address(pub_id,
                                               idx_address,
                                               address_pub))
@@ -367,6 +374,11 @@ def _build_authors_countries_institutions_scopus(df_corpus, dic_failed, inst_fil
 
     Returns:
         The dataframe df_addr_country_inst.
+        
+    Notes:
+        The globals 'ACCENT_CHANGE', 'COL_NAMES', 'COLUMN_LABEL_SCOPUS', 'RE_SUB' and 'UNKNOWN' are used.
+        The functions `build_institutions_dic`and `country_normalization`is used from `BiblioAnalysis_utils` package.
+             
     '''
     
     # Standard library imports
@@ -381,6 +393,7 @@ def _build_authors_countries_institutions_scopus(df_corpus, dic_failed, inst_fil
     # Local imports
     from BiblioAnalysis_Utils.BiblioParsingUtils import build_institutions_dic
     from BiblioAnalysis_Utils.BiblioParsingUtils import country_normalization
+    from BiblioAnalysis_Utils.BiblioGeneralGlobals import ACCENT_CHANGE
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import COL_NAMES
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import COLUMN_LABEL_SCOPUS
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import RE_SUB
@@ -456,6 +469,7 @@ def _build_authors_countries_institutions_scopus(df_corpus, dic_failed, inst_fil
             for affiliation in list_affiliations:
                 if affiliation in author_list_addresses:
                     affiliation = re.sub(RE_SUB,'University' + ' ',affiliation)
+                    affiliation = affiliation.translate(ACCENT_CHANGE) # Translate accentuated characters using global ACCENT_CHANGE 
                     author_address_list_raw.append(affiliation)   
 
             author_institutions = []
@@ -501,7 +515,6 @@ def _build_authors_countries_institutions_scopus(df_corpus, dic_failed, inst_fil
                                   pub_id_alias:[int(x) for x in list(list_id)]}
     
     return df_addr_country_inst
-
 
 
 def _build_subjects_scopus(df_corpus,

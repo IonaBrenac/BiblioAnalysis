@@ -1,6 +1,6 @@
 Abylsen : Abylsen
 ADEME : ADEME
-Agence de l'Environnement et de la Maîtrise de l'Energie : ADEME
+Agence de l'Environnement et de la Maitrise de l'Energie : ADEME
 ALLIOS : ALLIOS
 ALLIOS Les Docks II : ALLIOS
 Altran : Altran
@@ -25,6 +25,7 @@ CSTB : CSTB
 DAM : DAM
 DavidsonGrenoble : Davidson
 DEN : DEN
+Deutsches Zentrum fur Luft- und Raumfahrt :  DLR
 DRF : DRF
 Ecole Polytech Fed Lausanne : EPFL
 Elcogen : Elcogen
@@ -37,6 +38,7 @@ Fed University : Fed Univ
 Forschungszentrum Julich : Julich Institutes
 FRAMATOME : FRAMATOME
 Fraunhofer : FhG Institutes
+German Aerospace Center : DLR
 GmbH : Compagnies
 Grenoble INP : G-INP
 Helmholtz : Helmholtz Institutes
@@ -44,6 +46,7 @@ HotBlock OnBoard : HBOB
 IBS : IBS
 ICAM : ICAM
 ICMM : ICMM
+ILL : ILL
 IMDEA : IMDEA Institutes
 IMEC : IMEC
 INAC : INAC
@@ -53,7 +56,13 @@ INiBICA : INiBICA
 INP Grenoble : G-INP
 INSA : INSA
 Inst Laue Langevin : ILL
+Inst Solar Energy Res Hamelin : ISFH Inst
+Institut Laue-Langevin : ILL
+Institute for Solar Energy Research Hamelin : ISFH Inst
+Institute of Energy and Climate Research : IECR Inst
 Instituut Voor Kern- en Stralingsfysica : VKS Inst
+Int Solar Energy Res Ctr : ISC
+International Solar Energy Research Center : ISC
 IPC : IPC
 IPVF : IPVF
 IRAMIS : IRAMIS
@@ -64,13 +73,16 @@ ISEN : ISEN
 ITER : ITER
 Jozef Stefan Inst : Jozef Stefan Inst 
 Karlsruhe Inst Technol : KIT
+Karlsruhe Institute of Technology : KIT
 KIT : KIT
-Laboratoire national de métrologie et d'essais (LNE): LNE
+Laboratoire national de metrologie et d'essais (LNE): LNE
 Laboratory for Plasma Physics : Plasma Phys Lab
+Leibniz : Leibniz Institutes
 LETI : LETI
 LIST : LIST
 LITEN : LITEN
 LONGi : LONGi
+Max-Planck : Max-Planck Institutes
 Nanyang Technol University : NTU
 National Research Council Canada : Nat Res Council
 Natl Inst Appl Sci : INSA
@@ -79,6 +91,7 @@ PELLENC : PELLENC
 Phys Tech Bundesanstalt : PTB Inst
 PROMES : PROMES
 RAGT : RAGT
+Saint-Gobain : Saint-Gobain 
 SILVACO : SILVACO
 SOLEIL : SOLEIL
 Synchrotron : Synchrotrons
