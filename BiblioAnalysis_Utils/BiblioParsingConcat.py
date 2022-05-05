@@ -354,7 +354,7 @@ def _deduplicate_dat(file_name, pub_id_to_drop, path_in, path_out ):
     df = pd.read_csv(path_in / Path(file_name), sep="\t")
     
     filt = (df[pub_id_alias].isin(pub_id_to_drop))
-    df = df[filt]
+    df = df[~filt]
     df.sort_values([pub_id_alias], inplace=True)
 
     if file_name == DIC_OUTDIR_PARSING['AU']:
