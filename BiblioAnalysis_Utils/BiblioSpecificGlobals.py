@@ -43,6 +43,7 @@ __all__ = ['BLACKLISTED_WORDS',
            'NOUN_MINIMUM_OCCURRENCES',
            'NODE_SIZE_REF',
            'PARSING_PERF',
+           'RAW_INST_FILENAME',
            'RE_ADDRESS',
            'RE_ADDS_JOURNAL',
            'RE_AUTHOR',
@@ -58,9 +59,11 @@ __all__ = ['BLACKLISTED_WORDS',
            'RE_REF_YEAR_SCOPUS',
            'RE_REF_YEAR_WOS',
            'RE_SUB',
+           'RE_SUB_FIRST',
            'RE_YEAR',
            'RE_YEAR_JOURNAL',
            'REP_UTILS',
+           'RE_ZIP_CODE',
            'SCOPUS',
            'SCOPUS_CAT_CODES',
            'SCOPUS_JOURNALS_ISSN_CAT',
@@ -107,7 +110,8 @@ COL_NAMES = {   'pub_id':       pub_id,
                                  'Idx_author',
                                  'Address',
                                  'Country',
-                                 'Institutions',
+                                 'Norm_institutions',
+                                 'Raw_institutions',
                                  'Secondary_institutions'
                                  ], 
                 'country':      [pub_id,
@@ -363,6 +367,8 @@ NODE_SIZE_REF = 30
 
 PARSING_PERF = 'failed.json'
 
+RAW_INST_FILENAME = 'Raw_inst.csv'
+
 RE_ADDRESS = re.compile('''(?<=\]\s)               # Captures: "xxxxx" in string between "]" and "["  
                         [^;]*                      # or  between "]" and end of string or ";"
                         (?=; | $ )''',re.X)
@@ -401,14 +407,19 @@ RE_REF_YEAR_SCOPUS = re.compile(r'(?<=\()\d{4}(?=\))')  # Captures: "dddd" withi
 
 RE_REF_YEAR_WOS = re.compile(r',\s\d{4},')               # Captures: ", dddd," in wos references
 
-RE_SUB = re.compile('''[a-z]?Univ[\.a-zé]{0,6}\s        # Captures alias of University
+RE_SUB = re.compile('''[a-z]?Univ[\.a-zé]{0,6}\s        # Captures alias of University surrounded by texts
                     |[a-z]?Univ[\.a-zé]{0,6}$''',re.X)
+
+RE_SUB_FIRST = re.compile('''[a-z]?Univ[,]\s ''',re.X)       # Captures alias of University before a coma
 
 RE_YEAR = re.compile(r'\d{4}')                            # Captures "dddd" as the string giving the year
 
 RE_YEAR_JOURNAL = re.compile(r'\s\d{4}\s')               # Captures " dddd " as the year in journal name
 
 REP_UTILS = 'BiblioAnalysis_RefFiles'
+
+RE_ZIP_CODE = re.compile(',\s[a-zA-Z]?[\-]?\d+.*',)     # Captures text begining with ', ' 
+                                                        # and that possibly contains letters and hyphen-minus
 
 # Scopus database name
 SCOPUS = 'scopus'

@@ -120,7 +120,8 @@ DIC_CHANGE_ACCENT = {'À': 'A', 'Á': 'A', 'Â': 'A', 'Ã': 'A', 'Ä': 'A',
                       'Ù': 'U', 'Ú': 'U', 'Û': 'U', 'Ü': 'U',
                       'ù': 'u', 'ú': 'u', 'û': 'u', 'ü': 'u',
                       'Ñ': 'N', 'ñ': 'n',
-                      'Ç': 'C', 'ç': 'c',}
+                      'Ç': 'C', 'ç': 'c',
+                      'Ž': 'Z','ž': 'z'}
 
 ACCENT_CHANGE = str.maketrans(DIC_CHANGE_ACCENT)
 
@@ -132,7 +133,9 @@ DIC_CHANGE_CHAR = {"Ł":"L",   # polish capital to L
                    "–":"-",   # Em-dash to hyphen-minus
                    "Đ":"D",   # D with stroke (Vietamese,South Slavic) to D
                    ".":"",
-                   ",":"",}
+                   ",":"",
+                   "&": "and",
+                   "’": "'",}
 
 CHANGE = str.maketrans(DIC_CHANGE_CHAR)
 
