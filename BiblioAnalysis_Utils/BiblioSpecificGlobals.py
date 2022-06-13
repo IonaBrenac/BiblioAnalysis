@@ -20,11 +20,14 @@ __all__ = ['BLACKLISTED_WORDS',
            'COUPL_HTML_PARAM',
            'DEDUPLICATED_XLSX',
            'DIC_DOCTYPE',
+           'DIC_AMB_WORDS',
            'DIC_LOW_WORDS',
            'DIC_OUTDIR_DESCRIPTION',
            'DIC_OUTDIR_PARSING',
            'DIC_INST_FILENAME',
-           'DISTRIBS_ITEM_FILE',           
+           'DIC_WORD_RE_PATTERN',
+           'DISTRIBS_ITEM_FILE',
+           'EMPTY',
            'ENCODING',
            'FIELD_SIZE_LIMIT',
            'FOLDER_NAMES',
@@ -33,7 +36,9 @@ __all__ = ['BLACKLISTED_WORDS',
            'GUI_TEXT_MAX_LINES_NB',
            'GUI_WIDGET_RATIO',
            'HEADER',
+           'INST_BASE_LIST',
            'INST_FILTER_LIST',
+           'KEEPING_WORDS',
            'LABEL_MEANING',
            'LENGTH_DIFF_THRESHOLD',
            'LENGTH_THRESHOLD',
@@ -133,7 +138,10 @@ COL_NAMES = {   'pub_id':       pub_id,
                 'sub_subject':  [pub_id,
                                  'Sub_subject'],
                 'temp_col':     ['Title_LC', 
-                                 'Journal_norm'],
+                                 'Journal_norm',
+                                 'Title',
+                                 'title_tokens',
+                                 'kept_tokens'],             
             }                   
             
 COLUMN_LABEL_SCOPUS = {'affiliations': 'Affiliations',
@@ -236,6 +244,11 @@ COUPL_HTML_PARAM = {'background_color': '#EAEDED', #light grey,
 
 DEDUPLICATED_XLSX = 'articles_dedup.xlsx'
 
+# Potentialy ambiguous words in institutions names
+DIC_AMB_WORDS = {' des ': ' ', # Conflict with DES institution
+                 ' @ ': ' ', # Management conflict with '@' between texts
+                }
+
 DIC_DOCTYPE = {'Article':              ['Article'],
                'Article; Early Access':['Article; Early Access'], 
                'Conference Paper':     ['Conference Paper','Proceedings Paper'],
@@ -285,7 +298,29 @@ DIC_OUTDIR_PARSING = {'A':'articles.dat',
 
 DIC_INST_FILENAME = 'Inst_dic.csv'
 
+# For replacing aliases of a word by a word
+DIC_WORD_RE_PATTERN = {}
+DIC_WORD_RE_PATTERN['University'] = re.compile(r'\bUniv[aàädeéirstyz]{0,8}\b\.?')
+DIC_WORD_RE_PATTERN['Laboratory'] = re.compile(r"'?\bLab\b\.?" \
+                                                    +  "|" \
+                                                    + r"'?\bLabor[aeimorstuy]{0,7}\b\.?")
+DIC_WORD_RE_PATTERN['Center'] = re.compile(r"\b[CZ]ent[erum]{1,3}\b\.?")
+DIC_WORD_RE_PATTERN['Department'] = re.compile(r"\bD[eé]{1}p[artemnot]{0,9}\b\.?")
+DIC_WORD_RE_PATTERN['Institute'] = re.compile(r"\bInst[ituteosky]{0,7}\b\.?")
+DIC_WORD_RE_PATTERN['Faculty'] = re.compile(r"\bFac[lutey]{0,4}\b\.?")
+DIC_WORD_RE_PATTERN['School'] = re.compile(r"\bSch[ol]{0,3}\b\.?")
+
 DISTRIBS_ITEM_FILE = 'DISTRIBS_itemuse.json'
+
+# For droping chunks of addresses
+DROPING_SUFFIX = ["platz", "strae", "strasse", "vej"]
+
+DROPING_WORDS = ["allee", "av", "avda", "avenue", "bat", "batiment", "boulevard", "blv.", "box", "bp", "calle" 
+                 "campus", "carrera", "ciudad", "cedex", "cesta", "chemin", "ch.", "city", "cours", "district", 
+                 "lane", "mall", "no.", "po", "p.", "rd", "route", "rue", "road", "sec.", "strada",
+                 "st.", "street", "str.", "via", "viale"]
+
+EMPTY = 'empty'
 
 ENCODING = 'iso-8859-1' # encoding used by the function read_database_wos
 
@@ -316,8 +351,13 @@ GUI_WIDGET_RATIO = 1.2
 
 HEADER = True
 
+INST_BASE_LIST = ['UMR', 'CNRS', 'University']
+
 # Authors affiliations filter (default: None) as a list of tuples (instituion,country)
 INST_FILTER_LIST = [('LITEN','France'),('INES','France')]
+
+# For keeping chunks of addresses
+KEEPING_WORDS = list(DIC_WORD_RE_PATTERN.keys()) + ['Ines', 'INES', 'UMR', 'CNRS', 'Beamline']
 
 LABEL_MEANING = {'AU':'Authors',          # ex: Nom1 J, Nom2 E, Nom3 J-P
                  'CU':'Countries',        # ex: France, United States
@@ -436,10 +476,12 @@ SYMBOL = '\s,;:.\-\/'
 
 UNKNOWN = 'unknown'
 
+# This global is used in merge_database function
 USECOLS_SCOPUS = '''Abstract,Affiliations,Authors,Author Keywords,Authors with affiliations,
        CODEN,Document Type,DOI,EID,Index Keywords,ISBN,ISSN,Issue,Language of Original Document,
        Page start,References,Source title,Title,Volume,Year'''
 
+# To Do: Check if this global is still used
 USECOLS_WOS ='''AB,AU,BP,BS,C1,CR,DE,DI,DT,ID,IS,LA,PY,RP,
                 SC,SN,SO,TI,UT,VL,WC'''
 
@@ -466,8 +508,10 @@ _DIC_OUTDIR_DESCRIPTION_ADD = {'DT':'freq_doctypes.dat',
                               }
 DIC_OUTDIR_DESCRIPTION = res = {**DIC_OUTDIR_DESCRIPTION, **_DIC_OUTDIR_DESCRIPTION_ADD}
 
+# This global is used in merge_database function
 USECOLS_SCOPUS = [x.strip() for x in USECOLS_SCOPUS.split(',')]
 
+# To Do: Check if this global is still used
 USECOLS_WOS = [x.strip() for x in USECOLS_WOS.split(',')]
 
 

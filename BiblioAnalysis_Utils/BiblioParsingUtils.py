@@ -1,30 +1,24 @@
 __all__ = ['accent_remove',
-           'address_inst_full_list',
            'biblio_parser',
-           'build_institutions_dic',
            'build_title_keywords',
            'check_and_drop_columns',
            'country_normalization',
-           'extend_author_institutions',
-           'getting_secondary_inst_list',
            'merge_database',
            'name_normalizer',
            'normalize_journal_names',
-           'saving_raw_institutions',
-           'setting_secondary_inst_filter',
            'upgrade_col_names',
            ]
 
-# 
-# Globals used from BiblioAnalysis_Utils.BiblioGeneralGlobals:  ALIAS_UK, CHANGE, COUNTRIES,
+
+# Globals used from BiblioAnalysis_Utils.BiblioGeneralGlobals:  ALIAS_UK, COUNTRIES, 
+#                                                               DASHES_CHANGE, LANG_CHAR_CHANGE, PONCT_CHANGE, SYMB_CHANGE  
 # Globals used from BiblioAnalysis_Utils.BiblioSpecificGlobals: BLACKLISTED_WORDS, COL_NAMES,
-#                                                               DIC_INST_FILENAME, DIC_LOW_WORDS, DIC_OUTDIR_PARSING ,              
+#                                                               DIC_LOW_WORDS, DIC_OUTDIR_PARSING ,              
 #                                                               INST_FILTER_LIST, REP_UTILS, 
 #                                                               NLTK_VALID_TAG_LIST, NOUN_MINIMUM_OCCURRENCES,
-#                                                               RE_NUM_CONF, RE_ZIP_CODE, RE_YEAR_JOURNAL,
+#                                                               RE_NUM_CONF,RE_YEAR_JOURNAL,
 #                                                               SCOPUS, USECOLS_SCOPUS, UNKNOWN, WOS
 
-# Functions used from BiblioAnalysis_Utils.BiblioGui: Select_multi_items
 # Functions used from BiblioAnalysis_Utils.BiblioParsingScopus: biblio_parser_scopus
 # Functions used from BiblioAnalysis_Utils.BiblioParsingWos: biblio_parser_wos
 
@@ -51,15 +45,16 @@ def build_title_keywords(df):
        4- Suppress words pertening to BLACKLISTED_WORDS to the list  from the bag of words
     
     Args:
-       df (dataframe): pub_id | Title 
-       
+       df (dataframe): pub_id | title_alias 
+
     Returns:
-       df (dataframe): pub_id | title_token | kept_tokens where title_token is the list of token of the title
-         and kept_token the list of tokens with a frequency occurrence >= NOUN_MINIMUM_OCCURRENCES
+       df (dataframe): pub_id | title_tokens_alias | kept_tokens_alias where title_tokens is the list of tokens of the title
+         and kept_tokens the list of tokens with a frequency occurrence >= NOUN_MINIMUM_OCCURRENCES
        bag_of_words_occurrences (list of tuples): [(word_1,# occurrence_1), (word_2,# occurrence_2), ...]
         
     '''
-
+    # To Do: update docstring
+    
     # Standard library imports
     import operator
     from collections import Counter
@@ -69,9 +64,10 @@ def build_title_keywords(df):
     import numpy as np
     
     # Local imports
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import BLACKLISTED_WORDS
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import COL_NAMES
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import NLTK_VALID_TAG_LIST
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import NOUN_MINIMUM_OCCURRENCES
-    from BiblioAnalysis_Utils.BiblioSpecificGlobals import BLACKLISTED_WORDS
     
     def tokenizer(text):
         
@@ -98,9 +94,13 @@ def build_title_keywords(df):
     
         return valid_words_lemmatized        
 
-    df['title_token'] = df['Title'].apply(tokenizer)
+    title_alias = COL_NAMES['temp_col'][2]
+    title_tokens_alias = COL_NAMES['temp_col'][3]
+    kept_tokens_alias = COL_NAMES['temp_col'][4]
+    
+    df[title_tokens_alias] = df[title_alias].apply(tokenizer)
 
-    bag_of_words = np.array(df.title_token.sum()) # remove the blacklisted words from the bag of words
+    bag_of_words = np.array(df[title_tokens_alias].sum()) # remove the blacklisted words from the bag of words
     for remove in BLACKLISTED_WORDS:
         bag_of_words = bag_of_words[bag_of_words != remove] 
 
@@ -109,15 +109,17 @@ def build_title_keywords(df):
 
     keywords_TK = set([x for x,y in bag_of_words_occurrences if y>=NOUN_MINIMUM_OCCURRENCES])
     
-    df['kept_tokens'] = df['title_token'].apply(lambda x :list(keywords_TK.intersection(set(x))))
+    df[kept_tokens_alias] = df[title_tokens_alias].apply(lambda x :list(keywords_TK.intersection(set(x))))
    
     return df,bag_of_words_occurrences
 
 def country_normalization(country):
+    
     '''
     Normalize the country name for coherence seeking between wos and scopus corpuses.
     '''
-
+    # To Do: update docstring
+    
     # Local imports
     from BiblioAnalysis_Utils.BiblioGeneralGlobals import ALIAS_UK
     from BiblioAnalysis_Utils.BiblioGeneralGlobals import COUNTRIES
@@ -142,182 +144,22 @@ def country_normalization(country):
     return country_clean
 
 
-def build_institutions_dic(rep_utils = None, dic_inst_filename = None):
-    '''The `builds_institutions_dic` fuction builds the dict 'inst_dic' 
-    giving the mormalized names of institutions from a csv file `dic_inst_filename`.
-    The name of the csv file is set in the `DIC_INST_FILENAME` global.
-    
-    Args: 
-        rep_utils (str): name of the folder where the csv file is stored
-        dic_inst_filename (str): name of the csv file.        
-    
-    Returns:       
-        `dict`: `inst_dic` as {raw_inst:norm_inst} where 
-                - raw_inst a raw institution name 
-                - norm_inst is the normalized institution name.
-        
-    Note:
-        The globals `REP_UTILS` and `DIC_INST_FILENAME` are used.
-    
-    '''
-
-    # Standard library imports
-    from pathlib import Path
-    
-    # 3rd party imports
-    import pandas as pd
-    
-    # Local imports
-    from BiblioAnalysis_Utils.BiblioSpecificGlobals  import DIC_INST_FILENAME
-    from BiblioAnalysis_Utils.BiblioSpecificGlobals import REP_UTILS    
-    
-    if dic_inst_filename == None: dic_inst_filename = DIC_INST_FILENAME
-    if rep_utils == None: rep_utils = REP_UTILS 
-    
-    # Setting the file path for dic_inst_filename file reading    
-    path_dic_inst = Path(__file__).parent / rep_utils / Path(dic_inst_filename)
-    
-    # Reading and cleaning the dic_inst_filename file
-    inst_dic = pd.read_csv(path_dic_inst,sep=':',header=None,encoding='latin1')
-    inst_dic.sort_values([0],inplace=True)
-    inst_dic[0] = inst_dic[0].str.strip()
-    inst_dic[1] = inst_dic[1].str.strip()
-    inst_dic = dict(zip(inst_dic[0],inst_dic[1]))
-    
-    return inst_dic
-
-
-def setting_secondary_inst_filter(out_dir_parsing):
-    '''The `setting_secondary_inst_filter` function allows building the affiliation filter "inst_filter_list"
-    fron the institutions list of the corpus using the `Select_multi_items` GUI.
-    
-    Args:
-        out_dir_parsing (path): the corpus parsing path for reading the "DIC_OUTDIR_PARSING['I2']" file.
-        
-    Returns:
-        (list): list of tuples (institution,country) selected by the user.
-        
-    Notes:
-        The globals 'COL_NAMES'and 'DIC_OUTDIR_PARSING' are used.
-        The function `Select_multi_items`is used from `BiblioAnalysis_utils` package.
-        
-    '''
-    
-    # Standard library imports
-    from pathlib import Path
-    
-    # 3rd party imports
-    import numpy as np
-    import pandas as pd
-    
-    # Local imports
-    from BiblioAnalysis_Utils.BiblioGui import Select_multi_items
-    from BiblioAnalysis_Utils.BiblioSpecificGlobals import COL_NAMES
-    from BiblioAnalysis_Utils.BiblioSpecificGlobals import DIC_OUTDIR_PARSING
-    
-    
-    institutions_alias = COL_NAMES['auth_inst'][4]
-    country_alias = COL_NAMES['country'][2]    
-    
-    df_auth_inst = pd.read_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING['I2']),
-                                sep = '\t')
-    raw_institutions_list = []
-    for auth_inst in df_auth_inst[institutions_alias]:
-        raw_institutions_list.append(auth_inst.strip())
-        
-    institutions_list = list(np.concatenate([raw_inst.split(';') for raw_inst in raw_institutions_list]))
-    institutions_list  = sorted(list(set(institutions_list)))
-
-    country_institution_list = [x.split('_')[1] + ':' + x.split('_')[0] for x in institutions_list]
-    country_institution_list = sorted(country_institution_list)
-
-    selected_list = Select_multi_items(country_institution_list,
-                                       mode='multiple',
-                                       fact=2,
-                                       win_widthmm=80,
-                                       win_heightmm=100,
-                                       font_size=16)
-
-    inst_filter_list = [(x.split(':')[1].strip(),x.split(':')[0].strip()) for x in selected_list]
-    
-    return inst_filter_list
-
-
-def address_inst_full_list(full_address, inst_dic):
-    
-    # Standard library imports
-    import re
-    from collections import namedtuple
-    from string import Template
-
-    # 3rd party imports
-    import pandas as pd
-    from fuzzywuzzy import process
-    
-    # Local imports
-    from BiblioAnalysis_Utils.BiblioParsingUtils import country_normalization
-    from BiblioAnalysis_Utils.BiblioGeneralGlobals import CHANGE
-    from BiblioAnalysis_Utils.BiblioSpecificGlobals import RE_ZIP_CODE
-    from BiblioAnalysis_Utils.BiblioSpecificGlobals import UNKNOWN
-    
-    inst_full_list_ntup = namedtuple('inst_full_list_ntup',['norm_inst_list','raw_inst_list'])
-    
-    country_raw = full_address.split(',')[-1].strip()
-    country = country_normalization(country_raw)
-    add_country = '_' + country
-    
-    if RE_ZIP_CODE.findall(full_address):
-        address_to_keep = re.sub(RE_ZIP_CODE,'',full_address) + ','
-    else:
-        address_to_keep = ', '.join(full_address.split(',')[:-1])
-        
-    address_to_keep = address_to_keep.translate(CHANGE)
-
-    norm_inst_full_list = []        
-    for raw_inst, norm_inst in inst_dic.items(): 
-        raw_inst_split = raw_inst.split()
-        dic = {'inst'+str(i):inst for i,inst in enumerate(raw_inst_split)}
-        template_inst = Template(r'\s+'.join([r'(\b$inst'+str(i)+r'\b)' for i in range(len(raw_inst_split))]))
-        re_inst = re.compile(template_inst.substitute(dic), re.IGNORECASE)
-        if re_inst.findall(address_to_keep):
-            norm_inst_full_list.append(norm_inst + add_country)
-
-            address_to_keep_list = [x.strip() for x in address_to_keep.split(',')]
-            if raw_inst in address_to_keep_list:
-                address_to_keep = address_to_keep.replace(raw_inst + ',','')
-            address_to_keep = " ".join(address_to_keep.split())
-            if len(address_to_keep) != 0:
-                if address_to_keep[-1] != ',': address_to_keep = address_to_keep + ','
-                    
-    raw_inst_full_list = [x.strip() + add_country for x in address_to_keep.split(',') if x!='' ]
-    if raw_inst_full_list:
-        raw_inst_full_list_str = ';'.join(raw_inst_full_list)
-    else:
-        raw_inst_full_list_str = UNKNOWN   
-        
-    norm_inst_full_list = list(set(norm_inst_full_list))
-    if norm_inst_full_list:
-        norm_inst_full_list_str = ';'.join(norm_inst_full_list)
-    else:
-        norm_inst_full_list_str = UNKNOWN 
-    
-    inst_full_list_tup =  inst_full_list_ntup(norm_inst_full_list_str,raw_inst_full_list_str) 
-    
-    return inst_full_list_tup
-
-
 def merge_database(database,filename,in_dir,out_dir):
     
-    '''Merges several databases in one database
+    '''The `merge_database` function merges several corpus of same database type in one corpus.
     
     Args:
-        database (string): database type (scopus or wos)
-        filename (str): name of the merged database
-        in_dir (str): name of the folder where the databases are stored
-        out_dir (str): name of the folder where the merged databases will be stored
+        database (str): database type (scopus or wos).
+        filename (str): name of the merged database.
+        in_dir (str): name of the folder where the corpuses are saved.
+        out_dir (str): name of the folder where the merged corpuses will be saved.
     
     Notes:
-        The USECOLS_SCOPUS global is used.
+        The globals 'SCOPUS' and 'WOS' from `BiblioSpecificGlobals`module 
+        of `BiblioAnalysis_Utils`package are used.
+        The functions 'read_database_scopus' and 'read_database_wos' 
+        from, respectively, `BiblioParsingScopus`module and `BiblioParsingWos` 
+        of `BiblioAnalysis_Utils`package are used. 
         
     '''
     # Standard library imports
@@ -329,8 +171,10 @@ def merge_database(database,filename,in_dir,out_dir):
     import pandas as pd
     
     # Local imports
+    from BiblioAnalysis_Utils.BiblioParsingScopus import read_database_scopus
+    from BiblioAnalysis_Utils.BiblioParsingWos import read_database_wos
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import SCOPUS
-    from BiblioAnalysis_Utils.BiblioSpecificGlobals import USECOLS_SCOPUS
+    #from BiblioAnalysis_Utils.BiblioSpecificGlobals import USECOLS_SCOPUS       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import WOS
 
     list_data_base = []
@@ -347,9 +191,9 @@ def merge_database(database,filename,in_dir,out_dir):
             list_data_base.extend(Path(path) / Path(file) for file in files
                                                           if file.endswith(".csv"))
         for file in list_data_base:
-            df = pd.read_csv(file,usecols=USECOLS_SCOPUS) # reads the database
-            list_df.append(df)
-            
+            #df = pd.read_csv(file,usecols=USECOLS_SCOPUS) # reads the database     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            #list_df.append(df)                                                     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
+            list_df.append(read_database_scopus(file))
     else:
         raise Exception(f"Sorry, unrecognized database {database} : should be {WOS} or {SCOPUS} ")
         
@@ -358,7 +202,7 @@ def merge_database(database,filename,in_dir,out_dir):
 
 def name_normalizer(text):
     
-    '''Normalizes the author name spelling according the three debatable rules:
+    '''The `name_normalizer` function normalizes the author name spelling according the three debatable rules:
             - replacing none ascii letters by ascii ones
             - capitalizing first name 
             - capitalizing surnames
@@ -368,23 +212,29 @@ def name_normalizer(text):
         >>> "Grol-Bica-Velu D'Aillon E-KJ"
         
     Args:
-        text (str): text to normalize
+        text (str): the text to normalize.
     
     Returns
-        The normalized text
+        (str) : The normalized text.
         
     Notes:
-        The CHANGE global is used.
+        The globals 'DASHES_CHANGE', 'LANG_CHAR_CHANGE' and 'PONCT_CHANGE' 
+        from `BiblioGeneralGlobals` module of `BiblioAnalysis_Utils` package are used.
+        
     '''
 
     # Standard library imports
     import re
     
     # Local imports
-    from BiblioAnalysis_Utils.BiblioGeneralGlobals import CHANGE
+    from BiblioAnalysis_Utils.BiblioGeneralGlobals import DASHES_CHANGE    
+    from BiblioAnalysis_Utils.BiblioGeneralGlobals import LANG_CHAR_CHANGE
+    from BiblioAnalysis_Utils.BiblioGeneralGlobals import PONCT_CHANGE
     
-    # Translate special character using global CHANGE dict
-    text = text.translate(CHANGE) 
+    # Translate special character 
+    text = text.translate(DASHES_CHANGE)
+    text = text.translate(LANG_CHAR_CHANGE)
+    text = text.translate(PONCT_CHANGE)
     
     # Removing accentuated characters
     text = accent_remove(text)
@@ -591,175 +441,9 @@ def upgrade_col_names(corpus_folder):
                     print(Fore.BLUE + f'*** The EMPTY file {os.path.join(dirpath,file)} has been upgraded ***' + Style.RESET_ALL)
                 except:
                     print(Fore.WHITE + Back.RED + f'Warning: File {os.path.join(dirpath,file)} not recognized as a parsing file' + Style.RESET_ALL)
-
-                
-def extend_author_institutions(in_dir,inst_filter_list):
-    ''' The `extend_author_institutions`function extends the .dat file of authors with institutions 
-    initialy obtained by the parsing of the corpus, with complementary information about institutions
-    selected by the user.
-    
-    Args:
-        in_dir (path): path to the .dat file of authors with institutions
-        inst_filter_list (list): the affiliation filter list of tuples (institution, country) 
-
-    Retruns:
-        None
-        
-    Notes:
-        The globals 'COL_NAMES' and 'DIC_OUTDIR_PARSING' from `BiblioSpecificGlobals` module 
-        of `BiblioAnalysis_Utils` package are used.
-    
-    '''
-    
-    # Standard library imports
-    from pathlib import Path
-    
-    # 3rd party imports
-    import pandas as pd
-    
-    # Local imports
-    from BiblioAnalysis_Utils.BiblioSpecificGlobals import COL_NAMES
-    from BiblioAnalysis_Utils.BiblioSpecificGlobals import DIC_OUTDIR_PARSING
-    
-    def _address_inst_list(inst_names_list,institutions):
-
-        secondary_institutions = []
-        for inst in inst_names_list:
-            if inst in institutions:
-                secondary_institutions.append(1)
-            else:
-                secondary_institutions.append(0)  
-             
-        return secondary_institutions
-    
-    institutions_alias = COL_NAMES['auth_inst'][4]
-    sec_institutions_alias = COL_NAMES['auth_inst'][5]
-    
-    # Setting the key for the name of the '.dat' file of authors with institutions 
-    # obtained by parsing the corpus
-    item = 'I2' 
-    
-    # Reading the '.dat' file                   
-    read_usecols = [COL_NAMES['auth_inst'][x] for x in [0,1,2,3,4]]     
-    df_I2= pd.read_csv(in_dir / Path(DIC_OUTDIR_PARSING[item]),
-                     sep='\t',
-                     usecols=read_usecols)
-    
-    # Setting an institution name for each of the institutions indicated in the institutions filter
-    inst_names_list = [f'{x[0]}_{x[1]}' for x in inst_filter_list]   
-    
-    # Building the "sec_institution_alias" column in the 'df_I2' dataframe using "inst_filter_list"
-    df_I2[sec_institutions_alias] = df_I2.apply(lambda row:
-                                             _address_inst_list(inst_names_list,row[institutions_alias]),
-                                             axis = 1)
-
-    # Distributing in a 'df_inst_split' df the value lists of 'df_I2[sec_institutions_alias]' column  
-    # into columns which names are in 'inst_names_list' list     
-    df_inst_split = pd.DataFrame(df_I2[sec_institutions_alias].sort_index().to_list(),
-                                          columns=inst_names_list)
-    
-    # Extending the 'df' dataframe with 'df_inst_split' dataframe
-    df_I2 = pd.concat([df_I2, df_inst_split], axis=1)
-
-    # Droping the 'df[sec_institutions_alias]' column which is no more usefull
-    df_I2.drop([sec_institutions_alias], axis=1, inplace=True)
-    
-    # Saving the extended 'df_I2' dataframe in the same '.dat' file 
-    df_I2.to_csv(in_dir/ Path(DIC_OUTDIR_PARSING[item]), 
-                 index=False,
-                 sep='\t') 
-    
-    
-def getting_secondary_inst_list(out_dir_parsing):
-    '''The `getting_secondary_inst_list` function provides the list of institutions of the corpus.
-   
-    Args:
-        out_dir_parsing (path): the corpus parsing path for reading the "DIC_OUTDIR_PARSING['I2']" file 
-                                that lists the authors with their institutions for each article.
-       
-    Returns:
-        (list): list of strings 'country:institution'
-       
-    Notes:
-        The globals 'COL_NAMES'and 'DIC_OUTDIR_PARSING' from `BiblioSpecificGlobals` module 
-        of `BiblioAnalysis_Utils` package are used.       
-    '''
-   
-    # Standard library imports
-    from pathlib import Path
-   
-    # 3rd party imports
-    import numpy as np
-    import pandas as pd
-   
-    # Local imports
-    from BiblioAnalysis_Utils.BiblioSpecificGlobals import COL_NAMES
-    from BiblioAnalysis_Utils.BiblioSpecificGlobals import DIC_OUTDIR_PARSING
-   
-    
-    institutions_alias = COL_NAMES['auth_inst'][4]
-    country_alias = COL_NAMES['country'][2]   
-    
-    df_auth_inst = pd.read_csv(Path(out_dir_parsing) / Path(DIC_OUTDIR_PARSING['I2']),
-                                sep = '\t')
-    raw_institutions_list = []
-    for auth_inst in df_auth_inst[institutions_alias]:
-        raw_institutions_list.append(auth_inst.strip())
-       
-    institutions_list = list(np.concatenate([raw_inst.split(';') for raw_inst in raw_institutions_list]))
-    institutions_list  = sorted(list(set(institutions_list)))
- 
-    country_institution_list = [x.split('_')[1] + ':' + x.split('_')[0] for x in institutions_list]
-    country_institution_list = sorted(country_institution_list)
-   
-    return country_institution_list
-
-
-def saving_raw_institutions(df_I2,out_dir):
-    '''The `saving_raw_institutions`function allows to save the list of raw institutions of a corpus.
-    The raw institutions are the ones that have not been complitly replaced by the normalized names 
-    of institutions given in a specific file.
-    
-    Args:
-        df_I2 (dataframe): a dataframe resulting from the corpus parsing containing the raw-institutions column.
-        out_dir (str): a string for setting the the folder where the file of raw institutions is saved
-                       as a csv file which name is given by the global `RAW_INST_FILENAME`.
-    
-    Returns:
-    
-    Note:
-        The globals `COL_NAMES`and `RAW_INST_FILENAME` from `BiblioSpecificGlobals` module 
-        of `BiblioAnalysis_Utils` package are used.
-    
-    '''
-    # Standard libraries import
-    from pathlib import Path
-
-    # 3rd party imports
-    import pandas as pd
-
-    # Local imports
-    from BiblioAnalysis_Utils.BiblioSpecificGlobals import COL_NAMES
-    from BiblioAnalysis_Utils.BiblioSpecificGlobals import RAW_INST_FILENAME
-    
-    raw_institutions_alias = COL_NAMES['auth_inst'][5]
-    raw_institutions_authors_lists = df_I2[raw_institutions_alias].to_list()
-
-    raw_institutions_full_lists = [x.split(';') for x in raw_institutions_authors_lists]
-
-    raw_institutions_full_list = []
-    [raw_institutions_full_list.extend(x) for x in raw_institutions_full_lists]
-
-    raw_institutions_full_list = list(set(raw_institutions_full_list))
-    raw_institutions_full_list.sort()
-
-    df_raw_inst = pd.DataFrame(raw_institutions_full_list, columns = [raw_institutions_alias])
-    df_raw_inst.to_csv(Path(out_dir) / Path(RAW_INST_FILENAME),
-                       index=False,
-                       sep='\t') 
             
 
-def accent_remove(text):
+def accent_remove(text,strip = True):
     '''
     '''
     # Standard library imports
@@ -767,10 +451,14 @@ def accent_remove(text):
     import unicodedata
 
     nfc = functools.partial(unicodedata.normalize,'NFD')
-
     text = nfc(text). \
-               encode('ascii', 'ignore'). \
-               decode('utf-8').\
-               strip()
+                   encode('ascii', 'ignore'). \
+                   decode('utf-8')
+    if strip:
+        text = text.strip()
+    
     return text
+
+
+
             

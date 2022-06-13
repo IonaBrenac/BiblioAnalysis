@@ -1,4 +1,4 @@
-__version__ = '0.0.0'
+__version__ = '4.2.0'
 __author__ = 'BiblioAnalysis team'
 __license__ = 'MIT'
 
@@ -11,6 +11,7 @@ from BiblioAnalysis_Utils.BiblioGraphPlot import *
 from BiblioAnalysis_Utils.BiblioGui import *
 from BiblioAnalysis_Utils.BiblioNltk import *
 from BiblioAnalysis_Utils.BiblioParsingConcat import *
+from BiblioAnalysis_Utils.BiblioParsingInstitutions import *
 from BiblioAnalysis_Utils.BiblioParsingScopus import *
 from BiblioAnalysis_Utils.BiblioParsingWos import *
 from BiblioAnalysis_Utils.BiblioParsingUtils import *

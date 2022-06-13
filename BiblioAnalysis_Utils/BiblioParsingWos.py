@@ -1,15 +1,15 @@
 __all__ = ['biblio_parser_wos','read_database_wos']
 
-# Globals used from BiblioAnalysis_Utils.BiblioGeneralGlobals: ACCENT_CHANGE
+# Globals used from BiblioAnalysis_Utils.BiblioGeneralGlobals: DASHES_CHANGE, LANG_CHAR_CHANGE,PONCT_CHANGE 
 # Globals used from BiblioAnalysis_Utils.BiblioSpecificGlobals: DIC_OUTDIR_PARSING, DIC_DOCTYPE, 
 #                                                               ENCODING, FIELD_SIZE_LIMIT,
 #                                                               RE_ADDRESS, RE_AUTHOR,
 #                                                               RE_REF_AUTHOR_WOS, RE_REF_JOURNAL_WOS,
 #                                                               RE_REF_PAGE_WOS, RE_REF_VOL_WOS, 
-#                                                               RE_REF_YEAR_WOS, RE_SUB, SYMBOL, 
-#                                                               UNKNOWN, USECOLS_WOS, WOS
+#                                                               RE_REF_YEAR_WOS, RE_SUB, RE_SUB_FIRST, 
+#                                                               SYMBOL, UNKNOWN, USECOLS_WOS, WOS
 
-# Functions used from BiblioAnalysis_Utils.BiblioParsingUtils: build_title_keywords, build_institutions_dic
+# Functions used from BiblioAnalysis_Utils.BiblioParsingUtils: accent_remove, address_inst_full_list, build_title_keywords, build_institutions_dic
 #                                                              country_normalization, normalize_journal_names, name_normalizer 
                                                               
 
@@ -106,8 +106,9 @@ def _build_keywords_wos(df_corpus,dic_failed):
     key_word = namedtuple('key_word',COL_NAMES['keywords'] )
     
     pub_id_alias = COL_NAMES['keywords'][0]
-    type_alias = COL_NAMES['keywords'][1]
     keyword_alias = COL_NAMES['keywords'][1]
+    title_alias = COL_NAMES['temp_col'][2]
+    kept_tokens_alias = COL_NAMES['temp_col'][4]    
     
     list_keyword_AK = [] 
     df_AK = df_corpus[COLUMN_LABEL_WOS['author_keywords']].fillna('')
@@ -130,10 +131,10 @@ def _build_keywords_wos(df_corpus,dic_failed):
             
     list_keyword_TK = []
     df_title = pd.DataFrame(df_corpus[COLUMN_LABEL_WOS['title']].fillna('')) # Tranform a data list into dataframe
-    df_title.columns = ['Title']  # To be coherent with the convention of function build_title_keywords
+    df_title.columns = [title_alias]  # To be coherent with the convention of function build_title_keywords 
     df_TK,list_of_words_occurrences = build_title_keywords(df_title)
     for pub_id in df_TK.index:
-        for token in df_TK.loc[pub_id,'kept_tokens']:
+        for token in df_TK.loc[pub_id,kept_tokens_alias]:
             token = token.lower().strip()
             list_keyword_TK.append(key_word(pub_id,
                                          token if token != 'null' else '”null”'))                                    
@@ -214,8 +215,11 @@ def _build_addresses_countries_institutions_wos(df_corpus,dic_failed):
         The dataframes df_address, df_country, df_institution.
         
     Notes:
-        The globals 'ACCENT_CHANGE', 'COL_NAMES', 'COLUMN_LABEL_WOS', 'RE_ADDRESS', 'RE_AUTHOR' and 'RE_SUB' are used.
-        The function `country_normalization`is used from `BiblioAnalysis_utils` package.
+        The globals 'COL_NAMES', 'COLUMN_LABEL_WOS', 'RE_ADDRESS', 'RE_AUTHOR', 'RE_SUB', 'RE_SUB_FIRST'
+        and 'UNKNOWN' are used from `BiblioSpecificGlobals` module of `BiblioAnalysis_Utils` package.
+        The functions `accent_remove`, `address_inst_full_list`, `build_institutions_dic` and `country_normalization` are used 
+        from `BiblioParsingUtils` of `BiblioAnalysis_utils` package.
+        
     '''
 
     # Standard library imports
@@ -227,13 +231,14 @@ def _build_addresses_countries_institutions_wos(df_corpus,dic_failed):
     import pandas as pd
     
     # Local imports
+    from BiblioAnalysis_Utils.BiblioParsingUtils import accent_remove
     from BiblioAnalysis_Utils.BiblioParsingUtils import country_normalization
-    from BiblioAnalysis_Utils.BiblioGeneralGlobals import ACCENT_CHANGE
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import COL_NAMES
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import COLUMN_LABEL_WOS
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import RE_ADDRESS
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import RE_AUTHOR
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import RE_SUB
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import RE_SUB_FIRST
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import UNKNOWN
 
     address = namedtuple('address',COL_NAMES['address'] )
@@ -264,13 +269,14 @@ def _build_addresses_countries_institutions_wos(df_corpus,dic_failed):
         if addresses:
             for idx, author_address in enumerate(addresses):
                 
-                author_address = author_address.translate(ACCENT_CHANGE) # Translate accentuated characters using global ACCENT_CHANGE 
+                author_address = accent_remove(author_address)
                 list_addresses.append(address(pub_id,
                                               idx,
                                               author_address))
 
                 author_institution_raw = author_address.split(',')[0]
-                author_institution = re.sub(RE_SUB,'University'+' ', author_institution_raw)
+                author_institution_raw = re.sub(RE_SUB_FIRST,'University' + ', ', author_institution_raw)                 
+                author_institution = re.sub(RE_SUB,'University' + ' ', author_institution_raw)
                 list_institutions.append(institution(pub_id,
                                                      idx,
                                                      author_institution))
@@ -395,7 +401,7 @@ def _build_authors_countries_institutions_wos(df_corpus, dic_failed, inst_filter
     Notes:
         The globals 'COL_NAMES', 'COLUMN_LABEL_WOS', 'RE_ADDRESS', 'RE_AUTHOR', 'RE_SUB', 'RE_SUB_FIRST',
         'SYMBOL' and 'UNKNOWN' are used from `BiblioSpecificGlobals` module of `BiblioAnalysis_Utils` package.
-        The functions `address_inst_full_list`, `build_institutions_dic` and `country_normalization` are used 
+        The functions `accent_remove`, `address_inst_full_list`, `build_institutions_dic` and `country_normalization` are used 
         from `BiblioParsingUtils` of `BiblioAnalysis_utils` package.
         
     '''
@@ -671,7 +677,9 @@ def _build_articles_wos(df_corpus):
     '''
     
     # Local imports
-    from BiblioAnalysis_Utils.BiblioGeneralGlobals import CHANGE
+    from BiblioAnalysis_Utils.BiblioGeneralGlobals import DASHES_CHANGE
+    from BiblioAnalysis_Utils.BiblioGeneralGlobals import LANG_CHAR_CHANGE
+    from BiblioAnalysis_Utils.BiblioGeneralGlobals import PONCT_CHANGE
     from BiblioAnalysis_Utils.BiblioParsingUtils import name_normalizer
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import COL_NAMES
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import COLUMN_LABEL_WOS
@@ -693,7 +701,9 @@ def _build_articles_wos(df_corpus):
         return doctype
     
     def _treat_title(title):
-        title = title.translate(CHANGE)
+        title = title.translate(DASHES_CHANGE)
+        title = title.translate(LANG_CHAR_CHANGE)
+        title = title.translate(PONCT_CHANGE)
         return title
     
     pub_id_alias = COL_NAMES['articles'][0]

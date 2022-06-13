@@ -1,11 +1,17 @@
 __all__ = ['ACCENT_CHANGE',
            'ALIAS_UK',
+           'APOSTROPHE_CHANGE',
            'BOLD_TEXT',
            'CHANGE',
            'COUNTRIES',
            'COUNTRIES_GPS',
+           'DASHES_CHANGE',
+           'FRENCH_UNIVERSITY_TOWNS',
            'IN_TO_MM',
+           'LANG_CHAR_CHANGE',
            'LIGHT_TEXT',
+           'PONCT_CHANGE',
+           'SYMB_CHANGE',
            'USA_STATES',]
 
 # Text format control
@@ -107,7 +113,18 @@ COUNTRIES_GPS = {}
 for country in COUNTRIES_GPS_STRING.split(';'):
     match = pattern.search(country)
     COUNTRIES_GPS[match.group("country")] = (float(match.group("long")),float(match.group("lat")))
+    
+FRENCH_UNIVERSITY_TOWNS = ['Toulouse','Lyon','Rennes','Strasbourg','Montpellier','Nantes','Grenoble',
+                           'Bordeaux','Paris','Aix-Marseille', 'Marseille','Aix-en-Provence', 'Angers',
+                           'Poitiers','Clermont-Ferrand','Nancy','Lille','Caen','Dijon','Nice','Saint-Etienne',
+                           'Pau','Chambery','Orleans','Brest','Tours','Besançon','La Rochelle','Limoges',
+                           'Rouen','Le Mans','Reims','Amiens','Metz','Mulhouse','Arras','Nimes','Toulon',
+                           'Le Havre','Valenciennes','Troyes','Avignon','Perpignan','Saint-Denis de La Reunion',
+                           'Pointe-a-Pitre','Le Bourget du Lac', 'Le Bourget-du-Lac',
+                           'St-Paul-les-Durance', 'Saint-Paul-lez-Durance', 'Saint-Paul-les-Durance',
+                           'Gif-sur-Yvette']
 
+#To Do : Check if this global is still used
 # Character replacements
 DIC_CHANGE_ACCENT = {'À': 'A', 'Á': 'A', 'Â': 'A', 'Ã': 'A', 'Ä': 'A',
                       'à': 'a', 'á': 'a', 'â': 'a', 'ã': 'a', 'ä': 'a', 'ª': 'A',
@@ -125,6 +142,7 @@ DIC_CHANGE_ACCENT = {'À': 'A', 'Á': 'A', 'Â': 'A', 'Ã': 'A', 'Ä': 'A',
 
 ACCENT_CHANGE = str.maketrans(DIC_CHANGE_ACCENT)
 
+#To Do : Check if this global is still used
 DIC_CHANGE_CHAR = {"Ł":"L",   # polish capital to L 
                    "ł":"l",   # polish l
                    "ı":"i",    
@@ -134,10 +152,57 @@ DIC_CHANGE_CHAR = {"Ł":"L",   # polish capital to L
                    "Đ":"D",   # D with stroke (Vietamese,South Slavic) to D
                    ".":"",
                    ",":"",
-                   "&": "and",
-                   "’": "'",}
+                   } 
 
 CHANGE = str.maketrans(DIC_CHANGE_CHAR)
+
+# For changing particularly encoded symbols (particular cote to standard cote)
+DIC_CHANGE_APOST = {"”": "'",
+                    "’": "'",   
+                    '"': "'",
+                    "“": "'",   
+                    "'": "'",   
+                  } 
+
+APOSTROPHE_CHANGE = str.maketrans(DIC_CHANGE_APOST)
+
+# For changing dashes to hyphen-minus
+DIC_CHANGE_DASHES = {"‐": "-",   # Non-Breaking Hyphen to hyphen-minus
+                     "—": "-",   # En-dash to hyphen-minus
+                     "–": "-",   # Em-dash to hyphen-minus
+                    }
+
+DASHES_CHANGE = str.maketrans(DIC_CHANGE_DASHES)
+
+
+
+# For changing langages specific characters to standard characters
+DIC_CHANGE_LANG_CHAR = {"Ł": "L",   # polish capital to L 
+                        "ł": "l",   # polish l
+                        "ı": "i",    
+                        "Đ": "D",   # D with stroke (Vietamese,South Slavic) to D
+                        } 
+LANG_CHAR_CHANGE = str.maketrans(DIC_CHANGE_LANG_CHAR)
+
+# For droping ponctuation symbols
+DIC_CHANGE_PONCT = {".": "",
+                    ",": "",
+                   }
+
+PONCT_CHANGE = str.maketrans(DIC_CHANGE_PONCT)
+
+# For changing particularly encoded symbols
+DIC_CHANGE_SYMB = {"&": "and",
+                   "’": "'",   # Particular cote to standard cote
+                   ".": "",
+                   "-": " ",   # To Do: to be tested from the point of view of the effect on raw institutions
+                   "§": " ",
+                   "(": " ",
+                   ")": " ",
+                   "/": " "
+                  } 
+
+SYMB_CHANGE = str.maketrans(DIC_CHANGE_SYMB)
 
 # Conversion factor for inch to millimeter
 IN_TO_MM = 25.4
