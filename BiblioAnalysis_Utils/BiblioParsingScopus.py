@@ -10,10 +10,11 @@ __all__ = ['biblio_parser_scopus','read_database_scopus']
 #                                                               SYMBOL, UNKNOWN, USECOLS_SCOPUS
 
 
-# Functions used from BiblioAnalysis_Utils.BiblioParsingUtils: accent_remove, address_inst_full_list, 
+# Functions used from BiblioAnalysis_Utils.BiblioParsingUtils: address_inst_full_list, 
 #                                                              build_title_keywords, build_institutions_dic,
-#                                                              check_and_drop_columns,
-#                                                              country_normalization, normalize_journal_names, name_normalizer 
+#                                                              check_and_drop_columns, country_normalization, 
+#                                                              normalize_journal_names, name_normalizer, 
+#                                                              special_symbol_remove 
 
 
 def _build_authors_scopus(df_corpus):
@@ -204,7 +205,7 @@ def _build_addresses_countries_institutions_scopus(df_corpus,dic_failed):
     Notes:
         The globals 'COL_NAMES', 'COLUMN_LABEL_SCOPUS', 'RE_SUB', 'RE_SUB_FIRST' and 'UNKNOWN' 
         are used from `BiblioSpecificGlobals` module of `BiblioAnalysis_Utils` package.
-        The functions `accent_remove` and `country_normalization` are used 
+        The functions `special_symbol_remove` and `country_normalization` are used 
         from `BiblioParsingUtils` of `BiblioAnalysis_utils` package.
          
     '''
@@ -218,7 +219,7 @@ def _build_addresses_countries_institutions_scopus(df_corpus,dic_failed):
     import pandas as pd
     
     # Local imports
-    from BiblioAnalysis_Utils.BiblioParsingUtils import accent_remove
+    from BiblioAnalysis_Utils.BiblioParsingUtils import special_symbol_remove
     from BiblioAnalysis_Utils.BiblioParsingUtils import country_normalization
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import COL_NAMES
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import COLUMN_LABEL_SCOPUS
@@ -246,7 +247,7 @@ def _build_addresses_countries_institutions_scopus(df_corpus,dic_failed):
         if list_affiliation:
             for idx_address, address_pub in enumerate(list_affiliation):
                 
-                address_pub = accent_remove(address_pub)
+                address_pub = special_symbol_remove(address_pub, only_ascii=True, skip=True)
                 list_addresses.append(address(pub_id,
                                               idx_address,
                                               address_pub))
@@ -382,7 +383,7 @@ def _build_authors_countries_institutions_scopus(df_corpus, dic_failed, inst_fil
     Notes:
         The globals 'COL_NAMES', 'COLUMN_LABEL_SCOPUS', 'RE_SUB', 'RE_SUB_FIRST' and 'SYMBOL' are used 
         from `BiblioSpecificGlobals` module of `BiblioAnalysis_Utils` package.
-        The functions `accent_remove`, `address_inst_full_list`, `build_institutions_dic` and `country_normalization` are used 
+        The functions `special_symbol_remove`, `address_inst_full_list`, `build_institutions_dic` and `country_normalization` are used 
         from `BiblioParsingUtils` of `BiblioAnalysis_utils` package.
              
     '''
@@ -399,7 +400,7 @@ def _build_authors_countries_institutions_scopus(df_corpus, dic_failed, inst_fil
     # Local imports
     from BiblioAnalysis_Utils.BiblioParsingInstitutions import address_inst_full_list
     from BiblioAnalysis_Utils.BiblioParsingInstitutions import build_institutions_dic
-    from BiblioAnalysis_Utils.BiblioParsingUtils import accent_remove
+    from BiblioAnalysis_Utils.BiblioParsingUtils import special_symbol_remove
     from BiblioAnalysis_Utils.BiblioParsingUtils import country_normalization
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import COL_NAMES
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import COLUMN_LABEL_SCOPUS
@@ -458,7 +459,7 @@ def _build_authors_countries_institutions_scopus(df_corpus, dic_failed, inst_fil
             author_address_list_raw = []
             for affiliation_raw in list_affiliations:
                 if affiliation_raw in author_list_addresses:
-                    affiliation_raw = accent_remove(affiliation_raw)
+                    affiliation_raw = special_symbol_remove(affiliation_raw, only_ascii=True, skip=True)
                     affiliation_raw = re.sub(RE_SUB_FIRST,'University' + ', ',affiliation_raw)
                     affiliation = re.sub(RE_SUB,'University' + ' ',affiliation_raw)
                     author_address_list_raw.append(affiliation) 

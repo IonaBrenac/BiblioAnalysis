@@ -25,6 +25,8 @@ __all__ = ['BLACKLISTED_WORDS',
            'DIC_OUTDIR_DESCRIPTION',
            'DIC_OUTDIR_PARSING',
            'DIC_INST_FILENAME',
+           'DIC_TOWN_SYMBOLS',
+           'DIC_TOWN_WORDS',
            'DIC_WORD_RE_PATTERN',
            'DISTRIBS_ITEM_FILE',
            'EMPTY',
@@ -32,6 +34,7 @@ __all__ = ['BLACKLISTED_WORDS',
            'FIELD_SIZE_LIMIT',
            'FOLDER_NAMES',
            'FOLDER_SELECTION_HELP_TEXT',
+           'FR_UNIVERSITY_TOWNS',
            'GUI_BUTTON_RATIO',
            'GUI_TEXT_MAX_LINES_NB',
            'GUI_WIDGET_RATIO',
@@ -244,11 +247,6 @@ COUPL_HTML_PARAM = {'background_color': '#EAEDED', #light grey,
 
 DEDUPLICATED_XLSX = 'articles_dedup.xlsx'
 
-# Potentialy ambiguous words in institutions names
-DIC_AMB_WORDS = {' des ': ' ', # Conflict with DES institution
-                 ' @ ': ' ', # Management conflict with '@' between texts
-                }
-
 DIC_DOCTYPE = {'Article':              ['Article'],
                'Article; Early Access':['Article; Early Access'], 
                'Conference Paper':     ['Conference Paper','Proceedings Paper'],
@@ -296,29 +294,7 @@ DIC_OUTDIR_PARSING = {'A':'articles.dat',
                       'R':'references.dat',
                      }
 
-DIC_INST_FILENAME = 'Inst_dic.csv'
-
-# For replacing aliases of a word by a word
-DIC_WORD_RE_PATTERN = {}
-DIC_WORD_RE_PATTERN['University'] = re.compile(r'\bUniv[aàädeéirstyz]{0,8}\b\.?')
-DIC_WORD_RE_PATTERN['Laboratory'] = re.compile(r"'?\bLab\b\.?" \
-                                                    +  "|" \
-                                                    + r"'?\bLabor[aeimorstuy]{0,7}\b\.?")
-DIC_WORD_RE_PATTERN['Center'] = re.compile(r"\b[CZ]ent[erum]{1,3}\b\.?")
-DIC_WORD_RE_PATTERN['Department'] = re.compile(r"\bD[eé]{1}p[artemnot]{0,9}\b\.?")
-DIC_WORD_RE_PATTERN['Institute'] = re.compile(r"\bInst[ituteosky]{0,7}\b\.?")
-DIC_WORD_RE_PATTERN['Faculty'] = re.compile(r"\bFac[lutey]{0,4}\b\.?")
-DIC_WORD_RE_PATTERN['School'] = re.compile(r"\bSch[ol]{0,3}\b\.?")
-
 DISTRIBS_ITEM_FILE = 'DISTRIBS_itemuse.json'
-
-# For droping chunks of addresses
-DROPING_SUFFIX = ["platz", "strae", "strasse", "vej"]
-
-DROPING_WORDS = ["allee", "av", "avda", "avenue", "bat", "batiment", "boulevard", "blv.", "box", "bp", "calle" 
-                 "campus", "carrera", "ciudad", "cedex", "cesta", "chemin", "ch.", "city", "cours", "district", 
-                 "lane", "mall", "no.", "po", "p.", "rd", "route", "rue", "road", "sec.", "strada",
-                 "st.", "street", "str.", "via", "viale"]
 
 EMPTY = 'empty'
 
@@ -348,16 +324,8 @@ GUI_BUTTON_RATIO = 2.5
 GUI_TEXT_MAX_LINES_NB = 3
 
 GUI_WIDGET_RATIO = 1.2 
-
-HEADER = True
-
-INST_BASE_LIST = ['UMR', 'CNRS', 'University']
-
-# Authors affiliations filter (default: None) as a list of tuples (instituion,country)
-INST_FILTER_LIST = [('LITEN','France'),('INES','France')]
-
-# For keeping chunks of addresses
-KEEPING_WORDS = list(DIC_WORD_RE_PATTERN.keys()) + ['Ines', 'INES', 'UMR', 'CNRS', 'Beamline']
+ 
+HEADER = True                                                                                      #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 LABEL_MEANING = {'AU':'Authors',          # ex: Nom1 J, Nom2 E, Nom3 J-P
                  'CU':'Countries',        # ex: France, United States
@@ -406,8 +374,6 @@ NOUN_MINIMUM_OCCURRENCES = 3 # Minimum occurrences of a noun to be retained when
 NODE_SIZE_REF = 30
 
 PARSING_PERF = 'failed.json'
-
-RAW_INST_FILENAME = 'Raw_inst.csv'
 
 RE_ADDRESS = re.compile('''(?<=\]\s)               # Captures: "xxxxx" in string between "]" and "["  
                         [^;]*                      # or  between "]" and end of string or ";"
@@ -458,7 +424,7 @@ RE_YEAR_JOURNAL = re.compile(r'\s\d{4}\s')               # Captures " dddd " as 
 
 REP_UTILS = 'BiblioAnalysis_RefFiles'
 
-RE_ZIP_CODE = re.compile(',\s[a-zA-Z]?[\-]?\d+.*',)     # Captures text begining with ', ' 
+RE_ZIP_CODE = re.compile(',\s[a-zA-Z]?[\-]?\d+.*',)     # Captures text begining with ', '                                        #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                                                         # and that possibly contains letters and hyphen-minus
 
 # Scopus database name
@@ -476,15 +442,6 @@ SYMBOL = '\s,;:.\-\/'
 
 UNKNOWN = 'unknown'
 
-# This global is used in merge_database function
-USECOLS_SCOPUS = '''Abstract,Affiliations,Authors,Author Keywords,Authors with affiliations,
-       CODEN,Document Type,DOI,EID,Index Keywords,ISBN,ISSN,Issue,Language of Original Document,
-       Page start,References,Source title,Title,Volume,Year'''
-
-# To Do: Check if this global is still used
-USECOLS_WOS ='''AB,AU,BP,BS,C1,CR,DE,DI,DT,ID,IS,LA,PY,RP,
-                SC,SN,SO,TI,UT,VL,WC'''
-
 # Cooccurrence graph built only for the following labels
 VALID_LABEL_GRAPH = ['AU', 'CU', 'S', 'S2', 'IK', 'R', 'RJ', 'I', 'AK', 'TK'] 
 
@@ -498,7 +455,7 @@ WOS = 'wos'
 COOC_AUTHORIZED_ITEMS_DICT = {label:name for name,label in LABEL_MEANING.items() 
                               if name in COOC_AUTHORIZED_ITEMS}
 
-DIC_OUTDIR_DESCRIPTION = {acronym:'freq_'+file for acronym,file in DIC_OUTDIR_PARSING.items()}
+_DIC_OUTDIR_DESCRIPTION = {acronym:'freq_'+file for acronym,file in DIC_OUTDIR_PARSING.items()}
 
 _DIC_OUTDIR_DESCRIPTION_ADD = {'DT':'freq_doctypes.dat',
                               'J':'freq_journals.dat',
@@ -506,17 +463,119 @@ _DIC_OUTDIR_DESCRIPTION_ADD = {'DT':'freq_doctypes.dat',
                               'RJ':'freq_refjournals.dat',
                               'Y':'freq_years.dat',
                               }
-DIC_OUTDIR_DESCRIPTION = res = {**DIC_OUTDIR_DESCRIPTION, **_DIC_OUTDIR_DESCRIPTION_ADD}
+DIC_OUTDIR_DESCRIPTION = res = {**_DIC_OUTDIR_DESCRIPTION, **_DIC_OUTDIR_DESCRIPTION_ADD}
 
 # This global is used in merge_database function
-USECOLS_SCOPUS = [x.strip() for x in USECOLS_SCOPUS.split(',')]
+_USECOLS_SCOPUS = '''Abstract,Affiliations,Authors,Author Keywords,Authors with affiliations,
+       CODEN,Document Type,DOI,EID,Index Keywords,ISBN,ISSN,Issue,Language of Original Document,
+       Page start,References,Source title,Title,Volume,Year'''
+USECOLS_SCOPUS = [x.strip() for x in _USECOLS_SCOPUS.split(',')]
 
 # To Do: Check if this global is still used
-USECOLS_WOS = [x.strip() for x in USECOLS_WOS.split(',')]
+_USECOLS_WOS ='''AB,AU,BP,BS,C1,CR,DE,DI,DT,ID,IS,LA,PY,RP,
+                SC,SN,SO,TI,UT,VL,WC'''
+USECOLS_WOS = [x.strip() for x in _USECOLS_WOS.split(',')]
 
 
+#############################################
+# Specific globals for institutions parsing #
+#############################################
+
+# Standard library imports
+import re
+
+# Local imports 
+from BiblioAnalysis_Utils.BiblioParsingUtils import special_symbol_remove
+from BiblioAnalysis_Utils.BiblioParsingUtils import town_names_uniformization
+
+# For replacing symbols in town names
+DIC_TOWN_SYMBOLS = {"-": " ",
+                     }
+
+# For replacing names in town names
+DIC_TOWN_WORDS = {" lez ":  " les ",
+                   "saint ": "st ",
+                   } 
+
+# For replacing aliases of a word by a word (case sensitive)
+DIC_WORD_RE_PATTERN = {}
+DIC_WORD_RE_PATTERN['University'] = re.compile(r'\bUniv[aàädeéirstyz]{0,8}\b\.?')
+DIC_WORD_RE_PATTERN['Laboratory'] = re.compile(r"'?\bLab\b\.?" \
+                                                    +  "|" \
+                                                    + r"'?\bLabor[aeimorstuy]{0,7}\b\.?")
+DIC_WORD_RE_PATTERN['Center'] = re.compile(r"\b[CZ]ent[erum]{1,3}\b\.?")
+DIC_WORD_RE_PATTERN['Department'] = re.compile(r"\bD[eé]{1}p[artemnot]{0,9}\b\.?")
+DIC_WORD_RE_PATTERN['Institute'] = re.compile(r"\bInst[ituteosky]{0,7}\b\.?")
+DIC_WORD_RE_PATTERN['Faculty'] = re.compile(r"\bFac[lutey]{0,4}\b\.?")
+DIC_WORD_RE_PATTERN['School'] = re.compile(r"\bSch[ol]{0,3}\b\.?")
 
 
+# For keeping chunks of addresses (without accents and in lower case)
+    # Setting a list of keeping words
+        # Setting a basic list of keeping words
+_BASIC_KEEPING_WORDS = list(DIC_WORD_RE_PATTERN.keys())
+        # Setting a user list of keeping words
+_USER_KEEPING_WORDS = ['Beamline', 'CEA', 'CNRS', 'EA', 'ED', 'FR', 'IMEC', 'INES', 'IRCELYON',\
+                      'LEPMI', 'LITEN', 'LOCIE', 'STMicroelectronics', 'TNO', 'ULR', 'UMR', 'VTT']
+_KEEPING_WORDS = _BASIC_KEEPING_WORDS + _USER_KEEPING_WORDS
+        # Removing accents keeping non adcii characters and converting to lower case the keeping words, by default
+KEEPING_WORDS =[special_symbol_remove(x, only_ascii = False, strip = False).lower() for x in _KEEPING_WORDS]
 
+
+# For droping chunks of addresses (without accents and in lower case)
+    # Setting a list of droping suffixes
+_DROPING_SUFFIX = ["platz", "strae", "strasse", "straße", "vej"] # added "ring" but drops chunks containing "Engineering"
+        # Removing accents keeping non adcii characters and converting to lower case the droping suffixes, by default
+DROPING_SUFFIX = [special_symbol_remove(x, only_ascii = False, strip = False).lower() for x in _DROPING_SUFFIX]
+
+    # Setting a list of droping words
+_DROPING_WORDS = ["allee", "av", "avda", "avenue", "bat", "batiment", "boulevard", "blv.", "box", "bp", "calle", 
+                 "campus", "carrera", "cedex", "cesta", "chemin", "ch.", "city", "ciudad", "cours", "cs", "district", 
+                 "lane", "mall", "no.", "po", "p.", "rd", "route", "rue", "road", "sec.", "st.", "strada",
+                 "street", "str.", "via", "viale"]
+        # Removing accents keeping non adcii characters and converting to lower case the droping words, by default
+_DROPING_WORDS = [special_symbol_remove(x, only_ascii = False, strip = False).lower() for x in _DROPING_WORDS]
+        # Escaping the regex meta-character "." from the droping words, by default
+DROPING_WORDS = [x.replace(".", r"\.") for x in _DROPING_WORDS]
+
+
+# For droping towns in addresses 
+    # Setting string listing raw french-town names 
+_FR_UNIVERSITY_TOWNS = '''Aix-Marseille,Aix-en-Provence,Amiens,Angers,Arras,Avignon,
+                         Besançon,Bordeaux,Brest,Caen,Chambéry,Clermont-Ferrand,Dijon,
+                         Gif-sur-Yvette,Grenoble,La Rochelle,Le Bourget-du-Lac,
+                         Le Havre,Le Mans,Lille,Limoges,Lyon,Marseille,Metz,Montpellier,Mulhouse,
+                         Nancy,Nantes,Nice,Nîmes,Orléans,Paris,Pau,Perpignan,Pointe-à-Pitre,
+                         Poitiers,Reims,Rennes,Rouen,Saint-Denis de La Réunion,Saint-Étienne,
+                         Saint-Paul-lez-Durance,Strasbourg,Toulon,Toulouse,Tours,Troyes,Valenciennes'''
+
+    # Converting to lower case
+_FR_UNIVERSITY_TOWNS = _FR_UNIVERSITY_TOWNS.lower() 
+
+    # Uniformizing town names 
+_FR_UNIVERSITY_TOWNS = town_names_uniformization(_FR_UNIVERSITY_TOWNS)
+
+    # Removing accents keeping non adcii characters
+_FR_UNIVERSITY_TOWNS = special_symbol_remove(_FR_UNIVERSITY_TOWNS, only_ascii = False, strip = False)
+
+    # Converting to list of lower-case stripped names of towns 
+FR_UNIVERSITY_TOWNS = [x.strip() for x in _FR_UNIVERSITY_TOWNS.split(',')]
+
+
+# Use to be checked
+
+# Potentialy ambiguous words in institutions names
+DIC_AMB_WORDS = {' des ': ' ', # Conflict with DES institution
+                 ' @ ': ' ', # Management conflict with '@' between texts
+                }
+
+DIC_INST_FILENAME = 'Inst_dic.csv'
+
+INST_BASE_LIST = ['UMR', 'CNRS', 'University']                                                     #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+# Authors affiliations filter (default: None) as a list of tuples (instituion,country)
+INST_FILTER_LIST = [('LITEN','France'),('INES','France')]
+
+RAW_INST_FILENAME = 'Raw_inst.csv'
     
 

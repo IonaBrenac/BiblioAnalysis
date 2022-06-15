@@ -1,0 +1,38 @@
+    ''' The `parsing_concatenate_deduplicate` function concatenates parsing files of two corpuses 
+    using the `_get_common_files` and `_concatenate_dat` internal functions. 
+    Then it proceeds with deduplication of article lines using the `_deduplicate_articles` internal function.
+    Finally, it rationalizes the content of the other parsing files using the IDs of the droped articles lines
+    in the `_deduplicate_dat` internal function.
+    The outputs are the parsing files of the concatenated corpus and the deduplicated corpus saved in dedicated folders.
+    Control files which names are set in the globals 'CONCATENATED_XLSX' and 'DEDUPLICATED_XLSX' are also saved 
+    as EXCEL files in the same folders.
+    
+    Args:
+        useful_path_list (list): list of paths of the folders where the corpuses are parsed.
+        inst_filter_list (list): the affiliations filter list of tuples (institution, country)
+                                 with default value set to None. 
+        
+    Returns: 
+        None.
+        
+    Note:
+        The globals 'COL_NAMES', 'CONCATENATED_XLSX', 'DEDUPLICATED_XLSX' and 'DIC_OUTDIR_PARSING' 
+        are imported from 'BiblioSpecificGlobals' module of 'BiblioAnalysis_Utils' package.
+        The function 'extend_author_institutions' is imported from 'BiblioParsingUtils' module 
+        of 'BiblioAnalysis_Utils' package is used.
+                                  
+    '''
+
+
+    
+    '''The `_common_files_new` builds a list of the names of the files present in the parsing folder 
+    of two corpuses referenced as first_corpus and second_corpus. 
+    
+    Args : 
+        path_first_corpus (path) : path of the folder where the files of the first_corpus are saved.
+        path_second_corpus (path) : path of the folder where the files of the second_corpus are saved.
+        
+    Returns :
+        (list): The list of common files.
+        
+    '''

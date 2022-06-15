@@ -19,7 +19,7 @@ __all__ = ['address_inst_full_list',        #
 
 # Functions used from BiblioAnalysis_Utils.BiblioGui: Select_multi_items
 # Functions used from BiblioAnalysis_Utils.BiblioParsingUtils: country_normalization
-#                                                              accent_remove
+#                                                              special_symbol_remove
 
 
 def address_inst_full_list(full_address, inst_dic):
@@ -136,7 +136,7 @@ def affiliation_uniformization(affiliation_raw):    # A refondre profondément
     using 'DASHES_CHANGE' and 'SYMB_CHANGE' globals.
     Then, it substitutes by 'University' its aliases using specific 
     regular expressions set in 'RE_SUB',and 'RE_SUB_FIRST' globals.
-    Finally, it removes accents using `accent_remove` function.
+    Finally, it removes accents using `special_symbol_remove` function.
     
     Args:
         affiliation_raw (str): the raw affiliation to be normalized.
@@ -149,7 +149,8 @@ def affiliation_uniformization(affiliation_raw):    # A refondre profondément
         from `BiblioGeneralGlobals` module of `BiblioAnalysis_Utils` package.
         The globals 'RE_SUB',and 'RE_SUB_FIRST' are imported
         from `BiblioSpecificGlobals` module of `BiblioAnalysis_Utils` package.
-        #The function `accent_remove` is used from `BiblioParsingUtils` of `BiblioAnalysis_utils` package.
+        The function `special_symbol_remove` is used from `BiblioParsingUtils` 
+        of `BiblioAnalysis_utils` package.
         
     '''
     
@@ -157,7 +158,7 @@ def affiliation_uniformization(affiliation_raw):    # A refondre profondément
     import re
     
     # Local imports
-    from BiblioAnalysis_Utils.BiblioParsingUtils import accent_remove
+    from BiblioAnalysis_Utils.BiblioParsingUtils import special_symbol_remove
     from BiblioAnalysis_Utils.BiblioGeneralGlobals import DASHES_CHANGE
     from BiblioAnalysis_Utils.BiblioGeneralGlobals import SYMB_CHANGE
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import DIC_AMB_WORDS
@@ -175,7 +176,7 @@ def affiliation_uniformization(affiliation_raw):    # A refondre profondément
     affiliation_raw = affiliation_raw.translate(SYMB_CHANGE)
     affiliation_raw = re.sub(RE_SUB_FIRST,'University' + ', ',affiliation_raw)
     affiliation_raw = re.sub(RE_SUB,'University' + ' ',affiliation_raw)
-    affiliation = accent_remove(affiliation_raw)
+    affiliation = special_symbol_remove(affiliation_raw, only_ascii=True, skip=True)
     
     return affiliation
 

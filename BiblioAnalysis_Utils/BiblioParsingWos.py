@@ -9,8 +9,8 @@ __all__ = ['biblio_parser_wos','read_database_wos']
 #                                                               RE_REF_YEAR_WOS, RE_SUB, RE_SUB_FIRST, 
 #                                                               SYMBOL, UNKNOWN, USECOLS_WOS, WOS
 
-# Functions used from BiblioAnalysis_Utils.BiblioParsingUtils: accent_remove, address_inst_full_list, build_title_keywords, build_institutions_dic
-#                                                              country_normalization, normalize_journal_names, name_normalizer 
+# Functions used from BiblioAnalysis_Utils.BiblioParsingUtils: address_inst_full_list, build_title_keywords, build_institutions_dic
+#                                                              country_normalization, normalize_journal_names, name_normalizer, special_symbol_remove 
                                                               
 
 
@@ -216,9 +216,9 @@ def _build_addresses_countries_institutions_wos(df_corpus,dic_failed):
         
     Notes:
         The globals 'COL_NAMES', 'COLUMN_LABEL_WOS', 'RE_ADDRESS', 'RE_AUTHOR', 'RE_SUB', 'RE_SUB_FIRST'
-        and 'UNKNOWN' are used from `BiblioSpecificGlobals` module of `BiblioAnalysis_Utils` package.
-        The functions `accent_remove`, `address_inst_full_list`, `build_institutions_dic` and `country_normalization` are used 
-        from `BiblioParsingUtils` of `BiblioAnalysis_utils` package.
+        and 'UNKNOWN' are imported from `BiblioSpecificGlobals` module of `BiblioAnalysis_Utils` package.
+        The functions `special_symbol_remove`, `address_inst_full_list`, `build_institutions_dic` and `country_normalization` 
+        are imported from `BiblioParsingUtils` of `BiblioAnalysis_utils` package.
         
     '''
 
@@ -231,7 +231,7 @@ def _build_addresses_countries_institutions_wos(df_corpus,dic_failed):
     import pandas as pd
     
     # Local imports
-    from BiblioAnalysis_Utils.BiblioParsingUtils import accent_remove
+    from BiblioAnalysis_Utils.BiblioParsingUtils import special_symbol_remove
     from BiblioAnalysis_Utils.BiblioParsingUtils import country_normalization
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import COL_NAMES
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import COLUMN_LABEL_WOS
@@ -269,7 +269,7 @@ def _build_addresses_countries_institutions_wos(df_corpus,dic_failed):
         if addresses:
             for idx, author_address in enumerate(addresses):
                 
-                author_address = accent_remove(author_address)
+                author_address = special_symbol_remove(author_address, only_ascii=True, skip=True)
                 list_addresses.append(address(pub_id,
                                               idx,
                                               author_address))
@@ -396,13 +396,13 @@ def _build_authors_countries_institutions_wos(df_corpus, dic_failed, inst_filter
                                  which value is 'None' at initialization of the parsing.
                             
     Returns:
-        (dataframe):  "df_addr_country_inst".
+        (dataframe):  the dataframe of addresses, countrie and institutions for each author of a publication.
         
     Notes:
         The globals 'COL_NAMES', 'COLUMN_LABEL_WOS', 'RE_ADDRESS', 'RE_AUTHOR', 'RE_SUB', 'RE_SUB_FIRST',
-        'SYMBOL' and 'UNKNOWN' are used from `BiblioSpecificGlobals` module of `BiblioAnalysis_Utils` package.
-        The functions `accent_remove`, `address_inst_full_list`, `build_institutions_dic` and `country_normalization` are used 
-        from `BiblioParsingUtils` of `BiblioAnalysis_utils` package.
+        'SYMBOL' and 'UNKNOWN' are imported from `BiblioSpecificGlobals` module of `BiblioAnalysis_Utils` package.
+        The functions `special_symbol_remove`, `address_inst_full_list`, `build_institutions_dic` and `country_normalization`  
+        imported from `BiblioParsingUtils` of `BiblioAnalysis_utils` package.
         
     '''
     
@@ -418,7 +418,7 @@ def _build_authors_countries_institutions_wos(df_corpus, dic_failed, inst_filter
     from fuzzywuzzy import process
     
     # Local imports
-    from BiblioAnalysis_Utils.BiblioParsingUtils import accent_remove
+    from BiblioAnalysis_Utils.BiblioParsingUtils import special_symbol_remove
     from BiblioAnalysis_Utils.BiblioParsingUtils import address_inst_full_list
     from BiblioAnalysis_Utils.BiblioParsingUtils import build_institutions_dic
     from BiblioAnalysis_Utils.BiblioParsingUtils import country_normalization
@@ -502,7 +502,7 @@ def _build_authors_countries_institutions_wos(df_corpus, dic_failed, inst_filter
                     print(Fore.BLUE + warning + Fore.BLACK)
                 
                 author_address_raw = tup.address
-                author_address_raw = accent_remove(author_address_raw)
+                author_address_raw = special_symbol_remove(author_address_raw, only_ascii=True, skip=True)
                 author_address = re.sub(RE_SUB_FIRST,'University' + ', ', author_address_raw) 
                 author_address = re.sub(RE_SUB,'University' + ' ', author_address_raw)
                 author_institutions_tup = address_inst_full_list(author_address, inst_dic)

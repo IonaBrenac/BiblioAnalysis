@@ -6,7 +6,6 @@ __all__ = ['ACCENT_CHANGE',
            'COUNTRIES',
            'COUNTRIES_GPS',
            'DASHES_CHANGE',
-           'FRENCH_UNIVERSITY_TOWNS',
            'IN_TO_MM',
            'LANG_CHAR_CHANGE',
            'LIGHT_TEXT',
@@ -113,16 +112,7 @@ COUNTRIES_GPS = {}
 for country in COUNTRIES_GPS_STRING.split(';'):
     match = pattern.search(country)
     COUNTRIES_GPS[match.group("country")] = (float(match.group("long")),float(match.group("lat")))
-    
-FRENCH_UNIVERSITY_TOWNS = ['Toulouse','Lyon','Rennes','Strasbourg','Montpellier','Nantes','Grenoble',
-                           'Bordeaux','Paris','Aix-Marseille', 'Marseille','Aix-en-Provence', 'Angers',
-                           'Poitiers','Clermont-Ferrand','Nancy','Lille','Caen','Dijon','Nice','Saint-Etienne',
-                           'Pau','Chambery','Orleans','Brest','Tours','Besançon','La Rochelle','Limoges',
-                           'Rouen','Le Mans','Reims','Amiens','Metz','Mulhouse','Arras','Nimes','Toulon',
-                           'Le Havre','Valenciennes','Troyes','Avignon','Perpignan','Saint-Denis de La Reunion',
-                           'Pointe-a-Pitre','Le Bourget du Lac', 'Le Bourget-du-Lac',
-                           'St-Paul-les-Durance', 'Saint-Paul-lez-Durance', 'Saint-Paul-les-Durance',
-                           'Gif-sur-Yvette']
+
 
 #To Do : Check if this global is still used
 # Character replacements

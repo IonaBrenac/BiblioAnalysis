@@ -6,6 +6,8 @@ __all__ = ['accent_remove',
            'merge_database',
            'name_normalizer',
            'normalize_journal_names',
+           'special_symbol_remove',
+           'town_names_uniformization',
            'upgrade_col_names',
            ]
 
@@ -13,7 +15,8 @@ __all__ = ['accent_remove',
 # Globals used from BiblioAnalysis_Utils.BiblioGeneralGlobals:  ALIAS_UK, COUNTRIES, 
 #                                                               DASHES_CHANGE, LANG_CHAR_CHANGE, PONCT_CHANGE, SYMB_CHANGE  
 # Globals used from BiblioAnalysis_Utils.BiblioSpecificGlobals: BLACKLISTED_WORDS, COL_NAMES,
-#                                                               DIC_LOW_WORDS, DIC_OUTDIR_PARSING ,              
+#                                                               DIC_LOW_WORDS, DIC_OUTDIR_PARSING ,
+#                                                               DIC_TOWN_SYMBOLS, DIC_TOWN_WORDS,
 #                                                               INST_FILTER_LIST, REP_UTILS, 
 #                                                               NLTK_VALID_TAG_LIST, NOUN_MINIMUM_OCCURRENCES,
 #                                                               RE_NUM_CONF,RE_YEAR_JOURNAL,
@@ -123,6 +126,7 @@ def country_normalization(country):
     # Local imports
     from BiblioAnalysis_Utils.BiblioGeneralGlobals import ALIAS_UK
     from BiblioAnalysis_Utils.BiblioGeneralGlobals import COUNTRIES
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import UNKNOWN
     
     country_clean = country
     if country not in COUNTRIES:
@@ -139,7 +143,7 @@ def country_normalization(country):
         elif country == 'Vietnam':   
             country_clean = 'Viet Nam'
         else:
-            country_clean = ''
+            country_clean = UNKNOWN
 
     return country_clean
 
@@ -237,7 +241,7 @@ def name_normalizer(text):
     text = text.translate(PONCT_CHANGE)
     
     # Removing accentuated characters
-    text = accent_remove(text)
+    text = special_symbol_remove(text, only_ascii=True, skip=True)
     
     re_minus = re.compile('(-[a-zA-Z]+)')       # Captures: "cCc-cC-ccc-CCc"
     for text_minus_texts in re.findall(re_minus,text):
@@ -443,8 +447,11 @@ def upgrade_col_names(corpus_folder):
                     print(Fore.WHITE + Back.RED + f'Warning: File {os.path.join(dirpath,file)} not recognized as a parsing file' + Style.RESET_ALL)
             
 
-def accent_remove(text,strip = True):
-    '''
+def accent_remove(text, strip = True):
+    ''' The function `accent_remove` is deprecated and has been replaced by the function `special_symbol_remove` 
+     imported from 'BiblioParsingUtils' module of 'BiblioAnalysis' package
+     with the optional parameters "only_ascii" and "skip" set at the default value True.
+        
     '''
     # Standard library imports
     import functools
@@ -452,13 +459,74 @@ def accent_remove(text,strip = True):
 
     nfc = functools.partial(unicodedata.normalize,'NFD')
     text = nfc(text). \
-                   encode('ascii', 'ignore'). \
-                   decode('utf-8')
+               encode('ascii', 'ignore'). \
+               decode('utf-8')
     if strip:
         text = text.strip()
     
     return text
 
 
+def special_symbol_remove(text, only_ascii = True, strip = True):
+    '''The function `special_symbol_remove` remove accentuated characters in the string 'text'
+    and ignore non-ascii characters if 'only_ascii' is true. Finally, spaces at the ends of 'text'
+    are removed if strip is true.
+    
+    Args:
+        text (str): the text where to remove special symbols.
+        only_ascii (boolean): True to remove non-ascii characters from 'text' (default: True).
+        strip (boolean): True to remove spaces at the ends of 'text' (default: True).
+        
+    Returns:
+        (str): the modified string 'text'.
+    
+    '''
+    # Standard library imports
+    import functools
+    import unicodedata
 
-            
+    if only_ascii:
+        nfc = functools.partial(unicodedata.normalize,'NFD')
+        text = nfc(text). \
+                   encode('ascii', 'ignore'). \
+                   decode('utf-8')
+    else:
+        nfkd_form = unicodedata.normalize('NFKD',text)
+        text = ''.join([c for c in nfkd_form if not unicodedata.combining(c)])
+
+    if strip:
+        text = text.strip()
+    
+    return text
+
+
+def town_names_uniformization(text):
+    '''the `town_names_uniformization` function replaces in the string 'text'
+    symbols and words defined by the keys of the dictionaries 'DIC_TOWN_SYMBOLS'
+    and 'DIC_TOWN_WORDS' by their corresponding values in these dictionaries.
+    
+    Args:
+        text (str): The string where changes will be done.
+        
+    Returns:
+        (str): the modified string.
+        
+    Notes:
+        The globals 'DIC_TOWN_SYMBOLS' and 'DIC_TOWN_WORDS' are imported from
+        `BiblioSpecificGlobals` module of `BiblioAnalysis_Utils' package.
+    
+    '''
+    # Local imports
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import DIC_TOWN_SYMBOLS
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import DIC_TOWN_WORDS
+    
+    # Uniformizing symbols in town names using the dict 'DIC_TOWN_SYMBOLS'
+    for town_symb in DIC_TOWN_SYMBOLS.keys():
+        text = text.replace(town_symb, DIC_TOWN_SYMBOLS[town_symb])
+
+    # Uniformizing words in town names using the dict 'DIC_TOWN_WORDS'
+    for town_word in DIC_TOWN_WORDS.keys():
+        text = text.replace(town_word, DIC_TOWN_WORDS[town_word])
+    
+    return text
+

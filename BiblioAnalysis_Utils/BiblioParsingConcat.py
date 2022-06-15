@@ -21,8 +21,8 @@ def parsing_concatenate_deduplicate(useful_path_list, inst_filter_list = None):
         
     Note:
         The globals 'COL_NAMES', 'CONCATENATED_XLSX', 'DEDUPLICATED_XLSX' and 'DIC_OUTDIR_PARSING' 
-        from 'BiblioSpecificGlobals' module of 'BiblioAnalysis_Utils' package are used.
-        The function 'extend_author_institutions' from 'BiblioParsingUtils' module 
+        are imported from 'BiblioSpecificGlobals' module of 'BiblioAnalysis_Utils' package.
+        The function 'extend_author_institutions' is imported from 'BiblioParsingUtils' module 
         of 'BiblioAnalysis_Utils' package is used.
                                   
     '''
@@ -145,7 +145,7 @@ def _concatenate_dat(filename, path_first_corpus, path_second_corpus, path_conca
         None.
         
     Note:
-        The global 'COL_NAMES' from 'BiblioSpecificGlobals' module of 'BiblioAnalysis_Utils' package is used.
+        The global 'COL_NAMES' are imported from 'BiblioSpecificGlobals' module of 'BiblioAnalysis_Utils' package.
     
     '''
     # Standard libraries import
@@ -192,9 +192,9 @@ def _deduplicate_articles(path_in):
                 and a list of the duplicate indices.
         
     Notes:
-       The globals `BOLD_TEXT` and `LIGHT_TEXT` from 'BiblioGeneralGlobals' module of 'BiblioAnalysis_Utils' package are used. 
+       The globals `BOLD_TEXT` and `LIGHT_TEXT` are imported from 'BiblioGeneralGlobals' module of 'BiblioAnalysis_Utils' package. 
        The globals `COL_NAMES`, `DIC_OUTDIR_PARSING`, `LENGTH_THRESHOLD`, `SIMILARITY_THRESHOLD` and `UNKNOWN` 
-       from 'BiblioSpecificGlobals' module of 'BiblioAnalysis_Utils' package are used.
+       are imported from 'BiblioSpecificGlobals' module of 'BiblioAnalysis_Utils' package.
     
     '''
     # Standard library imports
