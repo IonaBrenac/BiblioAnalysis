@@ -715,7 +715,7 @@ def filters_selection(filters_filename, save_filename, parsing_dir,
     Arguments: 
         filters_filename (path): path of the json file of the filtering configuration.
         save_filename (path): path for saving the json file of the filtering configuration.
-        parsing_dir (path) : path of the parsing folder ofthe corpus.
+        parsing_dir (path) : path of the parsing folder of the corpus.
         fact (float):
         win_widthmm (float):
         win_heightmm (float):

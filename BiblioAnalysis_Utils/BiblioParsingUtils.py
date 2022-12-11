@@ -1,13 +1,17 @@
-__all__ = ['accent_remove',
+__all__ = ['accent_remove',                 # To remove after calls check in modules
            'biblio_parser',
            'build_title_keywords',
            'check_and_drop_columns',
-           'country_normalization',
+           'country_normalization',         # To remove after replace by 'normalize_country' when called in modules
            'merge_database',
            'name_normalizer',
+           'normalize_country',
            'normalize_journal_names',
-           'special_symbol_remove',
-           'town_names_uniformization',
+           'rationalize_town_names',
+           'read_towns_per_country',
+           'remove_special_symbol',
+           'special_symbol_remove',         # To remove after replace by 'remove_special_symbol' when called in modules (done in this module BiblioParsingWos and BiblioParsingScopus)
+           'town_names_uniformization',     # To remove after replace  by 'rationalize_town_names' when called in modules
            'upgrade_col_names',
            ]
 
@@ -116,7 +120,8 @@ def build_title_keywords(df):
    
     return df,bag_of_words_occurrences
 
-def country_normalization(country):
+
+def normalize_country(country):
     
     '''
     Normalize the country name for coherence seeking between wos and scopus corpuses.
@@ -177,6 +182,7 @@ def merge_database(database,filename,in_dir,out_dir):
     # Local imports
     from BiblioAnalysis_Utils.BiblioParsingScopus import read_database_scopus
     from BiblioAnalysis_Utils.BiblioParsingWos import read_database_wos
+    
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import SCOPUS
     #from BiblioAnalysis_Utils.BiblioSpecificGlobals import USECOLS_SCOPUS       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import WOS
@@ -207,13 +213,13 @@ def merge_database(database,filename,in_dir,out_dir):
 def name_normalizer(text):
     
     '''The `name_normalizer` function normalizes the author name spelling according the three debatable rules:
-            - replacing none ascii letters by ascii ones
-            - capitalizing first name 
-            - capitalizing surnames
-            - supressing comma and dot
-            
+            - replacing none ascii letters by ascii ones,
+            - capitalizing first name, 
+            - capitalizing surnames,
+            - supressing comma and dot.
+       It uses the internal funtion `remove_special_symbol`of this module "BiblioParsingUtils".    
        ex: name_normalizer(" GrÔŁ-biçà-vèLU D'aillön, E-kj. ")
-        >>> "Grol-Bica-Velu D'Aillon E-KJ"
+        >>> "Grol-Bica-Velu D'Aillon E-KJ".
         
     Args:
         text (str): the text to normalize.
@@ -241,7 +247,7 @@ def name_normalizer(text):
     text = text.translate(PONCT_CHANGE)
     
     # Removing accentuated characters
-    text = special_symbol_remove(text, only_ascii=True, skip=True)
+    text = remove_special_symbol(text, only_ascii=True, strip=True)
     
     re_minus = re.compile('(-[a-zA-Z]+)')       # Captures: "cCc-cC-ccc-CCc"
     for text_minus_texts in re.findall(re_minus,text):
@@ -338,6 +344,7 @@ def biblio_parser(in_dir_parsing, out_dir_parsing, database, expert, rep_utils=N
     # Local imports
     from BiblioAnalysis_Utils.BiblioParsingScopus import biblio_parser_scopus
     from BiblioAnalysis_Utils.BiblioParsingWos import biblio_parser_wos
+    
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import INST_FILTER_LIST
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import REP_UTILS
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import SCOPUS
@@ -445,9 +452,202 @@ def upgrade_col_names(corpus_folder):
                     print(Fore.BLUE + f'*** The EMPTY file {os.path.join(dirpath,file)} has been upgraded ***' + Style.RESET_ALL)
                 except:
                     print(Fore.WHITE + Back.RED + f'Warning: File {os.path.join(dirpath,file)} not recognized as a parsing file' + Style.RESET_ALL)
-            
 
-def accent_remove(text, strip = True):
+
+def read_towns_per_country(country_towns_file, rep_utils, dic_town_symbols, dic_town_words):
+    
+    '''The function `read_towns_per_country` builds a list of towns per country.
+    It calls the functions `rationalize_town_names`and `remove_special_symbol`
+    defined in the same module 'BiblioParsingUtils' of the package 'BiblioAnalysis_Utils'.
+    
+    Args:
+        country_towns_file (str): File name of the list of towns per country.
+        rep_utils (str): Folder of the file named 'country_towns_file'
+        
+    Returns:
+        (list): list of towns.
+        
+    Notes:
+        The data are extracted from the excel file 'country_towns' which is located in the folder
+        `rep_utils` of the package `BiblioAnalysis_Utils`.
+        
+    '''
+    # Standard library imports
+    from pathlib import Path
+
+    # 3rd party imports
+    import openpyxl
+    import pandas as pd
+
+    # Local imports
+    import BiblioAnalysis_Utils as bau
+
+    file = Path(bau.__file__).parent / Path(rep_utils) / Path(country_towns_file)
+    wb = openpyxl.load_workbook(file)
+
+    dict_df = pd.read_excel(file, 
+                            sheet_name=wb.sheetnames)
+    towns_dic = {x[0]:x[1]['Town name'].tolist() for x in dict_df.items()}
+
+    for country in towns_dic.keys():
+        
+        list_towns = []
+        for town in towns_dic[country]:
+            town = town.lower()
+            town = rationalize_town_names(town, dic_town_symbols=dic_town_symbols, dic_town_words= dic_town_words)
+            town = remove_special_symbol(town, only_ascii = False, strip = False)
+            town = town.strip()
+            list_towns.append(town)
+
+        towns_dic[country]= list_towns
+    
+    return towns_dic
+
+                    
+################################# Functions replacing deprecated ones ##########################################
+# To Do: 2022-12-08
+#    - Update All with functions replacing deprecated ones
+#    - Search for calls of deprecated functions in all BiblioAnalysis modules
+#    - Replace calls of deprecated functions by replacing functions and check args, returns and imports including globals
+
+def remove_special_symbol(text, only_ascii = True, strip = True):
+    '''The function `remove_special_symbol` removes accentuated characters in the string 'text'
+    and ignore non-ascii characters if 'only_ascii' is true. Finally, spaces at the ends of 'text'
+    are removed if strip is true.
+    
+    Args:
+        text (str): The text where to remove special symbols.
+        only_ascii (boolean): If True, non-ascii characters are removed from 'text' (default: True).
+        strip (boolean): If True, spaces at the ends of 'text' are removed (default: True).
+        
+    Returns:
+        (str): The modified string 'text'.
+    
+    '''
+    # Standard library imports
+    import functools
+    import unicodedata
+
+    if only_ascii:
+        nfc = functools.partial(unicodedata.normalize,'NFD')
+        text = nfc(text). \
+                   encode('ascii', 'ignore'). \
+                   decode('utf-8')
+    else:
+        nfkd_form = unicodedata.normalize('NFKD',text)
+        text = ''.join([c for c in nfkd_form if not unicodedata.combining(c)])
+
+    if strip:
+        text = text.strip()
+    
+    return text
+
+
+def rationalize_town_names(text, dic_town_symbols=None, dic_town_words=None):
+    '''The function `rationalize_town_names` replaces in the string 'text'
+    symbols and words defined by the keys of the dictionaries 'DIC_TOWN_SYMBOLS'
+    and 'DIC_TOWN_WORDS' by their corresponding values in these dictionaries.
+    
+    Args:
+        text (str): The string where changes will be done.
+        
+    Returns:
+        (str): The modified string.
+        
+    Notes:
+        The globals 'DIC_TOWN_SYMBOLS' and 'DIC_TOWN_WORDS' are imported from
+        `BiblioSpecificGlobals` module of `BiblioAnalysis_Utils' package.
+    
+    '''
+    
+    if dic_town_symbols==None: 
+        # Local imports
+        from BiblioAnalysis_Utils.BiblioSpecificGlobals import DIC_TOWN_SYMBOLS    
+        dic_town_symbols=DIC_TOWN_SYMBOLS
+    if dic_town_words==None: 
+        # Local imports
+        from BiblioAnalysis_Utils.BiblioSpecificGlobals import DIC_TOWN_WORDS
+        dic_town_words=DIC_TOWN_WORDS
+    
+    # Uniformizing symbols in town names using the dict 'DIC_TOWN_SYMBOLS'
+    for town_symb in dic_town_symbols.keys():
+        text = text.replace(town_symb, dic_town_symbols[town_symb])
+
+    # Uniformizing words in town names using the dict 'DIC_TOWN_WORDS'
+    for town_word in dic_town_words.keys():
+        text = text.replace(town_word, dic_town_words[town_word])
+    
+    return text
+
+
+################################# Deprecated functions ##########################################
+
+
+def country_normalization(country):                                                                            # Deprecated, replaced by "normalize_country"
+    
+    '''
+    Normalize the country name for coherence seeking between wos and scopus corpuses.
+    '''
+    # To Do: update docstring
+    
+    # Local imports
+    from BiblioAnalysis_Utils.BiblioGeneralGlobals import ALIAS_UK
+    from BiblioAnalysis_Utils.BiblioGeneralGlobals import COUNTRIES
+    
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import UNKNOWN
+    
+    country_clean = country
+    if country not in COUNTRIES:
+        if country in  ALIAS_UK:
+            country_clean = 'United Kingdom'
+        elif 'USA' in country:
+            country_clean = 'United States'
+        elif ('china' in country) or ('China' in country):
+            country_clean = 'China'
+        elif country == 'Russia':    
+            country_clean = 'Russian Federation'
+        elif country == 'U Arab Emirates':    
+            country_clean = 'United Arab Emirates'
+        elif country == 'Vietnam':   
+            country_clean = 'Viet Nam'
+        else:
+            country_clean = UNKNOWN
+
+    return country_clean
+
+
+def town_names_uniformization(text):                                                                            # Deprecated, replaced by "rationalize_town_names"
+    '''the `town_names_uniformization` function replaces in the string 'text'
+    symbols and words defined by the keys of the dictionaries 'DIC_TOWN_SYMBOLS'
+    and 'DIC_TOWN_WORDS' by their corresponding values in these dictionaries.
+    
+    Args:
+        text (str): The string where changes will be done.
+        
+    Returns:
+        (str): the modified string.
+        
+    Notes:
+        The globals 'DIC_TOWN_SYMBOLS' and 'DIC_TOWN_WORDS' are imported from
+        `BiblioSpecificGlobals` module of `BiblioAnalysis_Utils' package.
+    
+    '''
+    # Local imports
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import DIC_TOWN_SYMBOLS
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import DIC_TOWN_WORDS
+    
+    # Uniformizing symbols in town names using the dict 'DIC_TOWN_SYMBOLS'
+    for town_symb in DIC_TOWN_SYMBOLS.keys():
+        text = text.replace(town_symb, DIC_TOWN_SYMBOLS[town_symb])
+
+    # Uniformizing words in town names using the dict 'DIC_TOWN_WORDS'
+    for town_word in DIC_TOWN_WORDS.keys():
+        text = text.replace(town_word, DIC_TOWN_WORDS[town_word])
+    
+    return text
+
+
+def accent_remove(text, strip = True):                                                                                  # Deprecated, replaced by "remove_special_symbol"
     ''' The function `accent_remove` is deprecated and has been replaced by the function `special_symbol_remove` 
      imported from 'BiblioParsingUtils' module of 'BiblioAnalysis' package
      with the optional parameters "only_ascii" and "skip" set at the default value True.
@@ -467,7 +667,7 @@ def accent_remove(text, strip = True):
     return text
 
 
-def special_symbol_remove(text, only_ascii = True, strip = True):
+def special_symbol_remove(text, only_ascii = True, strip = True):                                                        # Deprecated, replaced by "remove_special_symbol"
     '''The function `special_symbol_remove` remove accentuated characters in the string 'text'
     and ignore non-ascii characters if 'only_ascii' is true. Finally, spaces at the ends of 'text'
     are removed if strip is true.
@@ -498,35 +698,3 @@ def special_symbol_remove(text, only_ascii = True, strip = True):
         text = text.strip()
     
     return text
-
-
-def town_names_uniformization(text):
-    '''the `town_names_uniformization` function replaces in the string 'text'
-    symbols and words defined by the keys of the dictionaries 'DIC_TOWN_SYMBOLS'
-    and 'DIC_TOWN_WORDS' by their corresponding values in these dictionaries.
-    
-    Args:
-        text (str): The string where changes will be done.
-        
-    Returns:
-        (str): the modified string.
-        
-    Notes:
-        The globals 'DIC_TOWN_SYMBOLS' and 'DIC_TOWN_WORDS' are imported from
-        `BiblioSpecificGlobals` module of `BiblioAnalysis_Utils' package.
-    
-    '''
-    # Local imports
-    from BiblioAnalysis_Utils.BiblioSpecificGlobals import DIC_TOWN_SYMBOLS
-    from BiblioAnalysis_Utils.BiblioSpecificGlobals import DIC_TOWN_WORDS
-    
-    # Uniformizing symbols in town names using the dict 'DIC_TOWN_SYMBOLS'
-    for town_symb in DIC_TOWN_SYMBOLS.keys():
-        text = text.replace(town_symb, DIC_TOWN_SYMBOLS[town_symb])
-
-    # Uniformizing words in town names using the dict 'DIC_TOWN_WORDS'
-    for town_word in DIC_TOWN_WORDS.keys():
-        text = text.replace(town_word, DIC_TOWN_WORDS[town_word])
-    
-    return text
-

@@ -22,8 +22,8 @@ def parsing_concatenate_deduplicate(useful_path_list, inst_filter_list = None):
     Note:
         The globals 'COL_NAMES', 'CONCATENATED_XLSX', 'DEDUPLICATED_XLSX' and 'DIC_OUTDIR_PARSING' 
         are imported from 'BiblioSpecificGlobals' module of 'BiblioAnalysis_Utils' package.
-        The function 'extend_author_institutions' is imported from 'BiblioParsingUtils' module 
-        of 'BiblioAnalysis_Utils' package is used.
+        The function 'extend_author_institutions' is imported from 'BiblioParsingInstitutions' module 
+        of 'BiblioAnalysis_Utils' package.
                                   
     '''
     
@@ -35,7 +35,8 @@ def parsing_concatenate_deduplicate(useful_path_list, inst_filter_list = None):
     import pandas as pd
 
     # Local imports
-    from BiblioAnalysis_Utils.BiblioParsingUtils import extend_author_institutions
+    from BiblioAnalysis_Utils.BiblioParsingInstitutions import extend_author_institutions
+    
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import COL_NAMES
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import CONCATENATED_XLSX
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import DEDUPLICATED_XLSX
@@ -164,7 +165,7 @@ def _concatenate_dat(filename, path_first_corpus, path_second_corpus, path_conca
     df_second_corpus = pd.read_csv(path_second_corpus / Path(filename), sep="\t")
     
     # Incrementing the "pub_id_alias" column values of second corpus by first corpus length 
-    first_corpus_articles_nb = max(df_first_corpus[pub_id_alias])
+    first_corpus_articles_nb = max(df_first_corpus[pub_id_alias]) + 1
     df_second_corpus[pub_id_alias] = df_second_corpus[pub_id_alias] + first_corpus_articles_nb
     
     # Cancatenating the two dataframes
@@ -208,6 +209,7 @@ def _deduplicate_articles(path_in):
     # Local imports
     from BiblioAnalysis_Utils.BiblioGeneralGlobals import BOLD_TEXT
     from BiblioAnalysis_Utils.BiblioGeneralGlobals import LIGHT_TEXT
+    
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import COL_NAMES
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import DIC_OUTDIR_PARSING
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import LENGTH_THRESHOLD

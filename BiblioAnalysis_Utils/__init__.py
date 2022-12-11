@@ -1,4 +1,4 @@
-__version__ = '4.2.0'
+__version__ = '5.0.0'
 __author__ = 'BiblioAnalysis team'
 __license__ = 'MIT'
 
@@ -19,4 +19,3 @@ from BiblioAnalysis_Utils.BiblioRefs import *
 from BiblioAnalysis_Utils.BiblioSpecificGlobals import *
 from BiblioAnalysis_Utils.BiblioSys import *
 from BiblioAnalysis_Utils.BiblioTempDev import *
-from BiblioAnalysis_Utils.BiblioUnusedGlobals import *
