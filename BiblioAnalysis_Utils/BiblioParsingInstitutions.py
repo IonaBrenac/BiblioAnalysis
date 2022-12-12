@@ -1721,9 +1721,9 @@ def build_addresses_institutions(path_parsing, norm_raw_aff_dict, aff_type_dict)
     pub_id_alias            = COL_NAMES['address'][0]
     idx_address_alias       = COL_NAMES['address'][1]
     address_alias           = COL_NAMES['address'][2]
-    country_alias           = COL_NAMES['address'][3]
-    norm_institutions_alias = COL_NAMES['address'][4]
-    raw_institutions_alias  = COL_NAMES['address'][5]
+    country_alias           = COL_NAMES['address_inst'][3]
+    norm_institutions_alias = COL_NAMES['address_inst'][4]
+    raw_institutions_alias  = COL_NAMES['address_inst'][5]
     
     # Setting local aliases
     temp_institutions_alias = "Full institutions"
