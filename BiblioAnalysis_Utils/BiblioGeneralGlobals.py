@@ -165,8 +165,9 @@ DIC_CHANGE_SYMB = {"&": "and",
                    "§": " ",
                    "(": " ",
                    ")": " ",
-                   "/": " ",                 
-                  }  
+                   "/": " ",
+                   "'": " ",   # To Do: to be tested from the point of view of the effect on raw institutions
+                  } 
 
 SYMB_CHANGE = str.maketrans(DIC_CHANGE_SYMB)
 

@@ -773,10 +773,11 @@ def _build_articles_scopus(df_corpus):
     
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import COL_NAMES
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import COLUMN_LABEL_SCOPUS
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import NORM_JOURNAL_COLUMN_LABEL         #####################################
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import DIC_DOCTYPE
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import UNKNOWN
 
-    re_issn = re.compile(r'^[0-9]{8}|[0-9]{4}|[0-9]{3}X') # Use to normalize the ISSN to the
+    re_issn = re.compile(r'^[0-9]{8}|[0-9]{4}|[0-9]{3}X') # Used to normalize the ISSN to the
                                                           # form dddd-dddd or dddd-dddX used by wos
     
     def _convert_issn(text):        
@@ -807,12 +808,12 @@ def _build_articles_scopus(df_corpus):
         title = title.translate(PONCT_CHANGE)
         return title
     
-    pub_id_alias = COL_NAMES['articles'][0]
-    author_alias = COL_NAMES['articles'][1]
-    year_alias = COL_NAMES['articles'][2]
+    pub_id_alias   = COL_NAMES['articles'][0]
+    author_alias   = COL_NAMES['articles'][1]
+    year_alias     = COL_NAMES['articles'][2]
     doc_type_alias = COL_NAMES['articles'][7]
-    title_alias = COL_NAMES['articles'][9]
-    issn_alias = COL_NAMES['articles'][-1]
+    title_alias    = COL_NAMES['articles'][9]
+    issn_alias     = COL_NAMES['articles'][-1]
     
     scopus_columns = [COLUMN_LABEL_SCOPUS['authors'],
                       COLUMN_LABEL_SCOPUS['year'],
@@ -823,7 +824,8 @@ def _build_articles_scopus(df_corpus):
                       COLUMN_LABEL_SCOPUS['document_type'],
                       COLUMN_LABEL_SCOPUS['language'],
                       COLUMN_LABEL_SCOPUS['title'],
-                      COLUMN_LABEL_SCOPUS['issn']]
+                      COLUMN_LABEL_SCOPUS['issn'],
+                      NORM_JOURNAL_COLUMN_LABEL]                                  ##########################
 
     df_article = df_corpus[scopus_columns].astype(str)
 
@@ -1017,10 +1019,11 @@ def read_database_scopus(filename):
     from BiblioAnalysis_Utils.BiblioParsingUtils import check_and_drop_columns
     from BiblioAnalysis_Utils.BiblioParsingUtils import normalize_journal_names
     
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import COLUMN_TYPE_SCOPUS
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import SCOPUS    
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import UNKNOWN
     
-    df = pd.read_csv(Path(filename))     
+    df = pd.read_csv(Path(filename), dtype = COLUMN_TYPE_SCOPUS)    
     df = check_and_drop_columns(SCOPUS,df,filename)    
     df = _check_affiliation_column_scopus(df)
     df = df.replace(np.nan,UNKNOWN,regex=True)

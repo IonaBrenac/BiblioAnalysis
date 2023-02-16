@@ -1240,10 +1240,10 @@ def build_norm_raw_affiliations_dict(country_affiliations_file_path = None, verb
         (dict): The built dict.
 
     Note:
-        _build_words_set_from_raw_aff
-        _build_words_sets_list
-        COUNTRY_AFFILIATIONS_FILE
-        REP_UTILS
+        internalfunctions : _build_words_set, _build_words_sets_list       
+        remove_special_symbol from BiblioAnalysis_Utils.BiblioParsingUtils
+        COUNTRY_AFFILIATIONS_FILE, DIC_WORD_RE_PATTERN, MISSING_SPACE_ACRONYMS, SMALL_WORDS_DROP, REP_UTILS
+        APOSTROPHE_CHANGE, DASHES_CHANGE, SYMB_DROP, SYMB_CHANGE
     
     '''
 
@@ -1299,18 +1299,7 @@ def build_norm_raw_affiliations_dict(country_affiliations_file_path = None, verb
         '''
         # Standard library imports
         import re
-        from string import Template
-
-        # Local imports
-            #remove_special_symbol
-            #DIC_WORD_RE_PATTERN
-            #DASHES_CHANGE
-            #APOSTROPHE_CHANGE
-            #SYMB_CHANGE
-            #SYMB_DROP
-            #MISSING_SPACE_ACRONYMS
-            #SMALL_WORDS_DROP    
-
+        from string import Template   
 
         # Setting substitution templates for searching small words or acronyms
         small_words_template = Template(r'[\s(]$word[\s)]'    # For instence capturing 'of' in 'technical university of denmark'                                                              
@@ -1649,21 +1638,26 @@ def build_address_affiliations_lists(raw_address, norm_raw_aff_dict, aff_type_di
         The function 'get_norm_affiliations_list' is imported from    .
     '''
 
+    from BiblioAnalysis_Utils.BiblioGeneralGlobals import SYMB_CHANGE
+    
     std_address = standardize_address(raw_address)
     if verbose:
         print()
         print('Standardized address:              ', std_address)
 
     country, affiliations_list, affiliations_drop = get_affiliations_list(std_address, drop_to_end = None, verbose = False)
+    affiliations_list_mod = [affiliation.translate(SYMB_CHANGE) for affiliation in affiliations_list]
+    
     if verbose:
         print()
         print('Country:                           ', country)
         print()
         print('Affiliations list:                 ', affiliations_list)
-        print('Affiliations dropped:              ', affiliations_drop)
+        print('Modified affiliations list:        ', affiliations_list_mod)
+        print('Affiliations dropped:              ', affiliations_drop) 
 
     if country in norm_raw_aff_dict.keys():
-        address_norm_affiliation_list, address_unknown_affiliations_list = get_norm_affiliations_list(country, affiliations_list, norm_raw_aff_dict, aff_type_dict, verbose=False)
+        address_norm_affiliation_list, address_unknown_affiliations_list = get_norm_affiliations_list(country, affiliations_list_mod, norm_raw_aff_dict, aff_type_dict, verbose=False)
     else:
         address_norm_affiliation_list = []
         address_unknown_affiliations_list = affiliations_list

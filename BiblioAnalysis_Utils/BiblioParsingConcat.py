@@ -38,6 +38,7 @@ def parsing_concatenate_deduplicate(useful_path_list, inst_filter_list = None):
     from BiblioAnalysis_Utils.BiblioParsingInstitutions import extend_author_institutions
     
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import COL_NAMES
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import NORM_JOURNAL_COLUMN_LABEL
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import CONCATENATED_XLSX
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import DEDUPLICATED_XLSX
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import DIC_OUTDIR_PARSING
@@ -80,7 +81,7 @@ def parsing_concatenate_deduplicate(useful_path_list, inst_filter_list = None):
     print(f'\nDeduplicated articles list file successfully saved as EXCEL file in: \n{path_rational_parsing}')    
       
     # Dropping the temporarily created column of normalized journal names in the deduplicated articles dataframe
-    df_articles_dedup = df_articles_dedup.drop([norm_journal_alias], axis = 1)
+    df_articles_dedup = df_articles_dedup.drop([NORM_JOURNAL_COLUMN_LABEL, norm_journal_alias], axis = 1)
     
     # Saving deduplicated articles list to .dat file  
     df_articles_dedup.to_csv(path_rational_parsing / Path(articles_dat_alias),
@@ -211,6 +212,7 @@ def _deduplicate_articles(path_in):
     from BiblioAnalysis_Utils.BiblioGeneralGlobals import LIGHT_TEXT
     
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import COL_NAMES
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import NORM_JOURNAL_COLUMN_LABEL
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import DIC_OUTDIR_PARSING
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import LENGTH_THRESHOLD
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import SIMILARITY_THRESHOLD
@@ -230,13 +232,14 @@ def _deduplicate_articles(path_in):
     light_text = LIGHT_TEXT
     
     # Defining aliases for column names of the articles file (.dat)
-    pub_id_alias = COL_NAMES['pub_id']
-    author_alias = COL_NAMES['articles'][1]
-    journal_alias = COL_NAMES['articles'][3]    
-    doi_alias = COL_NAMES['articles'][6]
+    pub_id_alias   = COL_NAMES['pub_id']
+    author_alias   = COL_NAMES['articles'][1]
+    #journal_alias  = COL_NAMES['articles'][3]
+    journal_alias  = NORM_JOURNAL_COLUMN_LABEL    #############################################################
+    doi_alias      = COL_NAMES['articles'][6]
     doc_type_alias = COL_NAMES['articles'][7]
-    title_alias = COL_NAMES['articles'][9]
-    issn_alias = COL_NAMES['articles'][10]
+    title_alias    = COL_NAMES['articles'][9]
+    issn_alias     = COL_NAMES['articles'][10]
     
     # Setting the name of a temporal column of titles in lower case 
     # to be added to working dataframes for case unsensitive dropping of duplicates

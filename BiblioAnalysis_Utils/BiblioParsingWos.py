@@ -694,6 +694,7 @@ def _build_articles_wos(df_corpus):
     
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import COL_NAMES
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import COLUMN_LABEL_WOS
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import NORM_JOURNAL_COLUMN_LABEL         #####################################
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import DIC_DOCTYPE
 
     def _str_int_convertor(x):
@@ -732,7 +733,8 @@ def _build_articles_wos(df_corpus):
                    COLUMN_LABEL_WOS['document_type'],
                    COLUMN_LABEL_WOS['language'],
                    COLUMN_LABEL_WOS['title'],
-                   COLUMN_LABEL_WOS['issn']]
+                   COLUMN_LABEL_WOS['issn'],
+                   NORM_JOURNAL_COLUMN_LABEL]         #####################################
                    
     df_article = df_corpus.loc[:,wos_columns].astype(str)
 
