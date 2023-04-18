@@ -474,12 +474,11 @@ def _build_authors_countries_institutions_scopus(df_corpus, dic_failed, inst_fil
                     affiliation = re.sub(RE_SUB,'University' + ' ',affiliation_raw)
                     author_address_list_raw.append(affiliation) 
 
-                author_institutions = []
-                for address in author_address_list_raw:
-                    author_country_raw = address.split(',')[-1].strip()
-                    author_country = country_normalization(author_country_raw)
+                    for address in author_address_list_raw:
+                        author_country_raw = address.split(',')[-1].strip()
+                        author_country = country_normalization(author_country_raw)
 
-                    author_institutions_tup = address_inst_full_list(address, inst_dic)
+                        author_institutions_tup = address_inst_full_list(address, inst_dic)
 
                     list_addr_country_inst.append(addr_country_inst(pub_id,
                                                                     idx_author,

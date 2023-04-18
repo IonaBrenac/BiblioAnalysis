@@ -67,9 +67,6 @@ def _get_displays(in_to_mm=None):
                  'height_mm':m.height_mm,'name':m.name,
                  'is_primary':m.is_primary} for m in get_monitors()]
     
-
-    print('Number of detected displays:',len(displays))
-    
     for disp in range(len(displays)):
         width_px = displays[disp]['width']
         height_px = displays[disp]['height']
@@ -88,16 +85,11 @@ def _get_displays(in_to_mm=None):
         
     return displays
 
-######################## Definition of globals ###########################
-
+######################## Definition of display globals ###########################
 DISPLAYS = _get_displays()
-
-   # Get the prime display choice
-   # TO DO: replace input by a GUI to select the gui display for the whole run of BiblioAnalysis
-displays_nb = len(DISPLAYS)
-GUI_DISP = [i for i in range(displays_nb) if DISPLAYS[i]['is_primary']][0]
+# Select the prime display
+displays_nb = len(DISPLAYS) 
 if displays_nb>1:
-    disp_select = input('\nSelect Id of gui prime-display '+
-                       '(value: 0 to '+ str(displays_nb-1)+
-                      '; default:'+ str(GUI_DISP)+')')
-    if disp_select: GUI_DISP = int(disp_select)  
+    GUI_DISP = 1
+else:
+    GUI_DISP = 0
