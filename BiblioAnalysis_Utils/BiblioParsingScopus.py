@@ -848,9 +848,9 @@ def _build_references_scopus(df_corpus):
     referenced with the key publi_id:
     
             pub_id  author     year         journal          volume  page
-        0    0    Bellouard Q  2017   INT. J. HYDROG. ENERGY   42    13486
-        1    0    Bellouard Q  2017   ENERGY FUELS             31    10933
-        2    0    Bellouard Q  2018   INT. J. HYDROG. ENERGY   44    19193
+        0    0    Bellouard Q  2017   Int. J. Hydrog. Energy   42    13486
+        1    0    Bellouard Q  2017   Energy Fuels             31    10933
+        2    0    Bellouard Q  2018   Int. J. Hydrog. Energy   44    19193
 
     Args:
         df_corpus (dataframe): the dataframe of the wos/scopus corpus
@@ -873,9 +873,13 @@ def _build_references_scopus(df_corpus):
     
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import COL_NAMES
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import COLUMN_LABEL_SCOPUS
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import RE_DETECT_SCOPUS_NEW
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import RE_REF_AUTHOR_SCOPUS
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import RE_REF_AUTHOR_SCOPUS_NEW
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import RE_REF_JOURNAL_SCOPUS
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import RE_REF_JOURNAL_SCOPUS_NEW
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import RE_REF_PAGE_SCOPUS
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import RE_REF_PAGE_SCOPUS_NEW
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import RE_REF_VOL_SCOPUS
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import RE_REF_YEAR_SCOPUS
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import UNKNOWN
@@ -891,48 +895,81 @@ def _build_references_scopus(df_corpus):
         if isinstance(row, str): # if the reference field is not empty and not an URL
 
             for field in row.split(";"):
-                author = re.findall(RE_REF_AUTHOR_SCOPUS, field)
-                if len(author):
-                    author = name_normalizer(author[0])
-                else:
-                    author = UNKNOWN
 
-                year = re.findall(RE_REF_YEAR_SCOPUS, field)  
-                if len(year):
-                    year = year[0]
-                else:
-                    year = 0
+                if RE_DETECT_SCOPUS_NEW.search(field):  # detect new SCOPUS coding 2023
 
-                journal = re.findall(RE_REF_JOURNAL_SCOPUS, field)
-                if journal:
-                    if ',' in journal[0] :
-                        journal = journal[0][6:-1].upper()
+                    author = re.findall(RE_REF_AUTHOR_SCOPUS_NEW, field)
+                    if len(author):
+                        author = name_normalizer(author[0])
                     else:
-                        journal = journal[0][6:].upper()
-                else:
-                    journal = UNKNOWN
-
-                vol = re.findall(RE_REF_VOL_SCOPUS, field)
-                if len(vol):
-                    if ',' in vol[0]:
-                        vol = re.findall(r'\d{1,6}',vol[0])[0]
+                        author = "UNKNOWN"
+                        
+                    year = re.findall(RE_REF_YEAR_SCOPUS, field)
+                    if len(year):
+                        year = year[0]
                     else:
-                        vol = vol[0].strip()
-                else:
-                    vol = 0
+                        year = 0  
 
-                page = re.findall(RE_REF_PAGE_SCOPUS, field)
-                if len(page) == 0:
-                    page = 0
-                else:
-                    page = page[0].split('p.')[1]
+                    page = re.findall(RE_REF_PAGE_SCOPUS_NEW, field)
+                    if len(page) == 0:
+                        page = 0
+                    else:
+                        page = page[0].split('p.')[1]      
+
+                    journal_vol =  re.findall(RE_REF_JOURNAL_SCOPUS_NEW , field)
+                    if journal_vol:
+                        journal_split = journal_vol[0].split(',')
+                        journal = journal_split[0]
+                        vol  = journal_split[1]
+                    else:
+                        journal = "UNKNOWN"
+                        vol = 0
+
+                else: # use old parsing
+
+                    author = re.findall(RE_REF_AUTHOR_SCOPUS, field)
+                    if len(author):
+                        author = name_normalizer(author[0])
+                    else:
+                        author = "UNKNOWN"
+
+                    year = re.findall(RE_REF_YEAR_SCOPUS, field)
+                    if len(year):
+                        year = year[0]
+                    else:
+                        year = 0
+
+                    journal = re.findall(RE_REF_JOURNAL_SCOPUS, field)
+                    if journal:
+                        if ',' in journal[0] :
+                            journal = journal[0][6:-1]
+                        else:
+                            journal = journal[0][6:]
+                    else:
+                        journal = "UNKNOWN"
+
+                    vol = re.findall(RE_REF_VOL_SCOPUS, field)
+                    if len(vol):
+                        if ',' in vol[0]:
+                            vol = re.findall(r'\d{1,6}',vol[0])[0]
+                        else:
+                            vol = vol[0].strip()
+                    else:
+                        vol = 0
+
+                    page = re.findall(RE_REF_PAGE_SCOPUS, field)
+                    if len(page) == 0:
+                        page = 0
+                    else:
+                        page = page[0].split('p.')[1]
+                
 
                 if (author != UNKNOWN) and (journal != UNKNOWN):
                     list_ref_article.append(ref_article(pub_id,author,year,journal,vol,page))
 
                 if (vol==0) & (page==0) & (author != UNKNOWN):
                     pass
-
+    
     df_references = pd.DataFrame.from_dict({label:[s[idx] for s in list_ref_article] 
                                             for idx,label in enumerate(COL_NAMES['references'])})
     

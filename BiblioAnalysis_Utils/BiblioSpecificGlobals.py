@@ -64,12 +64,16 @@ __all__ = ['BASIC_KEEPING_WORDS',
            'RE_ADDRESS',
            'RE_ADDS_JOURNAL',
            'RE_AUTHOR',
+           'RE_DETECT_SCOPUS_NEW',
            'RE_NUM_CONF',
            'RE_REF_AUTHOR_SCOPUS',
+           'RE_REF_AUTHOR_SCOPUS_NEW',
            'RE_REF_AUTHOR_WOS',
            'RE_REF_JOURNAL_SCOPUS',
+           'RE_REF_JOURNAL_SCOPUS_NEW',
            'RE_REF_JOURNAL_WOS',
            'RE_REF_PAGE_SCOPUS',
+           'RE_REF_PAGE_SCOPUS_NEW',
            'RE_REF_PAGE_WOS',
            'RE_REF_VOL_SCOPUS',
            'RE_REF_VOL_WOS',
@@ -512,15 +516,23 @@ RE_AUTHOR = re.compile('''(?<=\[)
 RE_NUM_CONF = re.compile(r'\s\d+th\s|\s\d+nd\s')    # Captures: " d...dth " or " d...dnd " in string
 
 
+RE_DETECT_SCOPUS_NEW = re.compile("\(\d{4}\)(\s)?$")                  # find (dddd); at the end of a string
+
+
 RE_REF_AUTHOR_SCOPUS = re.compile(r'^[^,0123456789:]*,'               # Captures: "ccccc, ccccc,"
                                   '[^,0123456789:]*,') 
 
+RE_REF_AUTHOR_SCOPUS_NEW = re.compile(r'^[^,0123456789:]*,')          # Captures: "ccccc," (since 07-2023)
 
-RE_REF_AUTHOR_WOS = re.compile(r'^[^,0123456789:]*,')    # Captures: "ccccc ccccc,"  ; To Do: to be converted to explicite list 
+
+RE_REF_AUTHOR_WOS = re.compile(r'^[^,0123456789:]*,')                 # Captures: "ccccc ccccc,"  ; To Do: to be converted to explicite list 
 
 
-RE_REF_JOURNAL_SCOPUS = re.compile('''\(\d{4}\)\s+[^,]*,       # Capures "(dddd) cccccc," c not a comma
+RE_REF_JOURNAL_SCOPUS = re.compile('''\(\d{4}\)\s+[^,]*,              # Capures "(dddd) cccccc," c not a comma
                                    |\(\d{4}\)\s+[^,]*$''',re.X)       # or "(dddd) cccccc" at the end
+
+
+RE_REF_JOURNAL_SCOPUS_NEW = re.compile('''(?<=,\s)[^,]*,\s+\d+,''')   # (since 07-2023)
 
 
 RE_REF_JOURNAL_WOS = re.compile('''(?<=,)\s[A-Z]{2}[0-9A-Z&\s\-\.\[\]]+(?=,)         # Captures ", Science & Dev.[3],"
@@ -530,12 +542,16 @@ RE_REF_JOURNAL_WOS = re.compile('''(?<=,)\s[A-Z]{2}[0-9A-Z&\s\-\.\[\]]+(?=,)    
 RE_REF_PAGE_SCOPUS = re.compile(r'\s+[p]{1,2}\.\s+[a-zA-Z0-9]{1,9}')  # Captures: "pp. ddd" or "p. ddd"
 
 
-RE_REF_PAGE_WOS = re.compile(r',\s+P\d{1,6}')            # Captures: ", Pdddd"
+RE_REF_PAGE_SCOPUS_NEW = re.compile(r'\s+[p]{1,2}\.\s+[a-zA-Z0-9]{1,9}'
+                                     '-[a-zA-Z0-9]{1,9}')              # Captures: "pp. ddd-ddd" (since 07-2023)
 
 
-RE_REF_VOL_SCOPUS = re.compile(''',\s+\d{1,6},                       # Capture: ", dddd,"
-                               |,\s+\d{1,6}\s\(                       # or: ", dddd ("
-                               |,\s+\d{1,6}$''',re.X)                 # or: ", dddd" at the string end
+RE_REF_PAGE_WOS = re.compile(r',\s+P\d{1,6}')                         # Captures: ", Pdddd"
+
+
+RE_REF_VOL_SCOPUS = re.compile(''',\s+\d{1,6},                         # Capture: ", dddd,"
+                               |,\s+\d{1,6}\s\(                        # or: ", dddd ("
+                               |,\s+\d{1,6}$''',re.X)                  # or: ", dddd" at the string end
 
 
 RE_REF_VOL_WOS = re.compile(r',\s+V\d{1,6}')             # Captures: ", Vdddd"
