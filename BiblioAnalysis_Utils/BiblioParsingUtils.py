@@ -360,16 +360,24 @@ def biblio_parser(in_dir_parsing, out_dir_parsing, database, expert, rep_utils=N
 
         
 def check_and_drop_columns(database,df,filename):
-
+    # Standard libraries import
+    import numpy as np
+    
     # Local imports
-    from BiblioAnalysis_Utils.BiblioSpecificGlobals import COLUMN_LABEL_WOS 
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import COLUMN_LABEL_SCOPUS
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import COLUMN_LABEL_WOS 
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import COLUMN_LABEL_WOS_PLUS    
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import SCOPUS
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import WOS
+    
+    
+    # Setting useful aliases
+    wos_col_issn_alias  = COLUMN_LABEL_WOS["issn"]
+    wos_col_eissn_alias = COLUMN_LABEL_WOS_PLUS["e_issn"] 
 
     # Check for missing mandatory columns
     if database == WOS:
-        cols_mandatory = set([val for val in COLUMN_LABEL_WOS.values() if val])
+        cols_mandatory = set([val for val in COLUMN_LABEL_WOS.values() if val] + [COLUMN_LABEL_WOS_PLUS["e_issn"]])
     elif database == SCOPUS:
         cols_mandatory = set([val for val in COLUMN_LABEL_SCOPUS.values() if val])    
     else:
@@ -380,13 +388,20 @@ def check_and_drop_columns(database,df,filename):
     if missing_columns:
         raise Exception(f'The mandarory columns: {",".join(missing_columns)} are missing from {filename}\nplease correct before proceeding')
     
-    # Columns selection and dataframe reformatting
+    # Setting issn to e_issn if issn not available for wos
+    if database == WOS:
+        df = df.replace('',np.nan,regex=True) # To allow the use of combine_first
+        df[wos_col_issn_alias] = df[wos_col_issn_alias].combine_first(df[wos_col_eissn_alias])
+        df = df.dropna(axis = 0, how = 'all')
+        cols_mandatory = set([val for val in COLUMN_LABEL_WOS.values() if val])
+        
+        
+    # Columns selection and dataframe reformatting    
     cols_to_drop = list(cols_available.difference(cols_mandatory))
     df.drop(cols_to_drop,
             axis=1,
             inplace=True)                    # Drops unused columns
     df.index = range(len(df))                # Sets the pub_id in df index
-    
     return df
 
                     

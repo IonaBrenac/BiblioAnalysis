@@ -8,6 +8,7 @@ __all__ = ['BASIC_KEEPING_WORDS',
            'COL_NAMES',
            'COLUMN_LABEL_SCOPUS',
            'COLUMN_LABEL_WOS',
+           'COLUMN_LABEL_WOS_PLUS',
            'COLUMN_TYPE_SCOPUS',
            'CONCATENATED_XLSX',
            'COOC_AUTHORIZED_ITEMS',
@@ -228,6 +229,8 @@ COLUMN_LABEL_WOS = {'affiliations'             : '',
                     'year'                     : 'PY' ,
                     }
 
+COLUMN_LABEL_WOS_PLUS = {'e_issn'              : 'EI',
+                        }
 
 NORM_JOURNAL_COLUMN_LABEL = 'Norm_journal'
 

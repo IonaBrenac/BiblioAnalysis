@@ -863,8 +863,9 @@ def read_database_wos(filename):
         
     '''
     # Standard library imports
-    import sys
+    import numpy as np
     import csv
+    import sys
     
     # 3rd party imports
     import pandas as pd
@@ -889,11 +890,9 @@ def read_database_wos(filename):
     df = pd.DataFrame(csv_list)
     df.columns = df.iloc[0]                  # Sets columns name to raw 0
     df = df.drop(0)                          # Drops the raw 0 from df 
-    
+
     df = check_and_drop_columns("wos",df,filename)
-    df = df.dropna()
-    df.index = list(range(len(df)))
-    df = df.replace('',UNKNOWN,regex=True)
+    df = df.replace(np.nan,UNKNOWN,regex=True)
     df = normalize_journal_names(WOS,df)
         
     return df

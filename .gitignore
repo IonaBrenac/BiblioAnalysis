@@ -76,6 +76,8 @@ target/
 
 # Jupyter Notebook
 .ipynb_checkpoints
+CheckAuthInst.ipynb
+CheckDeduplicateCorpuses.ipynb
 CheckFilterGui.ipynb
 CheckInstitutionsParsing.ipynb
 JRC_IF_pdf2xlsx.ipynb
