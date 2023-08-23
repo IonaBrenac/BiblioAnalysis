@@ -273,8 +273,9 @@ def _deduplicate_articles(path_in):
     # Setting issn when unknown for given article ID using available issn values 
     # of journals of same normalized names from other article IDs
     df_list = []
-    for j, dg in df_articles_concat_inter.groupby(norm_journal_alias): 
-        dg[issn_alias] = _find_value_to_keep(issn_alias)
+    for j, dg in df_articles_concat_inter.groupby(norm_journal_alias):
+        if UNKNOWN in dg[issn_alias].to_list(): dg[issn_alias] = _find_value_to_keep(issn_alias)    # Modification on 08-2023
+        #dg[issn_alias] = _find_value_to_keep(issn_alias)
         df_list.append(dg) 
     df_articles_concat = pd.concat(df_list)
         
