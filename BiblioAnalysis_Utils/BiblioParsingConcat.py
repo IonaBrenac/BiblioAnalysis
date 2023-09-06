@@ -275,7 +275,7 @@ def _deduplicate_articles(path_in):
     # Reading the articles file (.dat)
     df_articles_concat_init = pd.read_csv(path_in / Path(articles_dat_alias), 
                                          sep="\t") 
-    
+
     # Setting same journal name for similar journal names                                            
     journals_list = df_articles_concat_init[journal_alias].to_list()
     df_journal = pd.DataFrame(journals_list, columns = [norm_journal_alias])
@@ -304,8 +304,7 @@ def _deduplicate_articles(path_in):
                     df_title.loc[df_title[lc_title_alias] == t2] = t1
     df_title[lc_title_alias] = df_title[lc_title_alias].str.lower()
     df_title[lc_title_alias] = df_title[lc_title_alias].apply(norm_title)    
-    df_articles_concat_inter2 = pd.concat([df_articles_concat_inter1, df_title], axis = 1)
-    
+    df_articles_concat_inter2 = pd.concat([df_articles_concat_inter1, df_title], axis = 1)    
     
     # Setting issn when unknown for given article ID using available issn values 
     # of journals of same normalized names from other article IDs
@@ -348,24 +347,19 @@ def _deduplicate_articles(path_in):
     if df_list != []:
         df_articles_concat_doctype = pd.concat(df_list)
     else:
-        df_articles_concat_doctype = df_articles_concat_doi.copy()     
+        df_articles_concat_doctype = df_articles_concat_doi.copy() 
     
     # Setting same DOI for similar titles when any DOI is unknown
     # for same first author, page, document type and ISSN
     # Modification on 09-2023    
     df_list = []   
-    for _, author_dg in df_articles_concat_doctype.groupby([author_alias]):  
-        for _, doc_type_dg in author_dg.groupby([lc_doc_type_alias]):           
-            for _, issn_dg in doc_type_dg.groupby([issn_alias]):
-                for _, page_dg in issn_dg.groupby([page_alias]):
-                    
-                    dois_nb = len(list(set(page_dg[doi_alias].to_list())))
-                    titles_nb = len(list(set(page_dg[lc_title_alias].to_list())))
-
-                    if UNKNOWN in page_dg[doi_alias].to_list() and titles_nb>1:                       
-                        page_dg[doi_alias]      = _find_value_to_keep(page_dg,doi_alias)
-                        page_dg[lc_title_alias] = _find_value_to_keep(page_dg,lc_title_alias)
-                    df_list.append(page_dg) 
+    for _, sub_df in df_articles_concat_doctype.groupby([author_alias,lc_doc_type_alias,issn_alias,page_alias]):                      
+        dois_nb = len(list(set(sub_df[doi_alias].to_list())))
+        titles_nb = len(list(set(sub_df[lc_title_alias].to_list())))
+        if UNKNOWN in sub_df[doi_alias].to_list() and titles_nb>1:                       
+            sub_df[doi_alias]      = _find_value_to_keep(sub_df,doi_alias)
+            sub_df[lc_title_alias] = _find_value_to_keep(sub_df,lc_title_alias)
+        df_list.append(sub_df) 
     if df_list != []:
         df_articles_concat_title = pd.concat(df_list)
     else:
@@ -375,18 +369,16 @@ def _deduplicate_articles(path_in):
     # when DOI is unknown or DOIs are different
     # Modification on 09-2023
     df_list = []   
-    for _, doc_type_dg in df_articles_concat_title.groupby([lc_doc_type_alias]):
-        for _, issn_dg in doc_type_dg.groupby([issn_alias]):
-            for _, title_dg in issn_dg.groupby([lc_title_alias]):
-                for _, page_dg in title_dg.groupby([page_alias]):
-                    authors_list = list(set(page_dg[author_alias].to_list()))
-                    authors_nb   = len(authors_list)
-                    dois_list    = list(set(page_dg[doi_alias].to_list()))
-                    dois_nb      = len(dois_list)
-                    if authors_nb >1 and UNKNOWN in dois_list :                        
-                        page_dg[author_alias] = _find_value_to_keep(page_dg,author_alias)
-                        page_dg[doi_alias]    = _find_value_to_keep(page_dg,doi_alias)
-                df_list.append(page_dg) 
+    for _, sub_df in df_articles_concat_title.groupby([lc_doc_type_alias, issn_alias, lc_title_alias, page_alias]):        
+        pub_ids      = list(set(sub_df[pub_id_alias].to_list()))
+        authors_list = list(set(sub_df[author_alias].to_list()))
+        authors_nb   = len(authors_list)
+        dois_list    = list(set(sub_df[doi_alias].to_list()))
+        dois_nb      = len(dois_list)       
+        if authors_nb >1 and UNKNOWN in dois_list :                        
+            sub_df[author_alias] = _find_value_to_keep(sub_df,author_alias)
+            sub_df[doi_alias]    = _find_value_to_keep(sub_df,doi_alias)
+        df_list.append(sub_df) 
     if df_list != []:
         df_articles_concat_author = pd.concat(df_list)
     else:
