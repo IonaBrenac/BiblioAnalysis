@@ -213,12 +213,25 @@ def _deduplicate_articles(path_in):
     
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import COL_NAMES
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import NORM_JOURNAL_COLUMN_LABEL
+    from BiblioAnalysis_Utils.BiblioSpecificGlobals import DIC_DOCTYPE
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import DIC_OUTDIR_PARSING
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import LENGTH_THRESHOLD
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import SIMILARITY_THRESHOLD
     from BiblioAnalysis_Utils.BiblioSpecificGlobals import UNKNOWN
     
-    def _find_value_to_keep(column_name):
+    # Internal functions
+    
+    def norm_doctype(lc_doctype):
+        norm_doctype = lc_doctype
+        for key, values in lc_dic_doctype.items():            
+            if lc_doctype in values:
+                norm_doctype = key
+            else:
+                pass
+        return norm_doctype
+    
+    
+    def _find_value_to_keep(dg, column_name):
         col_values_list = dg[column_name].to_list()
         col_values_list = list(dict.fromkeys(col_values_list)) 
         if UNKNOWN in col_values_list: col_values_list.remove(UNKNOWN) 
@@ -227,6 +240,12 @@ def _deduplicate_articles(path_in):
     
     similar = lambda a,b:SequenceMatcher(None, a, b).ratio()
     
+    norm_title = lambda x: x.replace(" - ", "-").replace("(","").replace(")","").replace(" :", ": ").replace("-", " ").replace("  ", " ").strip()
+    
+    # Setting lower case doc-type dict for normalization of doc-types
+    lc_dic_doctype = {}
+    for key, values in DIC_DOCTYPE.items(): lc_dic_doctype[key.lower()] = [x.lower() for x in values]
+    
     # Defining aliases for text format control
     bold_text = BOLD_TEXT
     light_text = LIGHT_TEXT
@@ -234,16 +253,17 @@ def _deduplicate_articles(path_in):
     # Defining aliases for column names of the articles file (.dat)
     pub_id_alias   = COL_NAMES['pub_id']
     author_alias   = COL_NAMES['articles'][1]
-    #journal_alias  = COL_NAMES['articles'][3]
-    journal_alias  = NORM_JOURNAL_COLUMN_LABEL    #############################################################
+    page_alias     = COL_NAMES['articles'][5]
     doi_alias      = COL_NAMES['articles'][6]
     doc_type_alias = COL_NAMES['articles'][7]
     title_alias    = COL_NAMES['articles'][9]
     issn_alias     = COL_NAMES['articles'][10]
+    journal_alias  = NORM_JOURNAL_COLUMN_LABEL 
     
     # Setting the name of a temporal column of titles in lower case 
     # to be added to working dataframes for case unsensitive dropping of duplicates
-    lc_title_alias = COL_NAMES['temp_col'][0] 
+    lc_title_alias    = COL_NAMES['temp_col'][0] 
+    lc_doc_type_alias = COL_NAMES['temp_col'][5] 
     
     # Setting the name of a temporal column of journals normalized 
     # to be added to working dataframes for dropping of duplicates
@@ -255,7 +275,7 @@ def _deduplicate_articles(path_in):
     # Reading the articles file (.dat)
     df_articles_concat_init = pd.read_csv(path_in / Path(articles_dat_alias), 
                                          sep="\t") 
- 
+    
     # Setting same journal name for similar journal names                                            
     journals_list = df_articles_concat_init[journal_alias].to_list()
     df_journal = pd.DataFrame(journals_list, columns = [norm_journal_alias])
@@ -268,44 +288,135 @@ def _deduplicate_articles(path_in):
                 similarity = round(similar(j1,j2)*100)    
                 if (similarity > SIMILARITY_THRESHOLD) or (j1_specific_words == set() or j2_specific_words == set()):
                     df_journal.loc[df_journal[norm_journal_alias] == j2] = j1
-    df_articles_concat_inter = pd.concat([df_articles_concat_init, df_journal], axis = 1)
+    df_articles_concat_inter1 = pd.concat([df_articles_concat_init, df_journal], axis = 1)
+    
+    # Setting same article title for similar article title                                           
+    titles_list = df_articles_concat_inter1[title_alias].to_list()
+    df_title = pd.DataFrame(titles_list, columns = [lc_title_alias])
+    for t1 in df_title[lc_title_alias]:     
+        for t2 in  df_title[lc_title_alias]:
+            if t2 != t1 and (len(j1) > LENGTH_THRESHOLD and len(t2) > LENGTH_THRESHOLD):
+                t1_set, t2_set = set(t1.split()), set(t2.split())
+                common_words =  t2_set.intersection(t1_set)
+                t1_specific_words, t2_specific_words = (t1_set - common_words), (t2_set - common_words)
+                similarity = round(similar(t1,t2)*100)    
+                if (similarity > SIMILARITY_THRESHOLD) or (t1_specific_words == set() or t2_specific_words == set()):
+                    df_title.loc[df_title[lc_title_alias] == t2] = t1
+    df_title[lc_title_alias] = df_title[lc_title_alias].str.lower()
+    df_title[lc_title_alias] = df_title[lc_title_alias].apply(norm_title)    
+    df_articles_concat_inter2 = pd.concat([df_articles_concat_inter1, df_title], axis = 1)
+    
     
     # Setting issn when unknown for given article ID using available issn values 
     # of journals of same normalized names from other article IDs
     df_list = []
-    for j, dg in df_articles_concat_inter.groupby(norm_journal_alias):
-        if UNKNOWN in dg[issn_alias].to_list(): dg[issn_alias] = _find_value_to_keep(issn_alias)    # Modification on 08-2023
-        #dg[issn_alias] = _find_value_to_keep(issn_alias)
-        df_list.append(dg) 
-    df_articles_concat = pd.concat(df_list)
+    for _, journal_dg in df_articles_concat_inter2.groupby(norm_journal_alias):
+        if UNKNOWN in journal_dg[issn_alias].to_list(): # Modification on 08-2023
+            journal_dg[issn_alias] = _find_value_to_keep(journal_dg, issn_alias)             
+        df_list.append(journal_dg)
+    if df_list != []:
+        df_articles_concat_issn = pd.concat(df_list)
+    else:
+        df_articles_concat_issn = df_articles_concat_inter.copy()
+    
+    # Adding useful temporal columns
+    df_articles_concat_issn[lc_title_alias]    = df_articles_concat_issn[lc_title_alias].str.lower()
+    df_articles_concat_issn[lc_doc_type_alias] = df_articles_concat_issn[doc_type_alias].apply(lambda x: norm_doctype(x.lower()))
+    df_articles_concat_issn[title_alias]       = df_articles_concat_issn[title_alias].str.strip()
+    
+    # Setting DOI when unknown for given article ID using available DOI values 
+    # of articles of same title from other article IDs
+    # Modification on 09-2023 
+    df_list = []
+    for _, title_dg in df_articles_concat_issn.groupby(lc_title_alias):
+        if UNKNOWN in title_dg[doi_alias].to_list():
+            title_dg[doi_alias] = _find_value_to_keep(title_dg,doi_alias)
+        df_list.append(title_dg) 
+    if df_list != []:
+        df_articles_concat_doi = pd.concat(df_list)
+    else:
+        df_articles_concat_doi = df_articles_concat_issn.copy() 
+
+    # Setting document type when unknown for given article ID using available document type values 
+    # of articles of same DOI from other article IDs
+    # Modification on 09-2023 
+    df_list = []
+    for _, doi_dg in df_articles_concat_doi.groupby(doi_alias):
+        if UNKNOWN in doi_dg[doc_type_alias].to_list(): 
+            doi_dg[doc_type_alias] = _find_value_to_keep(doi_dg,doc_type_alias)   
+        df_list.append(doi_dg) 
+    if df_list != []:
+        df_articles_concat_doctype = pd.concat(df_list)
+    else:
+        df_articles_concat_doctype = df_articles_concat_doi.copy()     
+    
+    # Setting same DOI for similar titles when any DOI is unknown
+    # for same first author, page, document type and ISSN
+    # Modification on 09-2023    
+    df_list = []   
+    for _, author_dg in df_articles_concat_doctype.groupby([author_alias]):  
+        for _, doc_type_dg in author_dg.groupby([lc_doc_type_alias]):           
+            for _, issn_dg in doc_type_dg.groupby([issn_alias]):
+                for _, page_dg in issn_dg.groupby([page_alias]):
+                    
+                    dois_nb = len(list(set(page_dg[doi_alias].to_list())))
+                    titles_nb = len(list(set(page_dg[lc_title_alias].to_list())))
+
+                    if UNKNOWN in page_dg[doi_alias].to_list() and titles_nb>1:                       
+                        page_dg[doi_alias]      = _find_value_to_keep(page_dg,doi_alias)
+                        page_dg[lc_title_alias] = _find_value_to_keep(page_dg,lc_title_alias)
+                    df_list.append(page_dg) 
+    if df_list != []:
+        df_articles_concat_title = pd.concat(df_list)
+    else:
+        df_articles_concat_title = df_articles_concat_doctype.copy()
+    
+    # Setting same first author name for same page, document type and ISSN 
+    # when DOI is unknown or DOIs are different
+    # Modification on 09-2023
+    df_list = []   
+    for _, doc_type_dg in df_articles_concat_title.groupby([lc_doc_type_alias]):
+        for _, issn_dg in doc_type_dg.groupby([issn_alias]):
+            for _, title_dg in issn_dg.groupby([lc_title_alias]):
+                for _, page_dg in title_dg.groupby([page_alias]):
+                    authors_list = list(set(page_dg[author_alias].to_list()))
+                    authors_nb   = len(authors_list)
+                    dois_list    = list(set(page_dg[doi_alias].to_list()))
+                    dois_nb      = len(dois_list)
+                    if authors_nb >1 and UNKNOWN in dois_list :                        
+                        page_dg[author_alias] = _find_value_to_keep(page_dg,author_alias)
+                        page_dg[doi_alias]    = _find_value_to_keep(page_dg,doi_alias)
+                df_list.append(page_dg) 
+    if df_list != []:
+        df_articles_concat_author = pd.concat(df_list)
+    else:
+        df_articles_concat_author = df_articles_concat_title.copy()
+    
+    # Keeping copy of df_articles_concat with completed norm_journal_alias, issn_alias, doi_alias and doc_type_alias columns
+    df_articles_concat_full = df_articles_concat_author.copy()
         
     # Dropping duplicated article lines after merging by doi or, for unknown doi, by title and document type 
     df_list = []
-    for doi, dg in df_articles_concat.groupby(doi_alias):
+    for doi, dg in  df_articles_concat_author.groupby(doi_alias):
         if doi != UNKNOWN:
             # Deduplicating article lines by DOI
-            dg[title_alias] = _find_value_to_keep(title_alias)
-            dg[doc_type_alias] = _find_value_to_keep(doc_type_alias)
-            dg.drop_duplicates(subset=[doi_alias],keep='first',inplace=True)
+            dg[title_alias] = _find_value_to_keep(dg,title_alias)
+            dg[doc_type_alias] = _find_value_to_keep(dg,doc_type_alias)
+            dg.drop_duplicates(subset=[doi_alias], keep='first', inplace=True)
+            
         else:
             # Deduplicating article lines without DOI by title and document type
-                # Adding temporarily a column with lower-case titles for case-unsensitive duplicates droping 
-            dg[lc_title_alias] = dg[title_alias].str.lower()
-            dg.drop_duplicates(subset=[lc_title_alias,doc_type_alias],keep='first',inplace=True)
-                # Dropping the temporarily created column of lower_case titles
-            dg = dg.drop([lc_title_alias], axis = 1)
+            dg.drop_duplicates(subset=[lc_title_alias,lc_doc_type_alias],keep='first', inplace=True)
         df_list.append(dg)
-    df_inter = pd.concat(df_list)
+    df_articles_concat = pd.concat(df_list)
     
-    # Dropping duplicated article lines after merging by titles, document type, first author and journal
-        # Adding temporarily a column with lower-case titles for case_insensitive grouping
-    df_inter[lc_title_alias] = df_inter[title_alias].str.lower() 
+    # Dropping duplicated article lines after merging by titles, document type and journal 
     df_list = []   
-    for idx, dg in df_inter.groupby([lc_title_alias,doc_type_alias,norm_journal_alias]): 
+    for idx, dg in df_articles_concat.groupby([lc_title_alias,lc_doc_type_alias,norm_journal_alias]): 
         if len(dg)<3:
             # Deduplicating article lines with same title, document type, first author and journal
             # and also with same DOI if not UNKNOWN
-            dg[doi_alias] = _find_value_to_keep(doi_alias)
+            dg[doi_alias] = _find_value_to_keep(dg,doi_alias)
             dg.drop_duplicates(subset=[doi_alias],keep='first',inplace=True)          
         else:   
             # Dropping article lines with DOI UNKNOWN from group of articles with same title, 
@@ -320,22 +431,22 @@ def _deduplicate_articles(path_in):
                                   f'of "BiblioParsingConcat.py" module.\n'
                                   f'Article lines with DOIs "{UNKNOWN}" has been droped.')                      
             print(Fore.BLUE + warning + Fore.BLACK)
-        dg = dg.drop([lc_title_alias], axis = 1)
         df_list.append(dg) 
     if df_list != []:
         df_articles_dedup = pd.concat(df_list)
     else:
-        df_articles_dedup = df_inter
+        df_articles_dedup = df_articles_concat
+    df_articles_dedup = df_articles_dedup.drop([lc_title_alias, lc_doc_type_alias], axis = 1)
     df_articles_dedup.sort_values([pub_id_alias], inplace=True)
     
     # Identifying the set of articles IDs to drop in the other parsing files of the concatenated corpus
-    pub_id_set_init =  set(df_articles_concat[pub_id_alias].to_list())
-    pub_id_set_end =  set(df_articles_dedup[pub_id_alias].to_list())    
-    pub_id_to_drop = pub_id_set_init - pub_id_set_end 
+    pub_id_set_init =  set(df_articles_concat_full[pub_id_alias].to_list())
+    pub_id_set_end  =  set(df_articles_dedup[pub_id_alias].to_list())    
+    pub_id_to_drop  = pub_id_set_init - pub_id_set_end 
     
     # Setting usefull prints
-    articles_nb_init = len(df_articles_concat)    
-    articles_nb_end = len(df_articles_dedup)
+    articles_nb_init = len(df_articles_concat_full)    
+    articles_nb_end  = len(df_articles_dedup)
     articles_nb_drop = articles_nb_init - articles_nb_end
     
     print('\nDeduplication results:')
@@ -344,7 +455,7 @@ def _deduplicate_articles(path_in):
     warning = (f'    WARNING: {articles_nb_drop} articles have been dropped as duplicates')
     print(Fore.BLUE +  bold_text + warning + light_text + Fore.BLACK)
                                 
-    return df_articles_dedup, pub_id_to_drop
+    return (df_articles_dedup, pub_id_to_drop)
 
 
 def _deduplicate_dat(file_name, pub_id_to_drop, path_in, path_out ):

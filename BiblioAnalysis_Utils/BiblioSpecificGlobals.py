@@ -186,6 +186,7 @@ COL_NAMES = {   'pub_id'      :   pub_id,
                                   'Title',
                                   'title_tokens',
                                   'kept_tokens',
+                                  'doc_type_lc',
                                  ],             
             } 
 
@@ -340,15 +341,20 @@ DEDUPLICATED_XLSX = 'articles_dedup.xlsx'
 
 
 DIC_DOCTYPE = {'Article'              : ['Article'],
-               'Article; Early Access': ['Article; Early Access'], 
-               'Conference Paper'     : ['Conference Paper','Proceedings Paper'],
-               'Data Paper'           : ['Data Paper','Article; Data Paper'],
+               'Article; early access': ['Article; Early Access'],
+               'Book'                 : ['Book'],
+               'Book chapter'         : ['Book Chapter','Article; Book Chapter'],
+               'Conference paper'     : ['Conference Paper','Proceedings Paper','Article; Proceedings Paper'],
+               'Data paper'           : ['Data Paper','Article; Data Paper'],
                'Correction'           : ['Correction'],
-               'Editorial Material'   : ['Editorial Material'],               
+               'Editorial material'   : ['Editorial Material','Editorial Material; Book Chapter'],               
                'Erratum'              : ['Erratum'],
+               'Letter'               : ['Letter'],
+               'Meeting Abstract'     : ['Meeting Abstract'],
                'Note'                 : ['Note'], 
                'Review'               : ['Review'],
-               'Review; Early Access' : ['Review; Early Access'],
+               'Review; early access' : ['Review; Early Access'],
+               'Short survey'         : ['Short survey']
               }
 
 
