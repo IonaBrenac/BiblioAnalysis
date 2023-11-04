@@ -383,6 +383,7 @@ def _deduplicate_articles(path_in):
         df_articles_concat_author = pd.concat(df_list)
     else:
         df_articles_concat_author = df_articles_concat_title.copy()
+    df_articles_concat_author.sort_values(by=[pub_id_alias], inplace = True)
     
     # Keeping copy of df_articles_concat with completed norm_journal_alias, issn_alias, doi_alias and doc_type_alias columns
     df_articles_concat_full = df_articles_concat_author.copy()
@@ -429,7 +430,7 @@ def _deduplicate_articles(path_in):
     else:
         df_articles_dedup = df_articles_concat
     df_articles_dedup = df_articles_dedup.drop([lc_title_alias, lc_doc_type_alias], axis = 1)
-    df_articles_dedup.sort_values([pub_id_alias], inplace=True)
+    df_articles_dedup.sort_values(by=[pub_id_alias], inplace=True)
     
     # Identifying the set of articles IDs to drop in the other parsing files of the concatenated corpus
     pub_id_set_init =  set(df_articles_concat_full[pub_id_alias].to_list())
